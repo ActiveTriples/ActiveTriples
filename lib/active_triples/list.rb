@@ -1,3 +1,5 @@
+require 'active_support/core_ext/module'
+
 module ActiveTriples
   ##
   # An implementation of RDF::List intregrated with ActiveTriples.
@@ -101,7 +103,7 @@ module ActiveTriples
         values.with_indifferent_access.each do |key, value|
           if self.singleton_class.properties.keys.map{ |k| "#{k}_attributes"}.include?(key)
             klass = properties[key[0..-12]]['class_name']
-            klass = ActiveFedora.class_from_string(klass, final_parent.class) if klass.is_a? String
+            klass = ActiveTriples.class_from_string(klass, final_parent.class) if klass.is_a? String
             value.is_a?(Hash) ? attributes_hash_to_list(values[key], klass) : attributes_to_list(value, klass)
             values.delete key
           end
@@ -142,8 +144,6 @@ module ActiveTriples
         else value
       end
 
-      require 'pry'
-      binding.pry
       if empty?
         resource.set_value(RDF.first, value)
         resource.insert([subject, RDF.rest, RDF.nil])

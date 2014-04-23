@@ -12,13 +12,15 @@ Gem::Specification.new do |s|
   s.license     = "Public Domain"
   s.required_ruby_version     = '>= 1.9.3'
   
-  s.add_dependency('rdf', "~> 1.1.0")
+  s.add_dependency('rdf', '~> 1.1.0')
+  s.add_dependency('linkeddata')
   s.add_dependency('deprecation')
   s.add_dependency('activesupport')
 
-  s.add_development_dependency("rdoc")
-  s.add_development_dependency("rspec")
-  s.add_development_dependency("webmock")
+  s.add_development_dependency('rdoc')
+  s.add_development_dependency('rspec')
+  s.add_development_dependency('webmock')
+  s.add_development_dependency('nokogiri')
 
   s.files         = `git ls-files`.split("\n")
   s.test_files    = `git ls-files -- {spec}/*`.split("\n")

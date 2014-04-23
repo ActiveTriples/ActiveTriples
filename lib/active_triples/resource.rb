@@ -279,38 +279,36 @@ module ActiveTriples
 
     private
 
-    def properties
-      self.singleton_class.properties
-    end
-
-    def property_for_predicate(predicate)
-      properties.each do |property, values|
-        return property if values[:predicate] == predicate
+      def properties
+        self.singleton_class.properties
       end
-      return nil
-    end
 
-    def default_labels
-      [RDF::SKOS.prefLabel,
-       RDF::DC.title,
-       RDF::RDFS.label,
-       RDF::SKOS.altLabel,
-       RDF::SKOS.hiddenLabel]
-    end
-
-    ##
-    # Return the repository (or parent) that this resource should
-    # write to when persisting.
-    def repository
-      @repository ||= 
-        if self.class.repository == :parent
-          final_parent
-        else
-          Repositories.repositories[self.class.repository]
+      def property_for_predicate(predicate)
+        properties.each do |property, values|
+          return property if values[:predicate] == predicate
         end
-    end
+        return nil
+      end
 
-    private
+      def default_labels
+        [RDF::SKOS.prefLabel,
+         RDF::DC.title,
+         RDF::RDFS.label,
+         RDF::SKOS.altLabel,
+         RDF::SKOS.hiddenLabel]
+      end
+
+      ##
+      # Return the repository (or parent) that this resource should
+      # write to when persisting.
+      def repository
+        @repository ||= 
+          if self.class.repository == :parent
+            final_parent
+          else
+            Repositories.repositories[self.class.repository]
+          end
+      end
 
       ##
       # Takes a URI or String and aggressively tries to create a valid RDF URI.
