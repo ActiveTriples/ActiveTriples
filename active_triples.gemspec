@@ -30,5 +30,5 @@ Gem::Specification.new do |s|
     "README.md"
   ]
 
-  s.require_paths = ["lib", "lib/active_triples"]
+  s.require_paths = ["lib"]
 end
