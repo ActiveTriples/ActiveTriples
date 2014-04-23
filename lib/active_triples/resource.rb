@@ -1,3 +1,4 @@
+require 'deprecation'
 require 'active_support/core_ext/hash'
 
 module ActiveTriples
