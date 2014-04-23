@@ -180,7 +180,7 @@ module ActiveTriples
       def class_for_property
         klass = property_config[:class_name] 
         klass ||= Resource
-        klass = ActiveFedora.class_from_string(klass, final_parent.class) if klass.kind_of? String
+        klass = ActiveTriples.class_from_string(klass, final_parent.class) if klass.kind_of? String
         klass
       end
 
