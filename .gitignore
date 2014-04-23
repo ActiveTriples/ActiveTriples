@@ -1,0 +1,6 @@
+.bundle/
+log/*.log
+pkg/
+Gemfile.lock
+tmp/*
+.sass-cache
