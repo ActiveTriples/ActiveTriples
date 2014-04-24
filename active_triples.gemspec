@@ -29,6 +29,4 @@ Gem::Specification.new do |s|
     "LICENSE",
     "README.md"
   ]
-
-  s.require_paths = ["lib"]
 end
