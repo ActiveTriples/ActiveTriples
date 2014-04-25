@@ -1,6 +1,7 @@
-require "spec_helper"
-describe ActiveTriples::Resource do
+require 'spec_helper'
 
+describe ActiveTriples::Resource do
+  it_behaves_like 'an ActiveModel'
   before do
     class DummyLicense < ActiveTriples::Resource
       property :title, :predicate => RDF::DC.title
