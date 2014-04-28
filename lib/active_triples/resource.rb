@@ -253,11 +253,12 @@ module ActiveTriples
 
     def destroy
       clear
-      persist!
-      parent.destroy_child(self)
+      persist! if repository
+      parent.destroy_child(self) if parent
       @destroyed = true
     end
-
+    alias_method :destroy!, :destroy
+    
     def destroyed?
       @destroyed ||= false
     end
