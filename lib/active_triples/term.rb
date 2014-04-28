@@ -151,7 +151,7 @@ module ActiveTriples
         value = RDF::Node.new if value.nil?
         node = node_cache[value] if node_cache[value]
         node ||= klass.from_uri(value,parent)
-        return nil if property_config[:class_name] && class_for_value(value) != class_for_property
+        return nil if (property_config && property_config[:class_name]) && (class_for_value(value) != class_for_property)
         self.node_cache[value] ||= node
         node
       end
@@ -178,7 +178,7 @@ module ActiveTriples
       end
 
       def class_for_property
-        klass = property_config[:class_name] 
+        klass = property_config[:class_name] if property_config
         klass ||= Resource
         klass = ActiveTriples.class_from_string(klass, final_parent.class) if klass.kind_of? String
         klass
