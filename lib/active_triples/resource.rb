@@ -87,6 +87,11 @@ module ActiveTriples
       attrs = {}
       attrs['id'] = id if id
       fields.map { |f| attrs[f.to_s] = get_values(f) }
+      preds = registered_predicates 
+      predicates.each do |uri|
+        next if preds.include?(uri) or uri == RDF.type
+        attrs[uri.to_s] = get_values(uri)
+      end
       attrs
     end
 
@@ -304,6 +309,10 @@ module ActiveTriples
 
       def properties
         self.singleton_class.properties
+      end
+
+      def registered_predicates 
+        properties.values.map { |config| config.predicate }
       end
 
       def property_for_predicate(predicate)

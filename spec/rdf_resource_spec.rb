@@ -213,7 +213,7 @@ describe ActiveTriples::Resource do
         subject << RDF::Statement(subject.rdf_subject, RDF::DC.contributor, 'Tove Jansson')
       end
       
-      xit 'should include data with URIs as attribute names' do
+      it 'should include data with URIs as attribute names' do
         expect(subject.attributes[RDF::DC.contributor.to_s]).to eq ['Tove Jansson']
       end
     end
