@@ -26,6 +26,8 @@ module ActiveTriples
     extend Deprecation
     extend ActiveModel::Naming
     include ActiveModel::Conversion
+    include ActiveModel::Serialization
+    include ActiveModel::Serializers::JSON
     include NestedAttributes
     attr_accessor :parent
 
@@ -81,6 +83,13 @@ module ActiveTriples
       end
     end
 
+    def attributes
+      attrs = {}
+      attrs['id'] = id if id
+      fields.map { |f| attrs[f.to_s] = get_values(f) }
+      attrs
+    end
+
     def attributes=(values)
       raise ArgumentError, "values must be a Hash, you provided #{values.class}" unless values.kind_of? Hash
       values = values.with_indifferent_access
@@ -98,6 +107,10 @@ module ActiveTriples
 
     def rdf_subject
       @rdf_subject ||= RDF::Node.new
+    end
+
+    def id
+      node? ? nil : rdf_subject.to_s
     end
 
     def node?

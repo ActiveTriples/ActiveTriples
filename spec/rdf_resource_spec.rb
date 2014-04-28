@@ -67,47 +67,49 @@ describe ActiveTriples::Resource do
   end
 
   describe "#persisted?" do
-    before do
-      repository = RDF::Repository.new
-      subject.stub(:repository).and_return(repository)
-    end
-
-    context "when the object is new" do
-      it "should return false" do
-        expect(subject).not_to be_persisted
-      end
-    end
-
-    context "when it is saved" do
+    context 'with a repository' do
       before do
-        subject.title = "bla"
-        subject.persist!
+        repository = RDF::Repository.new
+        subject.stub(:repository).and_return(repository)
       end
 
-      it "should return true" do
-        expect(subject).to be_persisted
+      context "when the object is new" do
+        it "should return false" do
+          expect(subject).not_to be_persisted
+        end
       end
 
-      context "and then modified" do
+      context "when it is saved" do
         before do
-          subject.title = "newbla"
+          subject.title = "bla"
+          subject.persist!
         end
 
         it "should return true" do
           expect(subject).to be_persisted
         end
-      end
-      context "and then reloaded" do
-        before do
-          subject.reload
-        end
 
-        it "should reset the title" do
-          expect(subject.title).to eq ["bla"]
-        end
+        context "and then modified" do
+          before do
+            subject.title = "newbla"
+          end
 
-        it "should be persisted" do
-          expect(subject).to be_persisted
+          it "should return true" do
+            expect(subject).to be_persisted
+          end
+        end
+        context "and then reloaded" do
+          before do
+            subject.reload
+          end
+
+          it "should reset the title" do
+            expect(subject.title).to eq ["bla"]
+          end
+
+          it "should be persisted" do
+            expect(subject).to be_persisted
+          end
         end
       end
     end
@@ -181,6 +183,46 @@ describe ActiveTriples::Resource do
         subject.destroy
         subject.each_statement do |s|
           expect(parent.statements).not_to include s
+        end
+      end
+    end
+  end
+  
+  describe 'attributes' do
+    before do 
+      subject.license = license
+      subject.title = 'moomi'
+    end
+
+    let(:license) { DummyLicense.new('http://example.org/license') }
+
+    it 'should return an attributes hash' do
+      expect(subject.attributes).to be_a Hash
+    end
+
+    it 'should contain data' do
+      expect(subject.attributes['title']).to eq ['moomi']
+    end
+
+    it 'should contain child objects' do
+      expect(subject.attributes['license']).to eq [license]
+    end
+
+    context 'with unmodeled data' do
+      before do
+        subject << RDF::Statement(subject.rdf_subject, RDF::DC.contributor, 'Tove Jansson')
+      end
+      
+      xit 'should include data with URIs as attribute names' do
+        expect(subject.attributes[RDF::DC.contributor.to_s]).to eq ['Tove Jansson']
+      end
+    end
+
+    describe 'attribute_serialization' do
+      describe '#to_json' do
+        it 'should return a string with correct objects' do
+          json_hash = JSON.parse(subject.to_json)
+          expect(json_hash['license'].first['id']).to eq license.rdf_subject.to_s
         end
       end
     end
