@@ -145,6 +145,47 @@ describe ActiveTriples::Resource do
     end
   end
 
+  describe '#destroy!' do
+    before do
+      subject.title = 'Creative Commons'
+      subject << RDF::Statement(RDF::DC.LicenseDocument, RDF::DC.title, 'LICENSE')
+    end
+
+    subject { DummyLicense.new('http://example.org/cc')}
+
+    it 'should return true' do
+      expect(subject.destroy!).to be_true
+      expect(subject.destroy).to be_true
+    end
+    
+    it 'should delete the graph' do
+      subject.destroy
+      expect(subject).to be_empty
+    end
+
+    context 'with a parent' do
+      before do
+        parent.license = subject
+      end
+
+      let(:parent) do
+        DummyResource.new('http://example.org/moomi')
+      end
+
+      it 'should empty the graph and remove it from the parent' do
+        subject.destroy
+        expect(parent.license).to be_empty
+      end
+
+      it 'should remove its whole graph from the parent' do
+        subject.destroy
+        subject.each_statement do |s|
+          expect(parent.statements).not_to include s
+        end
+      end
+    end
+  end
+
   describe 'property methods' do
     it 'should set and get properties' do
       subject.title = 'Comet in Moominland'
