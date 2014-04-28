@@ -212,14 +212,22 @@ describe ActiveTriples::Resource do
       before do
         subject << RDF::Statement(subject.rdf_subject, RDF::DC.contributor, 'Tove Jansson')
         subject << RDF::Statement(subject.rdf_subject, RDF::DC.relation, RDF::URI('http://example.org/moomi'))
+        node = RDF::Node.new
+        subject << RDF::Statement(RDF::URI('http://example.org/moomi'), RDF::DC.relation, node)
+        subject << RDF::Statement(node, RDF::DC.title, 'bnode')
       end
       
       it 'should include data with URIs as attribute names' do
         expect(subject.attributes[RDF::DC.contributor.to_s]).to eq ['Tove Jansson']
       end
 
-      it 'should return generic Resources for unmodeled predicates' do
-        expect(subject.attributes[RDF::DC.relation.to_s]).to eq [ActiveTriples::Resource.new('http://example.org/moomi')]
+      it 'should return generic Resources' do
+        expect(subject.attributes[RDF::DC.relation.to_s].first).to be_a ActiveTriples::Resource
+      end
+
+      it 'should build deep data for Resources' do
+        expect(subject.attributes[RDF::DC.relation.to_s].first.get_values(RDF::DC.relation).
+               first.get_values(RDF::DC.title)).to eq ['bnode']
       end
     end
 
