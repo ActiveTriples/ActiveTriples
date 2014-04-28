@@ -1,4 +1,5 @@
 require 'deprecation'
+require 'active_model'
 require 'active_support/core_ext/hash'
 
 module ActiveTriples
@@ -23,6 +24,8 @@ module ActiveTriples
     extend Configurable
     extend Properties
     extend Deprecation
+    extend ActiveModel::Naming
+    include ActiveModel::Conversion
     include NestedAttributes
     attr_accessor :parent
 
@@ -252,6 +255,11 @@ module ActiveTriples
       clear
       persist!
       parent.destroy_child(self)
+      @destroyed = true
+    end
+
+    def destroyed?
+      @destroyed ||= false
     end
 
     def destroy_child(child)
