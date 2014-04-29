@@ -26,6 +26,8 @@ module ActiveTriples
     extend Deprecation
     extend ActiveModel::Naming
     include ActiveModel::Conversion
+    include ActiveModel::Serialization
+    include ActiveModel::Serializers::JSON
     include NestedAttributes
     attr_accessor :parent
 
@@ -81,6 +83,21 @@ module ActiveTriples
       end
     end
 
+    def attributes
+      attrs = {}
+      attrs['id'] = id if id
+      fields.map { |f| attrs[f.to_s] = get_values(f) }
+      unregistered_predicates.map { |uri| attrs[uri.to_s] = get_values(uri) }
+      attrs
+    end
+
+    def serializable_hash(options = nil)
+      attrs = (fields.map { |f| f.to_s }) << 'id'
+      hash = super(:only => attrs)
+      unregistered_predicates.map { |uri| hash[uri.to_s] = get_values(uri) }
+      hash
+    end
+
     def attributes=(values)
       raise ArgumentError, "values must be a Hash, you provided #{values.class}" unless values.kind_of? Hash
       values = values.with_indifferent_access
@@ -98,6 +115,10 @@ module ActiveTriples
 
     def rdf_subject
       @rdf_subject ||= RDF::Node.new
+    end
+
+    def id
+      node? ? nil : rdf_subject.to_s
     end
 
     def node?
@@ -291,6 +312,16 @@ module ActiveTriples
 
       def properties
         self.singleton_class.properties
+      end
+
+      def registered_predicates 
+        properties.values.map { |config| config.predicate }
+      end
+      
+      def unregistered_predicates
+        preds = registered_predicates
+        preds << RDF.type
+        predicates.select { |p| !preds.include? p }
       end
 
       def property_for_predicate(predicate)
