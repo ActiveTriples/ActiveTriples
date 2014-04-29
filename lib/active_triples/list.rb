@@ -1,5 +1,3 @@
-require 'active_support/core_ext/module'
-
 module ActiveTriples
   ##
   # An implementation of RDF::List intregrated with ActiveTriples.
