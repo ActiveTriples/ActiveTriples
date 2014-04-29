@@ -227,6 +227,11 @@ describe ActiveTriples::Resource do
 
       it 'should build deep data for Resources' do
         expect(subject.attributes[RDF::DC.relation.to_s].first.get_values(RDF::DC.relation).
+               first.get_values(RDF::DC.title)).to eq ['bnode']      
+      end
+
+      it 'should include deep data in serializable_hash' do
+        expect(subject.serializable_hash[RDF::DC.relation.to_s].first.get_values(RDF::DC.relation).
                first.get_values(RDF::DC.title)).to eq ['bnode']
       end
     end

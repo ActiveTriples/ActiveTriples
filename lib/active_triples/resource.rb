@@ -87,12 +87,15 @@ module ActiveTriples
       attrs = {}
       attrs['id'] = id if id
       fields.map { |f| attrs[f.to_s] = get_values(f) }
-      preds = registered_predicates 
-      predicates.each do |uri|
-        next if preds.include?(uri) or uri == RDF.type
-        attrs[uri.to_s] = get_values(uri)
-      end
+      unregistered_predicates.map { |uri| attrs[uri.to_s] = get_values(uri) }
       attrs
+    end
+
+    def serializable_hash(options = nil)
+      attrs = (fields.map { |f| f.to_s }) << 'id'
+      hash = super(:only => attrs)
+      unregistered_predicates.map { |uri| hash[uri.to_s] = get_values(uri) }
+      hash
     end
 
     def attributes=(values)
@@ -313,6 +316,12 @@ module ActiveTriples
 
       def registered_predicates 
         properties.values.map { |config| config.predicate }
+      end
+      
+      def unregistered_predicates
+        preds = registered_predicates
+        preds << RDF.type
+        predicates.select { |p| !preds.include? p }
       end
 
       def property_for_predicate(predicate)
