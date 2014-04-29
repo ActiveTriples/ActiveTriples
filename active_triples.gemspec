@@ -22,6 +22,7 @@ Gem::Specification.new do |s|
   s.add_development_dependency('rspec')
   s.add_development_dependency('webmock')
   s.add_development_dependency('nokogiri')
+  s.add_development_dependency('pragmatic_context')
 
   s.files         = `git ls-files`.split("\n")
   s.test_files    = `git ls-files -- {spec}/*`.split("\n")
