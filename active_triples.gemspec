@@ -7,15 +7,17 @@ Gem::Specification.new do |s|
   s.version     = ActiveTriples::VERSION
   s.platform    = Gem::Platform::RUBY
   s.authors     = ["Tom Johnson", "Trey Terrell"]
-  s.summary     = %q{A convenience libary for modeling RDF graphs as discrete resources.}
-  s.description = %q{ActiveTriples is a convenience libary for modeling RDF graphs as discrete resources.}
+  s.homepage    = 'https://github.com/no-reply/ActiveTriples'
+  s.email       = 'thomas.johnson@oregonstate.edu'  
+  s.summary     = %q{RDF graphs in ActiveModel wrappers.}
+  s.description = %q{ActiveTriples provides tools for modeling RDF as discrete resources.}
   s.license     = "Public Domain"
   s.required_ruby_version     = '>= 1.9.3'
   
-  s.add_dependency('rdf', '~> 1.1.0')
-  s.add_dependency('linkeddata')
+  s.add_dependency('rdf', '~> 1.1')
+  s.add_dependency('linkeddata', '~> 1.1')
   s.add_dependency('activemodel')
-  s.add_dependency('deprecation')
+  s.add_dependency('deprecation', '~> 0.1')
   s.add_dependency('activesupport')
 
   s.add_development_dependency('rdoc')
