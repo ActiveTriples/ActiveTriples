@@ -3,7 +3,7 @@ $:.push File.expand_path("../lib", __FILE__)
 require "active_triples/version"
 
 Gem::Specification.new do |s|
-  s.name        = "active_triples"
+  s.name        = "active-triples"
   s.version     = ActiveTriples::VERSION
   s.platform    = Gem::Platform::RUBY
   s.authors     = ["Tom Johnson", "Trey Terrell"]
