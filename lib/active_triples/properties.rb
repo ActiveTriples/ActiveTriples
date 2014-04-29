@@ -1,4 +1,3 @@
-require 'deprecation'
 require 'active_support/core_ext/hash'
 
 module ActiveTriples
@@ -11,15 +10,7 @@ module ActiveTriples
   #
   #    property :title, predicate: RDF::DC.title, class_name: ResourceClass
   #
-  # or with the 'old' style:
-  #
-  #    map_predicates do |map|
-  #      map.title(in: RDF::DC)
-  #    end
-  #
-  # You can pass a block to either to set index behavior.
   module Properties
-    extend Deprecation
     attr_accessor :config
 
     ##
@@ -70,27 +61,5 @@ module ActiveTriples
         instance_eval(&parent).get_values(name.to_sym)
       end
     end
-
-    public
-    # Mapper is for backwards compatibility with ActiveFedora::RDFDatastream
-    class Mapper
-      attr_accessor :parent
-      def initialize(parent)
-        @parent = parent
-      end
-      def method_missing(name, *args, &block)
-        properties = args.first || {}
-        vocab = properties.delete(:in)
-        to = properties.delete(:to) || name
-        predicate = vocab.send(to)
-        parent.property(name, properties.merge(predicate: predicate), &block)
-      end
-    end
-    def map_predicates
-      Deprecation.warn Properties, "map_predicates is deprecated and will be removed in active-fedora 8.0.0. Use property :name, predicate: predicate instead.", caller
-      mapper = Mapper.new(self)
-      yield(mapper)
-    end
-
   end
 end
