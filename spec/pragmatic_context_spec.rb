@@ -43,4 +43,11 @@ describe 'PragmaticContext integration' do
   it 'should have contexts' do
     expect(subject.as_jsonld['@context'].keys).to eq ["license", "title"]
   end
+  
+  it 'should use context with dump' do
+    context = JSON.parse(subject.dump :jsonld)['@context']
+    subject.class.properties.keys.each do |prop|
+      expect(context).to include prop
+    end
+  end
 end

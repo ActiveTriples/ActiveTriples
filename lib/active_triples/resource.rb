@@ -113,6 +113,14 @@ module ActiveTriples
       end
     end
 
+    def dump(*args)
+      if args.first == :jsonld and respond_to?(:jsonld_context)
+        args << {} unless args.last.is_a?(Hash) 
+        args.last[:context] ||= jsonld_context
+      end
+      super
+    end
+
     def rdf_subject
       @rdf_subject ||= RDF::Node.new
     end
