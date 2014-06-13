@@ -37,7 +37,7 @@ describe 'PragmaticContext integration' do
 
   xit 'should output a valid jsonld representation of itself' do
     g = RDF::Graph.new << JSON::LD::API.toRdf(subject.as_jsonld)
-    expect(subject == g).to be_true
+    expect(subject == g).to be_truthy
   end
 
   it 'should have contexts' do

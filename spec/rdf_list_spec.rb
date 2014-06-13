@@ -39,27 +39,27 @@ describe ActiveTriples::List do
     subject { ds.elementList.build}
 
     it "should insert at the end" do
-      subject.should be_kind_of DemoList::List
-      subject.size.should == 0
+      expect(subject).to be_kind_of DemoList::List
+      expect(subject.size).to eq 0
       subject[1] = DemoList::List::TopicElement.new
-      subject.size.should == 2
+      expect(subject.size).to eq 2
     end
 
     it "should insert at the head" do
-      subject.should be_kind_of DemoList::List
-      subject.size.should == 0
+      expect(subject).to be_kind_of DemoList::List
+      expect(subject.size).to eq 0
       subject[0] = DemoList::List::TopicElement.new
-      subject.size.should == 1
+      expect(subject.size).to eq 1
     end
 
     describe "that has 4 elements" do
       before do
         subject[3] = DemoList::List::TopicElement.new
-        subject.size.should == 4
+        expect(subject.size).to eq 4
       end
       it "should insert in the middle" do
         subject[1] = DemoList::List::TopicElement.new
-        subject.size.should == 4
+        expect(subject.size).to eq 4
       end
     end
 
@@ -87,7 +87,7 @@ describe ActiveTriples::List do
   describe "an empty list" do
     subject { DemoList.new.elementList.build } 
     it "should have to_ary" do
-      subject.to_ary.should == []
+      expect(subject.to_ary).to eq []
     end
   end
 
@@ -97,17 +97,17 @@ describe ActiveTriples::List do
     let!(:topic) { list.topicElement.build }
 
     it "should have to_ary" do
-      list.to_ary.size.should == 1
-      list.to_ary.first.class.should == DemoList::List::TopicElement
+      expect(list.to_ary.size).to eq 1
+      expect(list.to_ary.first.class).to eq DemoList::List::TopicElement
     end
 
     it "should be able to be cleared" do
       list.topicElement.build
       list.topicElement.build
       list.topicElement.build
-      list.size.should == 4
+      expect(list.size).to eq 4
       list.clear
-      list.size.should == 0
+      expect(list.size).to eq 0
     end
   end
 
@@ -137,34 +137,34 @@ END
       subject
     end
     it "should have a subject" do
-      subject.rdf_subject.to_s.should == "http://example.org/foo"
+      expect(subject.rdf_subject.to_s).to eq "http://example.org/foo"
     end
 
     let (:list) { subject.elementList.first }
 
     it "should have fields" do
-      list.first.rdf_subject.should == "http://library.ucsd.edu/ark:/20775/bbXXXXXXX6"
-      list[1].should be_kind_of DemoList::List::TopicElement
-      list[1].elementValue.should == ["Relations with Mexican Americans"]
-      list[2].rdf_subject.should == "http://library.ucsd.edu/ark:/20775/bbXXXXXXX4"
-      list[3].should be_kind_of DemoList::List::TemporalElement
-      list[3].elementValue.should == ["20th century"]
+      expect(list.first.rdf_subject).to eq "http://library.ucsd.edu/ark:/20775/bbXXXXXXX6"
+      expect(list[1]).to be_kind_of DemoList::List::TopicElement
+      expect(list[1].elementValue).to eq ["Relations with Mexican Americans"]
+      expect(list[2].rdf_subject).to eq "http://library.ucsd.edu/ark:/20775/bbXXXXXXX4"
+      expect(list[3]).to be_kind_of DemoList::List::TemporalElement
+      expect(list[3].elementValue).to eq ["20th century"]
     end
 
     it "should have each" do
       foo = []
       list.each { |n| foo << n.class }
-      foo.should == [ActiveTriples::Resource, DemoList::List::TopicElement, ActiveTriples::Resource, DemoList::List::TemporalElement]
+      expect(foo).to eq [ActiveTriples::Resource, DemoList::List::TopicElement, ActiveTriples::Resource, DemoList::List::TemporalElement]
     end
 
     it "should have to_ary" do
       ary = list.to_ary
-      ary.size.should == 4
-      ary[1].elementValue.should == ['Relations with Mexican Americans']
+      expect(ary.size).to eq 4
+      expect(ary[1].elementValue).to eq ['Relations with Mexican Americans']
     end
 
     it "should have size" do
-      list.size.should == 4
+      expect(list.size).to eq 4
     end
 
     it "should update fields" do

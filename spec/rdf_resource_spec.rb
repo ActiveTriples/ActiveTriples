@@ -22,7 +22,7 @@ describe ActiveTriples::Resource do
 
   describe 'rdf_subject' do
     it "should be a blank node if we haven't set it" do
-      expect(subject.rdf_subject.node?).to be_true
+      expect(subject.rdf_subject.node?).to be_truthy
     end
 
     it "should be settable" do
@@ -43,15 +43,15 @@ describe ActiveTriples::Resource do
       end
 
       it 'should update graph subjects' do
-        expect(subject.has_statement?(RDF::Statement.new(subject.rdf_subject, RDF::DC.title, RDF::Literal('Comet in Moominland')))).to be_true
+        expect(subject.has_statement?(RDF::Statement.new(subject.rdf_subject, RDF::DC.title, RDF::Literal('Comet in Moominland')))).to be_truthy
       end
 
       it 'should update graph objects' do
-        expect(subject.has_statement?(RDF::Statement.new(RDF::URI('http://example.org/moomin_comics'), RDF::DC.isPartOf, subject.rdf_subject))).to be_true
+        expect(subject.has_statement?(RDF::Statement.new(RDF::URI('http://example.org/moomin_comics'), RDF::DC.isPartOf, subject.rdf_subject))).to be_truthy
       end
 
       it 'should leave other uris alone' do
-        expect(subject.has_statement?(RDF::Statement.new(RDF::URI('http://example.org/moomin_comics'), RDF::DC.relation, 'http://example.org/moomin_land'))).to be_true
+        expect(subject.has_statement?(RDF::Statement.new(RDF::URI('http://example.org/moomin_comics'), RDF::DC.relation, 'http://example.org/moomin_land'))).to be_truthy
       end
     end
 
@@ -156,8 +156,8 @@ describe ActiveTriples::Resource do
     subject { DummyLicense.new('http://example.org/cc')}
 
     it 'should return true' do
-      expect(subject.destroy!).to be_true
-      expect(subject.destroy).to be_true
+      expect(subject.destroy!).to be_truthy
+      expect(subject.destroy).to be_truthy
     end
     
     it 'should delete the graph' do
