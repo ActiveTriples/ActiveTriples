@@ -51,25 +51,25 @@ shared_examples_for "an ActiveModel" do
 
   describe '#persisted?' do
     it 'should return a boolean' do
-      expect(match_boolean(subject.persisted?)).to be_truthy
+      expect(match_boolean(subject.persisted?)).to be true
     end
   end
 
   describe '#valid?' do
     it 'should return a boolean' do
-      expect(match_boolean(subject.valid?)).to be_truthy
+      expect(match_boolean(subject.valid?)).to be true
     end
   end
 
   describe '#new_record' do
     it 'should return a boolean' do
-      expect(match_boolean(subject.new_record?)).to be_truthy
+      expect(match_boolean(subject.new_record?)).to be true
     end
   end
 
   describe '#destroyed?' do
     it 'should return a boolean' do
-      expect(match_boolean(subject.destroyed?)).to be_truthy
+      expect(match_boolean(subject.destroyed?)).to be true
     end
   end
 
