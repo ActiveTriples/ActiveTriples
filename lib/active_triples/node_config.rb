@@ -16,6 +16,7 @@ module ActiveTriples
     end
 
     def class_name
+      raise "class_name for #{term} is a #{@class_name.class}; must be a class" unless @class_name.kind_of? Class or @class_name.kind_of? String
       if @class_name.kind_of?(String)
         begin
           new_class = @class_name.constantize

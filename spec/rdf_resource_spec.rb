@@ -188,6 +188,15 @@ describe ActiveTriples::Resource do
     end
   end
   
+  describe 'class_name' do
+    it 'should raise an error when not a class or string' do
+      DummyResource.property :relation, :predicate => RDF::DC.relation, :class_name => RDF::URI('http://example.org')
+      d = DummyResource.new
+      d.relation = RDF::DC.type
+      expect { d.relation.first }.to raise_error "class_name for relation is a RDF::URI; must be a class"
+    end
+  end
+  
   describe 'attributes' do
     before do 
       subject.license = license
