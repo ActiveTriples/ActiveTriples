@@ -70,7 +70,7 @@ describe ActiveTriples::Resource do
     context 'with a repository' do
       before do
         repository = RDF::Repository.new
-        subject.stub(:repository).and_return(repository)
+        allow(subject).to receive(:repository).and_return(repository)
       end
 
       context "when the object is new" do
@@ -123,8 +123,8 @@ describe ActiveTriples::Resource do
 
         before do
           @repo = RDF::Repository.new
-          subject.class.stub(:repository).and_return(nil)
-          subject.stub(:repository).and_return(@repo)
+          allow(subject.class).to receive(:repository).and_return(nil)
+          allow(subject).to receive(:repository).and_return(@repo)
           subject.title = "bla"
           subject.persist!
         end
