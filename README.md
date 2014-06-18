@@ -83,3 +83,22 @@ Typed Data
 
 Repositories and Persistence
 -----------------------------
+
+Contributing
+-------------
+
+Please observe the following guidelines:
+
+ - Do your work in a feature branch based on ```master``` and rebase before submitting a pull request.
+ - Write tests for your contributions.
+ - Document every method you add using YARD annotations. (_Note: Annotations are sparse in the existing codebase, help us fix that!_)
+ - Organize your commits into logical units.
+ - Don't leave trailing whitespace (i.e. run ```git diff --check``` before committing).
+ - Use [http://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html](well formed) commit messages.
+
+By contributing to ActiveTriples, you agree to dedicate all copyright interest over submitted work to the public domain (see the included ```WAIVER``` and ```License``` files). For substantial contributions, you may be asked to submit a formal disclaimer of your (and/or your employer's) copyright interest in the software.
+
+License
+--------
+
+This is free and unencumbered public domain software. For more information, see http://unlicense.org/ or the accompanying ```LICENSE``` file.
