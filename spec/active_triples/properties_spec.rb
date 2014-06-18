@@ -37,7 +37,6 @@ describe ActiveTriples::Properties do
       DummyProperties.property :title, :predicate => RDF::DC.title, :class_name => "FakeClassName"
       expect(DummyProperties.properties[:title][:class_name]).to eq "FakeClassName"
     end
-
   end
 
   context "when using a subclass" do
