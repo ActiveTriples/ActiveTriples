@@ -36,13 +36,23 @@ module ActiveTriples
       end
 
       ##
-      # Adapter for a consistent interface for creating a new node from a URI.
-      # Similar functionality should exist in all objects which can become a node.
+      # Adapter for a consistent interface for creating a new Resource 
+      # from a URI. Similar functionality should exist in all objects 
+      # which can become a Resource.
+      #
+      # @param uri [#to_uri, String]
+      # @param vals values to pass as arguments to ::new
+      #
+      # @return [ActiveTriples::Resource] a Resource with  
       def from_uri(uri,vals=nil)
         new(uri, vals)
       end
     end
 
+    ##
+    # Specifies whether the object is currently writable.
+    #
+    # @return [true, false] 
     def writable?
       !frozen?
     end
@@ -67,8 +77,14 @@ module ActiveTriples
       self.get_values(:type) << self.class.type if self.class.type.kind_of?(RDF::URI) && type.empty?
     end
 
+    ##
+    # Returns the current object.
+    #
+    # @deprecated redundant, simply returns self. 
+    # 
+    # @return [ActiveTriples::Resource] self
     def graph
-      Deprecation.warn Resource, "graph is redundant & deprecated. It will be removed in active-fedora 8.0.0.", caller
+v      Deprecation.warn Resource, "graph is redundant & deprecated. It will be removed in ActiveTriples 0.2.0.", caller
       self
     end
 
@@ -120,14 +136,20 @@ module ActiveTriples
       super
     end
 
+    ##
+    # @return [RDF::URI, RDF::Node] a URI or Node which the resource's
+    #   properties are about.
     def rdf_subject
       @rdf_subject ||= RDF::Node.new
     end
-
+    
     def id
       node? ? nil : rdf_subject.to_s
     end
-
+    
+    ##
+    # 
+    # 
     def node?
       return true if rdf_subject.kind_of? RDF::Node
       false
@@ -168,7 +190,17 @@ module ActiveTriples
     end
 
     ##
-    # Load data from URI
+    # Load data from the #rdf_subject URI. Retrieved data will be 
+    # parsed into the Resource's graph from available RDF::Readers
+    # and available from property accessors if if predicates are 
+    # registered.
+    # 
+    #    osu = ActiveTriples::Resource.new('http://dbpedia.org/resource/Oregon_State_University')
+    #    osu.fetch
+    #    osu.rdf_label.first
+    #    # => "Oregon State University"
+    # 
+    # @return [ActiveTriples::Resource] self
     def fetch
       load(rdf_subject)
       self
@@ -186,6 +218,11 @@ module ActiveTriples
       @persisted = true
     end
 
+    ##
+    # Indicates if the resource is persisted.
+    #
+    # @see #persist
+    # @return [true, false]
     def persisted?
       @persisted ||= false
       return (@persisted and parent.persisted?) if parent
