@@ -8,7 +8,7 @@ module ActiveTriples
   #
   # Define properties at the class level with:
   #
-  #    configure base_uri: "http://oregondigital.org/resource/", repository: :parent
+  #    configure base_uri: "http://oregondigital.org/resource/", repository: :default
   # Available properties are base_uri, rdf_label, type, and repository
   module Configurable
     extend Deprecation
@@ -25,6 +25,8 @@ module ActiveTriples
       nil
     end
 
+    ##
+    # @deprecated use `configure type:` instead.
     def rdf_type(value)
       Deprecation.warn Configurable, "rdf_type is deprecated and will be removed in active-fedora 8.0.0. Use configure type: instead.", caller
       configure type: value
@@ -34,8 +36,21 @@ module ActiveTriples
       :parent
     end
 
-    # API method for configuring class properties an RDF Resource may need.
-    # This is an alternative to overriding the methods extended with this module.
+    ##
+    # API for configuring class properties on a Resource. This is an 
+    # alternative to overriding the methods in this module.
+    #
+    # Can configure the following values:
+    #  - base_uri (allows passing slugs to the Resource initializer 
+    #    in place of fully qualified URIs)
+    #  - rdf_label (overrides default label predicates)
+    #  - type (a default rdf:type to include when initializing a
+    #    new Resource)
+    #  - repository (the target persist location to for the Resource)
+    # 
+    #   configure base_uri: "http://oregondigital.org/resource/", repository: :default
+    #
+    # @param options [Hash]
     def configure(options = {})
       {
         base_uri: options[:base_uri],

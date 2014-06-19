@@ -82,7 +82,7 @@ module ActiveTriples
     #
     # @deprecated redundant, simply returns self. 
     # 
-    # @return [ActiveTriples::Resource] self
+    # @return [self]
     def graph
 v      Deprecation.warn Resource, "graph is redundant & deprecated. It will be removed in ActiveTriples 0.2.0.", caller
       self
@@ -127,7 +127,17 @@ v      Deprecation.warn Resource, "graph is redundant & deprecated. It will be r
         end
       end
     end
-
+    
+    ##
+    # Returns a serialized string representation of self.
+    # Extends the base implementation builds a JSON-LD context if the
+    # specified format is :jsonld and a context is provided by 
+    # #jsonld_context
+    # 
+    # @see RDF::Enumerable#dump
+    #
+    # @param args [Array<Object>] 
+    # @return [String]
     def dump(*args)
       if args.first == :jsonld and respond_to?(:jsonld_context)
         args << {} unless args.last.is_a?(Hash) 
@@ -142,27 +152,26 @@ v      Deprecation.warn Resource, "graph is redundant & deprecated. It will be r
     def rdf_subject
       @rdf_subject ||= RDF::Node.new
     end
+    alias_method :to_term, :rdf_subject
     
+    ##
+    # A string identifier for the resource
     def id
       node? ? nil : rdf_subject.to_s
     end
     
-    ##
-    # 
-    # 
     def node?
       return true if rdf_subject.kind_of? RDF::Node
       false
     end
 
-    def to_term
-      rdf_subject
-    end
-
+    ##
+    # @return [String, nil] the base URI the resource will use when
+    #   setting its subject. `nil` if none is used.
     def base_uri
       self.class.base_uri
     end
-
+    
     def type
       self.get_values(:type).to_a.map{|x| x.rdf_subject}
     end
@@ -173,8 +182,8 @@ v      Deprecation.warn Resource, "graph is redundant & deprecated. It will be r
     end
 
     ##
-    # Look for labels in various default fields, prioritizing
-    # configured label fields
+    # Looks for labels in various default fields, prioritizing
+    # configured label fields.
     def rdf_label
       labels = Array(self.class.rdf_label)
       labels += default_labels
@@ -185,6 +194,10 @@ v      Deprecation.warn Resource, "graph is redundant & deprecated. It will be r
       node? ? [] : [rdf_subject.to_s]
     end
 
+    ##
+    # Lists fields registered as properties on the object.
+    #
+    # @return [Array<Symbol>] the list of registered properties.
     def fields
       properties.keys.map(&:to_sym).reject{|x| x == :type}
     end
@@ -231,6 +244,8 @@ v      Deprecation.warn Resource, "graph is redundant & deprecated. It will be r
 
     ##
     # Repopulates the graph from the repository or parent resource.
+    #
+    # @return [true, false]
     def reload
       @term_cache ||= {}
       if self.class.repository == :parent
@@ -324,6 +339,10 @@ v      Deprecation.warn Resource, "graph is redundant & deprecated. It will be r
     end
     alias_method :destroy!, :destroy
     
+    ##
+    # Indicates if the Resource has been destroyed.
+    # 
+    # @return [true, false]
     def destroyed?
       @destroyed ||= false
     end
@@ -334,12 +353,16 @@ v      Deprecation.warn Resource, "graph is redundant & deprecated. It will be r
       end
     end
 
+    ##
+    # Indicates if the record is 'new' (has not yet been persisted).
+    #
+    # @return [true, false]
     def new_record?
       not persisted?
     end
 
     ##
-    # @return [String] the string to index in solr
+    # @return [String] the string representation of the resource
     def solrize
       node? ? rdf_label : rdf_subject.to_s
     end
@@ -353,21 +376,42 @@ v      Deprecation.warn Resource, "graph is redundant & deprecated. It will be r
     end
 
     private
-
+    
+      ##
+      # Returns the properties registered and their configurations.
+      #
+      # @return [ActiveSupport::HashWithIndifferentAccess{String => ActiveTriples::NodeConfig}]
       def properties
         self.singleton_class.properties
       end
 
+      ##
+      # List of RDF predicates registered as properties on the object.
+      #
+      # @return [Array<RDF::URI>]
       def registered_predicates 
         properties.values.map { |config| config.predicate }
       end
       
+      ##
+      # List of RDF predicates used in the Resource's triples, but not
+      # mapped to any property or accessor methods.
+      #
+      # @return [Array<RDF::URI>]
       def unregistered_predicates
         preds = registered_predicates
         preds << RDF.type
         predicates.select { |p| !preds.include? p }
       end
 
+      ##
+      # Given a predicate which has been registered to a property, 
+      # returns the name of the matching property.
+      #
+      # @param predicate [RDF::URI]
+      #
+      # @return [String, nil] the name of the property mapped to the 
+      #   predicate provided
       def property_for_predicate(predicate)
         properties.each do |property, values|
           return property if values[:predicate] == predicate
@@ -386,6 +430,9 @@ v      Deprecation.warn Resource, "graph is redundant & deprecated. It will be r
       ##
       # Return the repository (or parent) that this resource should
       # write to when persisting.
+      #
+      # @return [RDF::Repository, ActiveTriples::Resource] the target
+      #   repository
       def repository
         @repository ||= 
           if self.class.repository == :parent
@@ -396,10 +443,22 @@ v      Deprecation.warn Resource, "graph is redundant & deprecated. It will be r
       end
 
       ##
-      # Takes a URI or String and aggressively tries to create a valid RDF URI.
-      # Combines the input with base_uri if appropriate.
+      # Takes a URI or String and aggressively tries to convert it into
+      # an RDF term. If a String is given, first tries to interpret it
+      # as a valid URI, then tries to append it to base_uri. Finally,
+      # raises an error if no valid term can be built.
+      # 
+      # The argument must be an RDF::Node, an object that responds to
+      # #to_uri, a String that represents a valid URI, or a String that
+      # appends to the Resource's base_uri to create a valid URI.
       #
-      # @TODO: URI.scheme_list is naive and incomplete. Find a better way to check for an existing scheme.
+      # @TODO: URI.scheme_list is naive and incomplete. Find a better 
+      #   way to check for an existing scheme.
+      #
+      # @param uri_or_str [RDF::Resource, String]
+      # 
+      # @return [RDF::Resource] A term
+      # @raise [RuntimeError] no valid RDF term could be built
       def get_uri(uri_or_str)
         return uri_or_str.to_uri if uri_or_str.respond_to? :to_uri
         return uri_or_str if uri_or_str.kind_of? RDF::Node

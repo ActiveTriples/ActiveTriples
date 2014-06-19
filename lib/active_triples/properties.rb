@@ -26,6 +26,11 @@ module ActiveTriples
       register_property(name)
     end
 
+    ##
+    # Returns the properties registered to the class and their 
+    # configurations.
+    #
+    # @return [ActiveSupport::HashWithIndifferentAccess{String => ActiveTriples::NodeConfig}]
     def config
       @config ||= if superclass.respond_to? :config
         superclass.config.dup
@@ -37,11 +42,23 @@ module ActiveTriples
     alias_method :properties, :config
     alias_method :properties=, :config=
 
+    ##
+    # Given a property name or a predicate, return the configuration
+    # for the matching property.
+    #
+    # @param term [#to_sym, RDF::Resource] a property name to predicate
+    #
+    # @return [ActiveTriples::NodeConfig]
     def config_for_term_or_uri(term)
       return config[term.to_sym] unless term.kind_of? RDF::Resource
       config.each { |k, v| return v if v.predicate == term.to_uri }
     end
 
+    ##
+    # List the property names registered to the class.
+    #
+    # @return [Array<Symbol>] list of the symbolized names of registered
+    #   properties
     def fields
       properties.keys.map(&:to_sym)
     end
@@ -50,7 +67,9 @@ module ActiveTriples
 
     ##
     # Private method for creating accessors for a given property.
-    # @param [#to_s] name Name of the accessor to be created, get/set_value is called on the resource using this.
+    #
+    # @param [#to_s] name Name of the accessor to be created, 
+    #   get/set_value is called on the resource using this.
     def register_property(name)
       parent = Proc.new{self}
       # parent = Proc.new{resource} if self < ActiveFedora::Datastream
