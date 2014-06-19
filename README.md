@@ -81,6 +81,41 @@ osu.rdf_label => => ["Oregon State University", "Oregon State University", "Univ
 Typed Data
 -----------
 
+Typed literals are handled natively through Ruby types and [https://github.com/ruby-rdf/rdf/tree/develop/lib/rdf/model/literal](RDF::Literal). There is no need to register a specific type for a property, simply pass the setter the appropriate typed data. See the examples in the RDF::Literal documentation for futher information about supported datatypes.
+
+```ruby
+Thing.property :date, :predicate => RDF::DC.date
+
+my_thing = Thing.new
+my_thing.date = Date.today
+
+puts my_thing.dump :ntriples
+# _:g70072864570340 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#Thing> .
+# _:g70072864570340 <http://purl.org/dc/terms/date> "2014-06-19Z"^^<http://www.w3.org/2001/XMLSchema#date> .
+```
+
+Data is cast back to the appropriate class when it is accessed.
+
+```ruby
+my_thing.date
+# => [Thu, 19 Jun 2014]
+```
+   
+Note that you can mix types on a single property.
+
+```ruby     
+my_thing.date << DateTime.now
+my_thing.date << "circa 2014"
+my_thing.date
+# => [Thu, 19 Jun 2014, Thu, 19 Jun 2014 11:39:21 -0700, "circa 2014"]
+
+puts my_thing.dump :ntriples
+# _:g70072864570340 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#Thing> .
+# _:g70072864570340 <http://purl.org/dc/terms/date> "2014-06-19Z"^^<http://www.w3.org/2001/XMLSchema#date> .
+# _:g70072864570340 <http://purl.org/dc/terms/date> "2014-06-19T11:39:21-07:00"^^<http://www.w3.org/2001/XMLSchema#dateTime> .
+# _:g70072864570340 <http://purl.org/dc/terms/date> "circa 2014" .
+```
+
 Repositories and Persistence
 -----------------------------
 
@@ -96,7 +131,7 @@ Please observe the following guidelines:
  - Don't leave trailing whitespace (i.e. run ```git diff --check``` before committing).
  - Use [http://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html](well formed) commit messages.
 
-By contributing to ActiveTriples, you agree to dedicate all copyright interest over submitted work to the public domain (see the included ```WAIVER``` and ```License``` files). For substantial contributions, you may be asked to submit a formal disclaimer of your (and/or your employer's) copyright interest in the software.
+By contributing to ActiveTriples, you agree to dedicate all copyright interest over submitted work to the public domain (see the included ```WAIVER``` and ```LICENSE``` files). For substantial contributions, you may be asked to submit a formal disclaimer of your (and/or your employer's) copyright interest in the software.
 
 License
 --------
