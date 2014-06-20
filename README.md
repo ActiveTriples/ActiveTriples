@@ -58,7 +58,20 @@ A Resource lets you handle data as a graph, independent of whether it is defined
 
 ```ruby
 related = Thing.new
-related.set_value(RDF::DC.relation, obj) # or: related << RDF::Statement(related, RDF::DC.relation, obj)
+
+related << RDF::Statement(related, RDF::DC.relation, obj)
+related << RDF::Statement(related, RDF::DC.subject, 'ActiveTriples')
+	
+related.query(:subject => related, :predicate => RDF::DC.relation).each_statement {|s,p,o| puts o}
+# => http://example.org/things#123
+related.query(:subject => subject, :predicate => RDF::DC.relation).each_statement {|s,p,o| puts o}
+# => http://example.org/things#123
+```
+
+Any operation you can run against an RDF::Graph works with Resources, too. Or you can use generic setters and getters with URI predicates:
+
+```ruby
+related.set_value(RDF::DC.relation, obj) 
 related.set_value(RDF::DC.subject, 'ActiveTriples')
 
 related.get_values(RDF::DC.relation) # => [#<Thing:0x3f949c6a2294(default)>]
