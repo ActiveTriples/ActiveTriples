@@ -94,7 +94,7 @@ osu.rdf_label => => ["Oregon State University", "Oregon State University", "Univ
 Typed Data
 -----------
 
-Typed literals are handled natively through Ruby types and [https://github.com/ruby-rdf/rdf/tree/develop/lib/rdf/model/literal](RDF::Literal). There is no need to register a specific type for a property, simply pass the setter the appropriate typed data. See the examples in the RDF::Literal documentation for futher information about supported datatypes.
+Typed literals are handled natively through Ruby types and [RDF::Literal](https://github.com/ruby-rdf/rdf/tree/develop/lib/rdf/model/literal). There is no need to register a specific type for a property, simply pass the setter the appropriate typed data. See the examples in the RDF::Literal documentation for futher information about supported datatypes.
 
 ```ruby
 Thing.property :date, :predicate => RDF::DC.date
@@ -142,7 +142,7 @@ Please observe the following guidelines:
  - Document every method you add using YARD annotations. (_Note: Annotations are sparse in the existing codebase, help us fix that!_)
  - Organize your commits into logical units.
  - Don't leave trailing whitespace (i.e. run ```git diff --check``` before committing).
- - Use [http://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html](well formed) commit messages.
+ - Use [well formed](http://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html) commit messages.
 
 By contributing to ActiveTriples, you agree to dedicate all copyright interest over submitted work to the public domain (see the included ```WAIVER``` and ```LICENSE``` files). For substantial contributions, you may be asked to submit a formal disclaimer of your (and/or your employer's) copyright interest in the software.
 
