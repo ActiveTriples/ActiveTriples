@@ -24,7 +24,10 @@ module ActiveTriples
     extend Configurable
     extend Properties
     extend Deprecation
-    include ActiveModel::Model
+    extend  ActiveModel::Naming
+    extend  ActiveModel::Translation
+    include ActiveModel::Validations
+    include ActiveModel::Conversion
     include ActiveModel::Serialization
     include ActiveModel::Serializers::JSON
     include NestedAttributes
