@@ -38,17 +38,16 @@ module ActiveTriples
 
     def build(attributes={})
       new_subject = attributes.key?('id') ? attributes.delete('id') : RDF::Node.new
-      node = make_node(new_subject)
-      node.attributes = attributes
-      if parent.kind_of? List::ListResource
-        parent.list << node
-        return node
-      elsif node.kind_of? RDF::List
-        self.push node.rdf_subject
-        return node
+      make_node(new_subject).tap do |node|
+        node.attributes = attributes
+        if parent.kind_of? List::ListResource
+          parent.list << node
+        elsif node.kind_of? RDF::List
+          self.push node.rdf_subject
+        else
+          self.push node
+        end
       end
-      self.push node
-      node
     end
 
     def first_or_create(attributes={})
@@ -74,7 +73,7 @@ module ActiveTriples
     end
 
     def type_property
-      {:multivalue => true, :predicate => RDF.type}
+      { :multivalue => true, :predicate => RDF.type }
     end
 
     def reset!
@@ -126,8 +125,7 @@ module ActiveTriples
       end
 
       def predicate
-        return property_config[:predicate] unless property.kind_of? RDF::URI
-        property
+        property.kind_of?(RDF::URI) ? property : property_config[:predicate]
       end
 
       def valid_datatype?(val)
@@ -136,9 +134,14 @@ module ActiveTriples
 
       # Converts an object to the appropriate class.
       def convert_object(value)
-        value = value.object if value.kind_of? RDF::Literal
-        value = make_node(value) if value.kind_of? RDF::Resource
-        value
+        case value
+        when RDF::Literal
+          value.object 
+        when RDF::Resource
+          make_node(value)
+        else
+          value
+        end
       end
 
       ##

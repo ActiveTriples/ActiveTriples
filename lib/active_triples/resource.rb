@@ -84,7 +84,7 @@ module ActiveTriples
     # 
     # @return [self]
     def graph
-v      Deprecation.warn Resource, "graph is redundant & deprecated. It will be removed in ActiveTriples 0.2.0.", caller
+      Deprecation.warn Resource, "graph is redundant & deprecated. It will be removed in ActiveTriples 0.2.0.", caller
       self
     end
 
@@ -221,12 +221,7 @@ v      Deprecation.warn Resource, "graph is redundant & deprecated. It will be r
 
     def persist!
       raise "failed when trying to persist to non-existant repository or parent resource" unless repository
-      repository.delete [rdf_subject,nil,nil] unless node?
-      if node?
-        repository.statements.each do |statement|
-          repository.send(:delete_statement, statement) if statement.subject == rdf_subject
-        end
-      end
+      erase_old_resource
       repository << self
       @persisted = true
     end
@@ -374,6 +369,20 @@ v      Deprecation.warn Resource, "graph is redundant & deprecated. It will be r
     def marked_for_destruction?
       @marked_for_destruction
     end
+
+    protected
+
+      #Clear out any old assertions in the repository about this node or statement
+      # thus preparing to receive the updated assertions.
+      def erase_old_resource
+        if node?
+          repository.statements.each do |statement|
+            repository.send(:delete_statement, statement) if statement.subject == rdf_subject
+          end
+        else
+          repository.delete [rdf_subject, nil, nil]
+        end
+     end
 
     private
     
