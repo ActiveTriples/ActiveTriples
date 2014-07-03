@@ -38,6 +38,18 @@ module ActiveTriples
       graph.reload
     end
 
+    def clear
+      graph.send :erase_old_resource
+      parent = graph.parent
+      old_subject = subject
+      super
+      @subject = old_subject
+      @graph = ListResource.new(subject)
+      graph << parent if parent
+      graph.parent = parent
+      graph.list = self
+    end
+
     def []=(idx, value)
       raise IndexError "index #{idx} too small for array: minimum 0" if idx < 0
 
