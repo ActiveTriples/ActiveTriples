@@ -10,7 +10,7 @@ module ActiveTriples
     extend Configurable
     extend Properties
 
-    delegate :rdf_subject, :mark_for_destruction, :marked_for_destruction?, :set_value, :get_values, :parent, :dump, :attributes=, to: :resource
+    delegate :rdf_subject, :mark_for_destruction, :marked_for_destruction?, :set_value, :get_values, :parent, :type, :dump, :attributes=, to: :resource
     alias_method :to_ary, :to_a
 
     class << self
@@ -34,7 +34,6 @@ module ActiveTriples
       graph.singleton_class.properties.keys.each do |property|
         graph.singleton_class.send(:register_property, property)
       end
-      graph.insert RDF::Statement.new(subject, RDF.type, RDF.List)
       graph.reload
     end
 
@@ -160,8 +159,15 @@ module ActiveTriples
         when Array       then RDF::List.new(nil, graph, value)
         else value
       end
+      
+      if subject == RDF.nil
+        @subject = RDF::Node.new 
+        @graph = ListResource.new(subject)
+        @graph.type = RDF.List
+      end
 
       if empty?
+        @graph.type = RDF.List
         resource.set_value(RDF.first, value)
         resource.insert([subject, RDF.rest, RDF.nil])
         resource << value if value.kind_of? Resource
