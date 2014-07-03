@@ -101,13 +101,23 @@ describe ActiveTriples::List do
       expect(list.to_ary.first.class).to eq DemoList::List::TopicElement
     end
 
-    it "should be able to be cleared" do
-      list.topicElement.build
-      list.topicElement.build
-      list.topicElement.build
-      expect(list.size).to eq 4
-      list.clear
-      expect(list.size).to eq 0
+    describe 'clearing a list' do
+      it "should be able to be cleared" do
+        list.topicElement.build
+        list.topicElement.build
+        list.topicElement.build
+        expect(list.size).to eq 4
+        list.clear
+        expect(list.size).to eq 0
+      end
+
+      it 'should allow elements to be added after clearing' do
+        list.clear
+        list.topicElement.build
+        list.topicElement.build
+        list.topicElement.build
+        expect(list.size).to eq 3
+      end
     end
   end
 
