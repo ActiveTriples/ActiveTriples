@@ -11,7 +11,7 @@ Gem::Specification.new do |s|
   s.email       = 'thomas.johnson@oregonstate.edu'  
   s.summary     = %q{RDF graphs in ActiveModel wrappers.}
   s.description = %q{ActiveTriples provides tools for modeling RDF as discrete resources.}
-  s.license     = "Public Domain"
+  s.license     = "APACHE2"
   s.required_ruby_version     = '>= 1.9.3'
   
   s.add_dependency('rdf', '~> 1.1')
