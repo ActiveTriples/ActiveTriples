@@ -11,6 +11,7 @@ module ActiveTriples
   autoload :Repositories,     'active_triples/repositories'
   autoload :NodeConfig,       'active_triples/node_config'  
   autoload :NestedAttributes, 'active_triples/nested_attributes'
+  autoload :Identifiable,     'active_triples/identifiable'
 
   def self.class_from_string(class_name, container_class=Kernel)
     container_class = container_class.name if container_class.is_a? Module
