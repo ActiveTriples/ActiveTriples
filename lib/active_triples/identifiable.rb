@@ -37,7 +37,7 @@ module ActiveTriples::Identifiable
 
     module ClassMethods
 
-      delegate :configure, :property, :properties, to: :resource_class
+      delegate :configure, :properties, to: :resource_class
 
       def property(*args)
         prop = args.first
@@ -51,13 +51,11 @@ module ActiveTriples::Identifiable
       end
 
       def resource_class
-        @resource_class ||= ObjectResource.dup
+        @resource_class ||= Class.new(ActiveTriples::Resource)
       end
 
       def from_uri(uri, *args)
         raise NotImplementedError
       end
-
-      class ObjectResource < ActiveTriples::Resource; end
     end
 end
