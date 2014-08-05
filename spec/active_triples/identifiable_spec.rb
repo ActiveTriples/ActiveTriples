@@ -76,14 +76,6 @@ describe ActiveTriples::Identifiable do
         expect(klass.properties).to include 'title'
       end
 
-      it 'does not effect other classes' do
-        class ActiveExampleTwo
-          include ActiveTriples::Identifiable
-        end
-        klass.property :identifier, :predicate => RDF::DC.identifier
-        expect(ActiveExampleTwo.properties).to be_empty
-      end
-
       it 'sets property values' do
         subject.title = 'Finn Family Moomintroll'
         expect(subject.resource.title).to eq ['Finn Family Moomintroll']
@@ -97,6 +89,22 @@ describe ActiveTriples::Identifiable do
       it 'returns correct values in property getters' do
         subject.resource.title = 'Finn Family Moomintroll'
         expect(subject.title).to eq subject.resource.title
+      end
+
+      context 'with other identifiable classes' do
+        before do
+          class ActiveExampleTwo
+            include ActiveTriples::Identifiable
+          end
+        end
+        after do
+          Object.send(:remove_const, 'ActiveExampleTwo')
+        end
+
+        it 'does not effect other classes' do
+          klass.property :identifier, :predicate => RDF::DC.identifier
+          expect(ActiveExampleTwo.properties).to be_empty
+        end
       end
     end
 
