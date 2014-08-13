@@ -64,6 +64,21 @@ describe ActiveTriples::Resource do
         expect{ subject.set_subject! RDF::URI('http://example.org/moomin2') }.to raise_error
       end
     end
+
+    context 'with null relative URI subject' do
+      before do
+        subject.set_subject! RDF::URI(nil)
+      end
+      
+      it 'should have a subject of <>' do
+        expect(subject.rdf_subject).to eq RDF::URI(nil)
+      end
+
+      it 'should be settable' do
+        subject.set_subject! RDF::URI('http://example.org/moomin')
+        expect(subject.rdf_subject).to eq RDF::URI('http://example.org/moomin')
+      end
+    end
   end
 
   describe "#persisted?" do

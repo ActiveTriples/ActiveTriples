@@ -311,9 +311,9 @@ module ActiveTriples
     #
     # @param [#to_uri, #to_s] uri_or_str the uri or string to use
     def set_subject!(uri_or_str)
-      raise "Refusing update URI when one is already assigned!" unless node?
+      raise "Refusing update URI when one is already assigned!" unless node? or rdf_subject == RDF::URI(nil)
       # Refusing set uri to an empty string.
-      return false if uri_or_str.nil? or uri_or_str.to_s.empty?
+      return false if uri_or_str.nil? or (uri_or_str.to_s.empty? and not uri_or_str.kind_of? RDF::URI)
       # raise "Refusing update URI! This object is persisted to a datastream." if persisted?
       old_subject = rdf_subject
       @rdf_subject = get_uri(uri_or_str)
