@@ -39,14 +39,14 @@ module ActiveTriples
       end
 
       ##
-      # Adapter for a consistent interface for creating a new Resource 
-      # from a URI. Similar functionality should exist in all objects 
+      # Adapter for a consistent interface for creating a new Resource
+      # from a URI. Similar functionality should exist in all objects
       # which can become a Resource.
       #
       # @param uri [#to_uri, String]
       # @param vals values to pass as arguments to ::new
       #
-      # @return [ActiveTriples::Resource] a Resource with  
+      # @return [ActiveTriples::Resource] a Resource with
       def from_uri(uri,vals=nil)
         new(uri, vals)
       end
@@ -55,7 +55,7 @@ module ActiveTriples
     ##
     # Specifies whether the object is currently writable.
     #
-    # @return [true, false] 
+    # @return [true, false]
     def writable?
       !frozen?
     end
@@ -83,8 +83,8 @@ module ActiveTriples
     ##
     # Returns the current object.
     #
-    # @deprecated redundant, simply returns self. 
-    # 
+    # @deprecated redundant, simply returns self.
+    #
     # @return [self]
     def graph
       Deprecation.warn Resource, "graph is redundant & deprecated. It will be removed in ActiveTriples 0.2.0.", caller
@@ -130,16 +130,16 @@ module ActiveTriples
         end
       end
     end
-    
+
     ##
     # Returns a serialized string representation of self.
     # Extends the base implementation builds a JSON-LD context if the
-    # specified format is :jsonld and a context is provided by 
+    # specified format is :jsonld and a context is provided by
     # #jsonld_context
-    # 
+    #
     # @see RDF::Enumerable#dump
     #
-    # @param args [Array<Object>] 
+    # @param args [Array<Object>]
     # @return [String]
     def dump(*args)
       if args.first == :jsonld and respond_to?(:jsonld_context)
@@ -156,13 +156,13 @@ module ActiveTriples
       @rdf_subject ||= RDF::Node.new
     end
     alias_method :to_term, :rdf_subject
-    
+
     ##
     # A string identifier for the resource
     def id
       node? ? nil : rdf_subject.to_s
     end
-    
+
     def node?
       return true if rdf_subject.kind_of? RDF::Node
       false
@@ -174,7 +174,7 @@ module ActiveTriples
     def base_uri
       self.class.base_uri
     end
-    
+
     def type
       self.get_values(:type).to_a.map{|x| x.rdf_subject}
     end
