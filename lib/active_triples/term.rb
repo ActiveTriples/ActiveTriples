@@ -1,3 +1,5 @@
+require 'active_support/core_ext/module/delegation'
+
 module ActiveTriples
   class Term
     attr_accessor :parent, :value_arguments, :node_cache
@@ -84,7 +86,7 @@ module ActiveTriples
     end
 
     def rdf_subject
-      raise ArgumentError("wrong number of arguments (#{value_arguments.length} for 1-2)") if value_arguments.length < 1 || value_arguments.length > 2
+      raise ArgumentError, "wrong number of arguments (#{value_arguments.length} for 1-2)" if value_arguments.length < 1 || value_arguments.length > 2
       if value_arguments.length > 1
         value_arguments.first
       else
