@@ -320,6 +320,24 @@ describe ActiveTriples::Resource do
       expect(subject.query(:subject => RDF::URI("http://opaquenamespace.org/jokes"), :predicate => RDF::DC.title).statements.to_a.length).to eq 1
     end
   end
+  describe '#[]=' do
+    it 'should set a value in the graph' do
+      subject[RDF::DC.title] = 'Comet in Moominland'
+      subject.query(:subject => subject.rdf_subject, :predicate => RDF::DC.title).each_statement do |s|
+        expect(s.object.to_s).to eq 'Comet in Moominland'
+      end
+    end
+
+    it 'should set a value in the when given a registered property symbol' do
+      subject[:title] = 'Comet in Moominland'
+      expect(subject.title).to eq ['Comet in Moominland']
+    end
+
+    it "raise an error if the value is not a URI, Node, Literal, RdfResource, or string" do
+      expect { subject[RDF::DC.title] = Object.new }.to raise_error
+    end
+  end
+
   describe '#get_values' do
     before do
       subject.title = ['Comet in Moominland', "Finn Family Moomintroll"]
@@ -331,6 +349,26 @@ describe ActiveTriples::Resource do
 
     it 'should return values for a registered predicate symbol' do
       expect(subject.get_values(:title)).to eq ['Comet in Moominland', 'Finn Family Moomintroll']
+    end
+
+    it "should return values for other subjects if asked" do
+      expect(subject.get_values(RDF::URI("http://opaquenamespace.org/jokes"),:title)).to eq []
+      subject.set_value(RDF::URI("http://opaquenamespace.org/jokes"), RDF::DC.title, 'Comet in Moominland')
+      expect(subject.get_values(RDF::URI("http://opaquenamespace.org/jokes"),:title)).to eq ["Comet in Moominland"]
+    end
+  end
+
+  describe '#[]' do
+    before do
+      subject.title = ['Comet in Moominland', "Finn Family Moomintroll"]
+    end
+
+    it 'should return values for a predicate uri' do
+      expect(subject[RDF::DC.title]).to eq ['Comet in Moominland', 'Finn Family Moomintroll']
+    end
+
+    it 'should return values for a registered predicate symbol' do
+      expect(subject[:title]).to eq ['Comet in Moominland', 'Finn Family Moomintroll']
     end
 
     it "should return values for other subjects if asked" do

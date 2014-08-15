@@ -277,6 +277,14 @@ module ActiveTriples
     end
 
     ##
+    # Adds or updates a property with supplied values.
+    #
+    # @note This method will delete existing statements with the correct subject and predicate from the graph
+    def []=(uri_or_term_property, value)
+      self[uri_or_term_property].set(value)
+    end
+
+    ##
     # Returns an array of values belonging to the property
     # requested. Elements in the array may RdfResource objects or a
     # valid datatype.
@@ -290,6 +298,15 @@ module ActiveTriples
     def get_values(*args)
       get_term(args)
     end
+
+    ##
+    # Returns an array of values belonging to the property
+    # requested. Elements in the array may RdfResource objects or a
+    # valid datatype.
+    def [](uri_or_term_property)
+      get_term([uri_or_term_property])
+    end
+
 
     def get_term(args)
       @term_cache ||= {}
