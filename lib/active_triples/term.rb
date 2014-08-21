@@ -2,8 +2,11 @@ require 'active_support/core_ext/module/delegation'
 
 module ActiveTriples
   class Term
+
     attr_accessor :parent, :value_arguments, :node_cache
-    delegate *(Array.public_instance_methods - [:__send__, :__id__, :class, :object_id] + [:as_json]), :to => :result
+
+    delegate *(Array.public_instance_methods - [:send, :__send__, :__id__, :class, :object_id] + [:as_json]), :to => :result
+
     def initialize(parent, value_arguments)
       self.parent = parent
       self.value_arguments = value_arguments
@@ -131,7 +134,10 @@ module ActiveTriples
       end
 
       def valid_datatype?(val)
-        val.is_a? String or val.is_a? Date or val.is_a? Time or val.is_a? Numeric or val.is_a? Symbol or val == !!val
+        case val
+        when String, Date, Time, Numeric, Symbol, TrueClass, FalseClass then true
+        else false
+        end
       end
 
       # Converts an object to the appropriate class.
