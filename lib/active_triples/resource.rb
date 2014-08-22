@@ -270,7 +270,7 @@ module ActiveTriples
     def set_value(*args)
       # Add support for legacy 3-parameter syntax
       if args.length > 3 || args.length < 2
-        raise ArgumentError("wrong number of arguments (#{args.length} for 2-3)")
+        raise ArgumentError, "wrong number of arguments (#{args.length} for 2-3)"
       end
       values = args.pop
       get_term(args).set(values)
