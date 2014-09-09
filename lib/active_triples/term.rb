@@ -72,6 +72,13 @@ module ActiveTriples
 
     alias_method :push, :<<
 
+    def []=(index, value)
+      values = Array.wrap(result)
+      raise IndexError, "Index #{index} out of bounds." if values[index].nil?
+      values[index] = value
+      self.set(values)
+    end
+
     def property_config
       return type_property if (property == RDF.type || property.to_s == "type") && !parent.send(:properties)[property]
       parent.send(:properties)[property]
