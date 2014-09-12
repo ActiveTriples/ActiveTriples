@@ -44,10 +44,11 @@ module ActiveTriples::Identifiable
       super
     end
     
+    # NB: this method is Mongoid-specific; TODO: abstract to an implementation module
     def set_relation(name, relation)
       if resource_class.properties.has_key? name then
-        documents = relation.is_a?(Enumerable) ? relation : [relation]
-        documents.compact.each { |doc| resource.set_value(name, doc.resource.base_uri + doc.to_uri) }
+        documents = relation.is_a?(Enumerable) ? relation : [relation].compact
+        documents.each { |doc| resource.set_value(name, doc.resource.base_uri + doc.to_uri) }
       end
 
       super
