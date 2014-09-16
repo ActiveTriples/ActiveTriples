@@ -31,6 +31,7 @@ module ActiveTriples::Identifiable
   ##
   # Convenience method to return JSON-LD representation
   def as_jsonld
+    update_resource
     resource.dump(:jsonld)
   end
 
@@ -39,18 +40,14 @@ module ActiveTriples::Identifiable
       self.class.resource_class
     end
 
+    def update_resource
+      resource_class.properties.each do |name, prop|
+        resource.set_value(prop.predicate, self.send(prop.term))
+      end
+    end
+
     def write_attribute(attr_name, value)
       resource.set_value(attr_name, value) if resource_class.properties.has_key? attr_name
-      super
-    end
-    
-    # NB: this method is Mongoid-specific; TODO: abstract to an implementation module
-    def set_relation(name, relation)
-      if resource_class.properties.has_key? name then
-        documents = relation.is_a?(Enumerable) ? relation : [relation].compact
-        documents.each { |doc| resource.set_value(name, doc.resource.base_uri + doc.to_uri) }
-      end
-
       super
     end
     
