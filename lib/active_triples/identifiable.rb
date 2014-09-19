@@ -28,13 +28,6 @@ module ActiveTriples::Identifiable
     raise NotImplementedError
   end
 
-  ##
-  # Convenience method to return JSON-LD representation
-  def as_jsonld
-    update_resource
-    resource.dump(:jsonld)
-  end
-
   private
     def resource_class
       self.class.resource_class
@@ -50,7 +43,7 @@ module ActiveTriples::Identifiable
       resource.set_value(attr_name, value) if resource_class.properties.has_key? attr_name
       super
     end
-    
+
   public
 
     module ClassMethods
