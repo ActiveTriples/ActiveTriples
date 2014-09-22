@@ -33,10 +33,12 @@ module ActiveTriples::Identifiable
       self.class.resource_class
     end
 
-    def update_resource
+    def update_resource(&block)
       resource_class.properties.each do |name, prop|
         resource.set_value(prop.predicate, self.send(prop.term))
       end
+
+      yield if block_given?
     end
 
     def write_attribute(attr_name, value)
