@@ -5,6 +5,21 @@ describe ActiveTriples::Identifiable do
   before do
     class ActiveExample
       include ActiveTriples::Identifiable
+      
+      def self.property(*args)
+        prop = args.first
+
+        define_method prop.to_s do 
+          resource.get_values(prop)
+        end
+
+        define_method "#{prop.to_s}=" do |*args|
+          resource.set_value(prop, *args)
+        end
+
+        resource_class.property(*args)
+      end
+
     end
   end
 
@@ -63,6 +78,21 @@ describe ActiveTriples::Identifiable do
           item.parent = args.first unless args.empty? or args.first.is_a?(Hash)
           item
         end
+
+        def self.property(*args)
+          prop = args.first
+
+          define_method prop.to_s do 
+            resource.get_values(prop)
+          end
+
+          define_method "#{prop.to_s}=" do |*args|
+            resource.set_value(prop, *args)
+          end
+
+          resource_class.property(*args)
+        end
+
       end
 
       subject.id = '123'
