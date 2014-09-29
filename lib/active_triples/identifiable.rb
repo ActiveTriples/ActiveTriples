@@ -41,20 +41,11 @@ module ActiveTriples::Identifiable
       yield if block_given?
     end
 
-    def write_attribute(attr_name, value)
-      resource.set_value(attr_name, value) if resource_class.properties.has_key? attr_name
-      super
-    end
-
   public
 
     module ClassMethods
 
-      delegate :configure, :properties, to: :resource_class
-
-      def property(*args)
-        resource_class.property(*args)
-      end
+      delegate :configure, :property, :properties, to: :resource_class
 
       def resource_class
         @resource_class ||= Class.new(ActiveTriples::Resource)
