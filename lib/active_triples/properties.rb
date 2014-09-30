@@ -22,7 +22,6 @@ module ActiveTriples
       self.config[name] = NodeConfig.new(name, opts[:predicate], opts.except(:predicate)).tap do |config|
         config.with_index(&block) if block_given?
       end
-      behaviors = config[name].behaviors.flatten if config[name].behaviors and not config[name].behaviors.empty?
       register_property(name)
     end
 
