@@ -3,11 +3,12 @@ module ActiveTriples
     attr_accessor :predicate, :term, :class_name, :type, :behaviors, :multivalue, :cast
 
     def initialize(term, predicate, args={})
+      args.assert_valid_keys(:class_name, :multivalue)
       self.term = term
       self.predicate = predicate
-      self.class_name = args.delete(:class_name)
-      self.multivalue = args.delete(:multivalue) { true }
-      self.cast = args.delete(:cast) { true }
+      self.class_name = args.fetch(:class_name) { default_class_name }
+      self.multivalue = args.fetch(:multivalue) { default_multivalue }
+      self.cast = args.fetch(:cast) { true }
       raise ArgumentError, "Invalid arguments for Rdf Node configuration: #{args} on #{predicate}" unless args.empty?
       yield(self) if block_given?
     end
@@ -36,6 +37,16 @@ module ActiveTriples
       yield iobj
       self.type = iobj.data_type
       self.behaviors = iobj.behaviors
+    end
+
+    private
+
+    def default_class_name
+      nil
+    end
+
+    def default_multivalue
+      true
     end
 
     # this enables a cleaner API for solr integration
