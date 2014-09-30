@@ -18,8 +18,10 @@ module ActiveTriples
 
     def result
       result = parent.query(:subject => rdf_subject, :predicate => predicate)
-      .map{|x| convert_object(x.object)}
-      .reject(&:nil?)
+      .each_with_object([]) do |x, collector|
+        converted_object = convert_object(x.object)
+        collector << converted_object unless converted_object.nil?
+      end
       return result if !property_config || property_config[:multivalue]
       result.first
     end
