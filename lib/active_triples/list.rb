@@ -8,7 +8,8 @@ module ActiveTriples
   class List < RDF::List
     include ActiveTriples::NestedAttributes
     extend Configurable
-    extend Properties
+    include Properties
+    include Reflection
 
     delegate :rdf_subject, :mark_for_destruction, :marked_for_destruction?, :set_value, :get_values, :parent, :type, :dump, :attributes=, to: :resource
     alias_method :to_ary, :to_a
@@ -30,10 +31,6 @@ module ActiveTriples
       @graph = ListResource.new(subject) << graph unless graph.kind_of? Resource
       graph << parent if parent
       graph.list = self
-      graph.singleton_class.properties = self.class.properties
-      graph.singleton_class.properties.keys.each do |property|
-        graph.singleton_class.send(:register_property, property)
-      end
       graph.reload
     end
 
@@ -107,11 +104,15 @@ module ActiveTriples
         @list ||= list
       end
 
+      def reflections
+        @list.class
+      end
+
       def attributes=(values)
         raise ArgumentError, "values must be a Hash, you provided #{values.class}" unless values.kind_of? Hash
         values.with_indifferent_access.each do |key, value|
-          if self.singleton_class.properties.keys.map{ |k| "#{k}_attributes"}.include?(key)
-            klass = properties[key[0..-12]]['class_name']
+          if reflections.properties.keys.map { |k| "#{k}_attributes" }.include?(key)
+            klass = reflections.reflect_on_property(key[0..-12])['class_name']
             klass = ActiveTriples.class_from_string(klass, final_parent.class) if klass.is_a? String
             value.is_a?(Hash) ? attributes_hash_to_list(values[key], klass) : attributes_to_list(value, klass)
             values.delete key
@@ -159,9 +160,9 @@ module ActiveTriples
         when Array       then RDF::List.new(nil, graph, value)
         else value
       end
-      
+
       if subject == RDF.nil
-        @subject = RDF::Node.new 
+        @subject = RDF::Node.new
         @graph = ListResource.new(subject)
         @graph.type = RDF.List
       end

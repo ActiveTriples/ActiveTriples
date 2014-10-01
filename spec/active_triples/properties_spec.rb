@@ -2,7 +2,8 @@ require "spec_helper"
 describe ActiveTriples::Properties do
   before do
     class DummyProperties
-      extend ActiveTriples::Properties
+      include ActiveTriples::Reflection
+      include ActiveTriples::Properties
     end
   end
 
@@ -13,29 +14,29 @@ describe ActiveTriples::Properties do
   describe '#property' do
     it 'should set a property' do
       DummyProperties.property :title, :predicate => RDF::DC.title
-      expect(DummyProperties.properties).to include :title
+      expect(DummyProperties.reflect_on_property(:title)).to be_kind_of ActiveTriples::NodeConfig
     end
 
     it 'should set index behaviors' do
       DummyProperties.property :title, :predicate => RDF::DC.title do |index|
         index.as :facetable, :searchable
       end
-      expect(DummyProperties.properties[:title][:behaviors]).to eq [:facetable, :searchable]
+      expect(DummyProperties.reflect_on_property(:title)[:behaviors]).to eq [:facetable, :searchable]
     end
 
     it 'should set class name' do
       DummyProperties.property :title, :predicate => RDF::DC.title, :class_name => RDF::Literal
-      expect(DummyProperties.properties[:title][:class_name]).to eq RDF::Literal
+      expect(DummyProperties.reflect_on_property(:title)[:class_name]).to eq RDF::Literal
     end
 
     it "should constantize string class names" do
       DummyProperties.property :title, :predicate => RDF::DC.title, :class_name => "RDF::Literal"
-      expect(DummyProperties.properties[:title][:class_name]).to eq RDF::Literal
+      expect(DummyProperties.reflect_on_property(:title)[:class_name]).to eq RDF::Literal
     end
 
     it "should keep strings which it can't constantize as strings" do
       DummyProperties.property :title, :predicate => RDF::DC.title, :class_name => "FakeClassName"
-      expect(DummyProperties.properties[:title][:class_name]).to eq "FakeClassName"
+      expect(DummyProperties.reflect_on_property(:title)[:class_name]).to eq "FakeClassName"
     end
   end
 
@@ -52,7 +53,8 @@ describe ActiveTriples::Properties do
     end
 
     it 'should carry properties from superclass' do
-      expect(DummySubClass.properties.keys).to eq ["title", "source"]
+      expect(DummySubClass.reflect_on_property(:title)).to be_kind_of ActiveTriples::NodeConfig
+      expect(DummySubClass.reflect_on_property(:source)).to be_kind_of ActiveTriples::NodeConfig
     end
   end
 end

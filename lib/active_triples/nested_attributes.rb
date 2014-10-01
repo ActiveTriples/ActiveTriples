@@ -50,7 +50,7 @@ module ActiveTriples
 
       attributes_collection.each do |attributes|
         attributes = attributes.with_indifferent_access
-        
+
         if attributes['id'] && existing_record = association.detect { |record| record.rdf_subject.to_s == attributes['id'].to_s }
           if !call_reject_if(association_name, attributes)
             assign_to_or_mark_for_destruction(existing_record, attributes, options[:allow_destroy])
@@ -83,7 +83,7 @@ module ActiveTriples
     def has_destroy_flag?(hash)
       ["1", "true"].include?(hash['_destroy'].to_s)
     end
-    
+
     module ClassMethods
       def accepts_nested_attributes_for *attr_names
         options = { :allow_destroy => false, :update_only => false }

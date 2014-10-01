@@ -4,11 +4,13 @@ module ActiveTriples
   class Term
 
     attr_accessor :parent, :value_arguments, :node_cache
+    attr_reader :reflections
 
     delegate *(Array.public_instance_methods - [:send, :__send__, :__id__, :class, :object_id] + [:as_json]), :to => :result
 
-    def initialize(parent, value_arguments)
-      self.parent = parent
+    def initialize(parent_resource, value_arguments)
+      self.parent = parent_resource
+      @reflections = parent_resource.reflections
       self.value_arguments = value_arguments
     end
 
@@ -75,8 +77,8 @@ module ActiveTriples
     alias_method :push, :<<
 
     def property_config
-      return type_property if (property == RDF.type || property.to_s == "type") && !parent.send(:properties)[property]
-      parent.send(:properties)[property]
+      return type_property if (property == RDF.type || property.to_s == "type") && (!reflections.kind_of?(Resource) || !reflections.reflect_on_property(property))
+      reflections.reflect_on_property(property)
     end
 
     def type_property
@@ -115,7 +117,7 @@ module ActiveTriples
           return
         end
         val = val.to_uri if val.respond_to? :to_uri
-        raise 'value must be an RDF URI, Node, Literal, or a valid datatype. See RDF::Literal' unless
+        raise "value must be an RDF URI, Node, Literal, or a valid datatype. See RDF::Literal.\n\tYou provided #{val.inspect}" unless
           val.kind_of? RDF::Value or val.kind_of? RDF::Literal
         parent.insert [rdf_subject, predicate, val]
       end
@@ -146,7 +148,7 @@ module ActiveTriples
       def convert_object(value)
         case value
         when RDF::Literal
-          value.object 
+          value.object
         when RDF::Resource
           make_node(value)
         else
