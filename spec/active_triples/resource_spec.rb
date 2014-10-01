@@ -214,6 +214,25 @@ describe ActiveTriples::Resource do
     it 'should return nil when none is given' do
       expect(DummyResource.reflect_on_property('title')[:class_name]).to be_nil
     end
+
+  end
+
+  context 'property configuration' do
+    it 'preserves previous #properties[] API but prefers #reflect_on_property' do
+      expect(DummyResource.reflect_on_property('title')).to eq(DummyResource.properties.fetch('title'))
+    end
+
+    it 'uses hash access on #properties to retrieve the configuration' do
+      expect(DummyResource.properties['title']).to be_a(ActiveTriples::NodeConfig)
+    end
+
+    it 'stores the properties configuration as a hash' do
+      expect(DummyResource.properties).to be_a(Hash)
+    end
+
+    it "uses reflection to retrieve a property's configuration" do
+      expect(DummyResource.reflect_on_property('title')).to be_a(ActiveTriples::NodeConfig)
+    end
   end
 
   describe 'attributes' do
