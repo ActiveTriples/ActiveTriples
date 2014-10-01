@@ -5,7 +5,7 @@ require 'linkeddata'
 describe ActiveTriples::List do
 
   subject { ActiveTriples::List.new }
-  
+
   context 'when empty' do
     it 'has subject of RDF.nil' do
       expect(subject.subject).to eq RDF.nil
@@ -43,7 +43,7 @@ describe ActiveTriples::List do
     it 'has correct number of elements' do
       expect(subject.length).to eq 3
     end
-    
+
     context 'after clear' do
       before do
         subject.clear
@@ -247,7 +247,7 @@ END
           expect(doc.xpath('//mads:ComplexSubject/mads:elementList/*[position() = 2]/mads:elementValue', ns).map(&:text)).to eq ["Relations with Mexican Americans"]
           expect(doc.xpath('//mads:ComplexSubject/mads:elementList/*[position() = 3]/@rdf:about', ns).map(&:value)).to eq ["http://library.ucsd.edu/ark:/20775/bbXXXXXXX4"]
           expect(doc.xpath('//mads:ComplexSubject/mads:elementList/*[position() = 4]/mads:elementValue', ns).map(&:text)).to eq ["1900s"]
-          expect(RDF::List.new(list.rdf_subject, subject.graph)).to be_valid
+          expect(RDF::List.new(list.rdf_subject, subject)).to be_valid
         end
 
         it "should be a valid list" do
@@ -255,9 +255,9 @@ END
           # TODO this is a workaround for https://github.com/projecthydra/active_fedora/issues/444
           # remove the following line when #444 is closed.
           list.resource.persist!
-          expect(RDF::List.new(list.rdf_subject, subject.graph)).to be_valid
+          expect(RDF::List.new(list.rdf_subject, subject)).to be_valid
         end
-      end  
+      end
     end
   end
 end

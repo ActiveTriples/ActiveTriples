@@ -202,7 +202,7 @@ describe ActiveTriples::Resource do
       end
     end
   end
-  
+
   describe 'class_name' do
     it 'should raise an error when not a class or string' do
       DummyResource.property :relation, :predicate => RDF::DC.relation, :class_name => RDF::URI('http://example.org')
@@ -210,14 +210,14 @@ describe ActiveTriples::Resource do
       d.relation = RDF::DC.type
       expect { d.relation.first }.to raise_error "class_name for relation is a RDF::URI; must be a class"
     end
-    
+
     it 'should return nil when none is given' do
-      expect(DummyResource.properties['title'][:class_name]).to be_nil
+      expect(DummyResource.reflect_on_property('title')[:class_name]).to be_nil
     end
   end
-  
+
   describe 'attributes' do
-    before do 
+    before do
       subject.license = license
       subject.title = 'moomi'
     end

@@ -4,7 +4,10 @@ require 'rdf/isomorphic'
 describe ActiveTriples::Term do
 
   describe "#rdf_subject" do
-    subject { described_class.new( double("parent"), double("value args") ) }
+    let(:parent_resource) { double("parent resource", reflections: {}) }
+
+    subject { described_class.new(parent_resource, double("value args") ) }
+
     context "when term has 0 value arguments" do
       before { subject.value_arguments = double(length: 0) }
       it "should raise an error" do
@@ -35,7 +38,7 @@ describe ActiveTriples::Term do
   end
 
   describe "#valid_datatype?" do
-    subject { described_class.new( double("parent"), "value" ) }
+    subject { described_class.new(double("parent", reflections: []), "value" ) }
     before { allow(subject.parent).to receive(:rdf_subject) { "parent subject" } }
     context "the value is not a Resource" do
       it "should be true if value is a String" do
