@@ -44,9 +44,9 @@ module ActiveTriples
     end
 
     def build(attributes={})
-      new_subject = attributes.key?('id') ? attributes.delete('id') : RDF::Node.new
+      new_subject = attributes.fetch('id') { RDF::Node.new }
       make_node(new_subject).tap do |node|
-        node.attributes = attributes
+        node.attributes = attributes.except('id')
         if parent.kind_of? List::ListResource
           parent.list << node
         elsif node.kind_of? RDF::List
