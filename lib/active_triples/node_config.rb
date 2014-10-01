@@ -8,6 +8,7 @@ module ActiveTriples
       self.class_name = args.delete(:class_name)
       self.multivalue = args.delete(:multivalue) { true } 
       raise ArgumentError, "Invalid arguments for Rdf Node configuration: #{args} on #{predicate}" unless args.empty?
+      yield(self) if block_given?
     end
 
     def [](value)
