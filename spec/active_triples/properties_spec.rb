@@ -40,6 +40,35 @@ describe ActiveTriples::Properties do
     end
   end
 
+  describe '#config_for_term_or_uri' do
+    before do
+      DummyProperties.property :title, :predicate => RDF::DC.title
+    end
+
+    it 'finds property configuration by term symbol' do
+      expect(DummyProperties.config_for_term_or_uri(:title)).to eq DummyProperties.properties['title']
+    end
+
+    it 'finds property configuration by term string' do
+      expect(DummyProperties.config_for_term_or_uri('title')).to eq DummyProperties.properties['title']
+    end
+
+    it 'finds property configuration by term URI' do
+      expect(DummyProperties.config_for_term_or_uri(RDF::DC.title)).to eq DummyProperties.properties['title']
+    end
+  end
+
+  describe '#fields' do
+    before do
+      DummyProperties.property :title, :predicate => RDF::DC.title
+      DummyProperties.property :name, :predicate => RDF::FOAF.name
+    end
+
+    it 'lists its terms' do
+      expect(DummyProperties.fields).to eq [:title, :name]
+    end
+  end
+
   context "when using a subclass" do
     before do
       DummyProperties.property :title, :predicate => RDF::DC.title
