@@ -22,7 +22,7 @@ module ActiveTriples
   class Resource < RDF::Graph
     @@type_registry
     extend Configurable
-    extend Properties
+    include Properties
     extend Deprecation
     extend  ActiveModel::Naming
     extend  ActiveModel::Translation
@@ -31,6 +31,7 @@ module ActiveTriples
     include ActiveModel::Serialization
     include ActiveModel::Serializers::JSON
     include NestedAttributes
+    include Reflection
     attr_accessor :parent
 
     class << self
@@ -116,14 +117,18 @@ module ActiveTriples
       hash
     end
 
+    def reflections
+      self.class
+    end
+
     def attributes=(values)
       raise ArgumentError, "values must be a Hash, you provided #{values.class}" unless values.kind_of? Hash
       values = values.with_indifferent_access
       set_subject!(values.delete(:id)) if values.has_key?(:id) and node?
       values.each do |key, value|
-        if properties.keys.include?(key)
+        if reflections.reflect_on_property(key)
           set_value(rdf_subject, key, value)
-        elsif self.singleton_class.nested_attributes_options.keys.map{ |k| "#{k}_attributes"}.include?(key)
+        elsif nested_attributes_options.keys.map { |k| "#{k}_attributes" }.include?(key)
           send("#{key}=".to_sym, value)
         else
           raise ArgumentError, "No association found for name `#{key}'. Has it been defined yet?"
@@ -143,7 +148,7 @@ module ActiveTriples
     # @return [String]
     def dump(*args)
       if args.first == :jsonld and respond_to?(:jsonld_context)
-        args << {} unless args.last.is_a?(Hash) 
+        args << {} unless args.last.is_a?(Hash)
         args.last[:context] ||= jsonld_context
       end
       super
@@ -206,16 +211,16 @@ module ActiveTriples
     end
 
     ##
-    # Load data from the #rdf_subject URI. Retrieved data will be 
+    # Load data from the #rdf_subject URI. Retrieved data will be
     # parsed into the Resource's graph from available RDF::Readers
-    # and available from property accessors if if predicates are 
+    # and available from property accessors if if predicates are
     # registered.
-    # 
+    #
     #    osu = ActiveTriples::Resource.new('http://dbpedia.org/resource/Oregon_State_University')
     #    osu.fetch
     #    osu.rdf_label.first
     #    # => "Oregon State University"
-    # 
+    #
     # @return [ActiveTriples::Resource] self
     def fetch
       load(rdf_subject)
@@ -405,23 +410,23 @@ module ActiveTriples
      end
 
     private
-    
+
       ##
       # Returns the properties registered and their configurations.
       #
       # @return [ActiveSupport::HashWithIndifferentAccess{String => ActiveTriples::NodeConfig}]
       def properties
-        self.singleton_class.properties
+        _active_triples_config
       end
 
       ##
       # List of RDF predicates registered as properties on the object.
       #
       # @return [Array<RDF::URI>]
-      def registered_predicates 
+      def registered_predicates
         properties.values.map { |config| config.predicate }
       end
-      
+
       ##
       # List of RDF predicates used in the Resource's triples, but not
       # mapped to any property or accessor methods.
@@ -434,12 +439,12 @@ module ActiveTriples
       end
 
       ##
-      # Given a predicate which has been registered to a property, 
+      # Given a predicate which has been registered to a property,
       # returns the name of the matching property.
       #
       # @param predicate [RDF::URI]
       #
-      # @return [String, nil] the name of the property mapped to the 
+      # @return [String, nil] the name of the property mapped to the
       #   predicate provided
       def property_for_predicate(predicate)
         properties.each do |property, values|
@@ -463,7 +468,7 @@ module ActiveTriples
       # @return [RDF::Repository, ActiveTriples::Resource] the target
       #   repository
       def repository
-        @repository ||= 
+        @repository ||=
           if self.class.repository == :parent
             final_parent
           else
@@ -476,16 +481,16 @@ module ActiveTriples
       # an RDF term. If a String is given, first tries to interpret it
       # as a valid URI, then tries to append it to base_uri. Finally,
       # raises an error if no valid term can be built.
-      # 
+      #
       # The argument must be an RDF::Node, an object that responds to
       # #to_uri, a String that represents a valid URI, or a String that
       # appends to the Resource's base_uri to create a valid URI.
       #
-      # @TODO: URI.scheme_list is naive and incomplete. Find a better 
+      # @TODO: URI.scheme_list is naive and incomplete. Find a better
       #   way to check for an existing scheme.
       #
       # @param uri_or_str [RDF::Resource, String]
-      # 
+      #
       # @return [RDF::Resource] A term
       # @raise [RuntimeError] no valid RDF term could be built
       def get_uri(uri_or_str)

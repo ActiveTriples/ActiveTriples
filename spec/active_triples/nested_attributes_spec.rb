@@ -85,7 +85,7 @@ describe "nesting attribute behavior" do
             personalName_attributes: [
               {
                 id: 'http://library.ucsd.edu/ark:20775/jefferson',
-                elementList_attributes: [{                         
+                elementList_attributes: [{
                   fullNameElement: "Jefferson, Thomas",
                   dateNameElement: "1743-1826"
                 }]
@@ -123,12 +123,12 @@ describe "nesting attribute behavior" do
           expect(subject.personalName.first.elementList.first.fullNameElement).to eq ["Jefferson, Thomas"]
           expect(subject.personalName.first.elementList.first.dateNameElement).to eq ["1743-1826"]
         end
-        
+
         it 'should build nodes with ids' do
           expect(subject.topic[0].elementList.first[0].rdf_subject).to eq 'http://library.ucsd.edu/ark:/20775/bb3333333x'
           expect(subject.personalName.first.rdf_subject).to eq  'http://library.ucsd.edu/ark:20775/jefferson'
         end
-        
+
         it 'should fail when writing to a non-predicate' do
           attributes = { topic_attributes: { '0' => { elementList_attributes: [{ topicElement_attributes: [{ fake_predicate:"Cosmology" }] }]}}}
           expect{ subject.attributes = attributes }.to raise_error ArgumentError

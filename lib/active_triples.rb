@@ -1,16 +1,22 @@
 require 'rdf'
 require 'active_triples/version'
+require 'active_support'
 
 module ActiveTriples
-  autoload :Resource,         'active_triples/resource'
-  autoload :List,             'active_triples/list'
-  autoload :Term,             'active_triples/term'  
-  autoload :Indexing,         'active_triples/indexing'
-  autoload :Configurable,     'active_triples/configurable'
-  autoload :Properties,       'active_triples/properties'
-  autoload :Repositories,     'active_triples/repositories'
-  autoload :NodeConfig,       'active_triples/node_config'  
-  autoload :NestedAttributes, 'active_triples/nested_attributes'
+  extend ActiveSupport::Autoload
+  eager_autoload do
+    autoload :Resource
+    autoload :List
+    autoload :Term
+    autoload :Indexing
+    autoload :Configurable
+    autoload :Properties
+    autoload :PropertyBuilder
+    autoload :Reflection
+    autoload :Repositories
+    autoload :NodeConfig
+    autoload :NestedAttributes
+  end
 
   def self.class_from_string(class_name, container_class=Kernel)
     container_class = container_class.name if container_class.is_a? Module

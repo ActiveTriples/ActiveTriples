@@ -29,7 +29,8 @@ describe ActiveTriples::Configurable do
 
   describe '#rdf_type' do
     it "should set the type the old way" do
-      DummyConfigurable.should_receive(:configure).with(type: RDF::RDFS.Class).and_call_original
+      expect(DummyConfigurable).to receive(:configure).with(type: RDF::RDFS.Class).and_call_original
+      expect(Deprecation).to receive(:warn)
       DummyConfigurable.rdf_type(RDF::RDFS.Class)
       expect(DummyConfigurable.type).to eq RDF::RDFS.Class
     end
