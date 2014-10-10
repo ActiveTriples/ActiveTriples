@@ -300,6 +300,99 @@ describe ActiveTriples::Resource do
     end
   end
 
+  describe 'array setters' do
+    before do 
+      DummyResource.property :aggregates, :predicate => RDF::DC.relation
+    end
+
+    it "should be empty array if we haven't set it" do
+      expect(subject.aggregates).to match_array([])
+    end
+    
+    it "should be set to a URI producing an ActiveTriple::Resource" do
+      subject.aggregates = RDF::URI("http://example.org/b1")
+      expect(subject.aggregates.first).to be_a ActiveTriples::Resource
+    end
+    
+    it "should be settable" do
+      subject.aggregates = RDF::URI("http://example.org/b1")
+      expect(subject.aggregates.first.rdf_subject).to eq RDF::URI("http://example.org/b1")
+      ['id']
+    end
+
+    it "should be settable to multiple values" do
+      bib1 = RDF::URI("http://example.org/b1")
+      bib2 = RDF::URI("http://example.org/b2")
+      bib3 = RDF::URI("http://example.org/b3")
+      subject.aggregates = bib1
+      subject.aggregates << bib2
+      subject.aggregates << bib3
+      expect(subject.aggregates[0].rdf_subject).to eq bib1
+      expect(subject.aggregates[1].rdf_subject).to eq bib2
+      expect(subject.aggregates[2].rdf_subject).to eq bib3
+    end
+    
+    it "should be changeable" do
+      orig_bib = RDF::URI("http://example.org/b1")
+      new_bib  = RDF::URI("http://example.org/b1_NEW")
+      subject.aggregates = orig_bib
+      subject.aggregates = new_bib
+      expect(subject.aggregates.first.rdf_subject).to eq new_bib
+    end
+    
+    it "should be changeable for multiple values" do
+      orig_bib1 = RDF::URI("http://example.org/b1")
+      orig_bib2 = RDF::URI("http://example.org/b2")
+      orig_bib3 = RDF::URI("http://example.org/b3")
+      
+      new_bib1 = RDF::URI("http://example.org/b1_NEW")
+      new_bib2 = RDF::URI("http://example.org/b2_NEW")
+      new_bib3 = RDF::URI("http://example.org/b3_NEW")
+      
+      subject.aggregates = orig_bib1
+      subject.aggregates << orig_bib2
+      subject.aggregates << orig_bib3
+      
+      aggregates = subject.aggregates.dup
+      aggregates[0] = new_bib1
+      # aggregates[1] = new_bib2
+      aggregates[2] = new_bib3
+      subject.aggregates = aggregates
+ 
+      expect(subject.aggregates[0].rdf_subject).to eq new_bib1
+      # expect(subject.aggregates[1].rdf_subject).to eq new_bib2
+      expect(subject.aggregates[1].rdf_subject).to eq orig_bib2
+      expect(subject.aggregates[2].rdf_subject).to eq new_bib3
+    end
+
+    it "raises an error for out of bounds index" do
+      expect { subject.aggregates[4] = 'blah' }.to raise_error IndexError
+    end
+    
+    it "should be directly changeable for multiple values" do
+      orig_bib1 = RDF::URI("http://example.org/b1")
+      orig_bib2 = RDF::URI("http://example.org/b2")
+      orig_bib3 = RDF::URI("http://example.org/b3")
+      
+      new_bib1 = RDF::URI("http://example.org/b1_NEW")
+      new_bib2 = RDF::URI("http://example.org/b2_NEW")
+      new_bib3 = RDF::URI("http://example.org/b3_NEW")
+      
+      subject.aggregates = orig_bib1
+      subject.aggregates << orig_bib2
+      subject.aggregates << orig_bib3
+      
+      subject.aggregates[0] = new_bib1
+      # subject.aggregates[1] = new_bib2
+      subject.aggregates[2] = new_bib3
+      
+      expect(subject.aggregates[0].rdf_subject).to eq new_bib1
+      # expect(subject.aggregates[1].rdf_subject).to eq new_bib2
+      expect(subject.aggregates[1].rdf_subject).to eq orig_bib2
+      expect(subject.aggregates[2].rdf_subject).to eq new_bib3
+    end
+  end
+  
   describe 'child nodes' do
     it 'should return an object of the correct class when the value is a URI' do
       subject.license = DummyLicense.new('http://example.org/license')
@@ -430,6 +523,31 @@ describe ActiveTriples::Resource do
       subject << RDF::Statement(subject.rdf_subject, custom_label, RDF::Literal('New Label'))
       subject.title = 'Comet in Moominland'
       expect(subject.rdf_label).to eq ['New Label']
+    end
+  end
+
+  describe '#prefix_id' do
+    before do
+      class DummyResourceWithoutPrefix < ActiveTriples::Resource
+        configure :base_uri => 'http://example.org'
+      end
+      class DummyResourceWithPrefix < ActiveTriples::Resource
+        configure :base_uri => 'http://example.org', :prefix_id => 'b'
+      end
+    end
+    after do
+      Object.send(:remove_const, "DummyResourceWithoutPrefix") if Object
+      Object.send(:remove_const, "DummyResourceWithPrefix") if Object
+    end
+
+    it "should use base_uri to construct rdf_subject" do
+      # backward compatibility when prefix_id is not specified
+      d = DummyResourceWithoutPrefix.new('1')
+      expect(d.rdf_subject).to eq RDF::URI("http://example.org/1")
+    end
+    it "should use base_uri and prefix_id to construct rdf_subject" do
+      d = DummyResourceWithPrefix.new('1')
+      expect(d.rdf_subject).to eq RDF::URI("http://example.org/b1")
     end
   end
 

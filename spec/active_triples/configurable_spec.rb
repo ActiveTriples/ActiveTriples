@@ -11,11 +11,15 @@ describe ActiveTriples::Configurable do
 
   describe '#configure' do
     before do
-      DummyConfigurable.configure base_uri: "http://example.org/base", type: RDF::RDFS.Class, rdf_label: RDF::DC.title
+      DummyConfigurable.configure base_uri: "http://example.org/base", prefix_id: 'b', type: RDF::RDFS.Class, rdf_label: RDF::DC.title
     end
 
     it 'should set a base uri' do
       expect(DummyConfigurable.base_uri).to eq "http://example.org/base"
+    end
+
+    it 'should set a prefix_id' do
+      expect(DummyConfigurable.prefix_id).to eq "b"
     end
 
     it 'should set an rdf_label' do

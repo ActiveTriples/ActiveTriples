@@ -180,6 +180,14 @@ module ActiveTriples
       self.class.base_uri
     end
 
+    ##
+    # @return [String, nil] the characters to prepend to the id used
+    #    to build the full URI. `nil` if none used.
+    #    full URI = base_uri/prefix_id + id passed to new('id')
+    def prefix_id
+      self.class.prefix_id
+    end
+
     def type
       self.get_values(:type).to_a.map{|x| x.rdf_subject}
     end
@@ -499,7 +507,7 @@ module ActiveTriples
         uri_or_str = uri_or_str.to_s
         return RDF::Node(uri_or_str[2..-1]) if uri_or_str.start_with? '_:'
         return RDF::URI(uri_or_str) if RDF::URI(uri_or_str).valid? and (URI.scheme_list.include?(RDF::URI.new(uri_or_str).scheme.upcase) or RDF::URI.new(uri_or_str).scheme == 'info')
-        return RDF::URI(self.base_uri.to_s + (self.base_uri.to_s[-1,1] =~ /(\/|#)/ ? '' : '/') + uri_or_str) if base_uri && !uri_or_str.start_with?(base_uri.to_s)
+        return RDF::URI(self.base_uri.to_s + (self.base_uri.to_s[-1,1] =~ /(\/|#)/ ? '' : '/') + self.prefix_id.to_s + uri_or_str) if base_uri && !uri_or_str.start_with?(base_uri.to_s)
         raise RuntimeError, "could not make a valid RDF::URI from #{uri_or_str}"
       end
   end
