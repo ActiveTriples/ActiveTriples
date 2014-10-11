@@ -433,6 +433,31 @@ describe ActiveTriples::Resource do
     end
   end
 
+  describe '#prefix_id' do
+    before do
+      class DummyResourceWithoutPrefix < ActiveTriples::Resource
+        configure :base_uri => 'http://example.org'
+      end
+      class DummyResourceWithPrefix < ActiveTriples::Resource
+        configure :base_uri => 'http://example.org', :prefix_id => 'b'
+      end
+    end
+    after do
+      Object.send(:remove_const, "DummyResourceWithoutPrefix") if Object
+      Object.send(:remove_const, "DummyResourceWithPrefix") if Object
+    end
+
+    it "should use base_uri to construct rdf_subject" do
+      # backward compatibility when prefix_id is not specified
+      d = DummyResourceWithoutPrefix.new('1')
+      expect(d.rdf_subject).to eq RDF::URI("http://example.org/1")
+    end
+    it "should use base_uri and prefix_id to construct rdf_subject" do
+      d = DummyResourceWithPrefix.new('1')
+      expect(d.rdf_subject).to eq RDF::URI("http://example.org/b1")
+    end
+  end
+
   describe '#solrize' do
     it 'should return a label for bnodes' do
       expect(subject.solrize).to eq subject.rdf_label

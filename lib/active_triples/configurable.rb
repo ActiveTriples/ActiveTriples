@@ -8,12 +8,16 @@ module ActiveTriples
   #
   # Define properties at the class level with:
   #
-  #    configure base_uri: "http://oregondigital.org/resource/", repository: :default
-  # Available properties are base_uri, rdf_label, type, and repository
+  #    configure base_uri: "http://oregondigital.org/resource/", "prefix_id: "b", repository: :default
+  # Available properties are base_uri, prefix_id, rdf_label, type, and repository
   module Configurable
     extend Deprecation
 
     def base_uri
+      nil
+    end
+
+    def prefix_id
       nil
     end
 
@@ -54,6 +58,7 @@ module ActiveTriples
     def configure(options = {})
       {
         base_uri: options[:base_uri],
+        prefix_id: options[:prefix_id],
         rdf_label: options[:rdf_label],
         type: options[:type],
         repository: options[:repository]
