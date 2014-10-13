@@ -476,20 +476,23 @@ module ActiveTriples
           end
       end
 
+
     protected
 
       ##
       # Generate a random ID that does not already exist in the
       # triplestore.
       #
-      # @param [Integer, #read] max attempts at finding a unique ID
+      # @param [Integer, #read] max_tries: max attempts at finding a
+      #    unique ID
       #    NOTE: Will try max_tries again for each extra digit added.
-      # @param [Integer, #read] preferred number of digits in the ID
-      # @param [Integer, #read] number of extra digits that can be
-      #    added to the preferred number of digits if a unique ID
-      #    is not found
-      # @param [Integer, #read] suggested ID to test first before
-      #    generating a random ID
+      # @param [Integer, #read] digit_count: preferred number of
+      #    digits in the ID
+      # @param [Integer, #read] extra_digits: number of extra digits
+      #    that can be added to the preferred number of digits if a
+      #    unique ID is not found
+      # @param [Integer, #read] suggested_id: suggested ID to test
+      #    first before generating a random ID
       #
       # @return [Integer] the generated id
       #
@@ -499,13 +502,26 @@ module ActiveTriples
       # @TODO This is inefficient if max_tries is large. Could try
       #    multi-threading. Likely it won't be a problem and should
       #    find an ID within the first few attempts.
-      def self.generate_id(max_tries=10, digit_count=3, extra_digits=2, suggested_id=-1)
-        test_id = suggested_id > 0 ? suggested_id : random_id(digit_count)
+      def self.generate_id(options = {} )
+
+        raise 'Requires base_uri to be defined.' if !self.base_uri
+
+        max_tries    = options[:maxtries]     || 10
+        digit_count  = options[:digit_count]  || 3
+        extra_digits = options[:extra_digits] || 2
+        suggested_id = options[:suggested_id] || self.integer_time_hash(digit_count)
+
+        raise ArgumentError, "Argument max_tries must be >= 1 if passed in"    if max_tries    <= 0
+        raise ArgumentError, "Argument digit_count must be >= 1 if passed in"  if digit_count  <= 0
+        raise ArgumentError, "Argument extra_digits must be >= 0 if passed in" if extra_digits <  0
+        raise ArgumentError, "Argument suggested_id must be >= 0 if passed in" if suggested_id <= 0
+
+        test_id = suggested_id
         found = id_persisted?(test_id)
-        (1).upto(extra_digits) do     # try adding a few more digits if not found in the preferred digit count
+        (0).upto(extra_digits) do     # try adding a few more digits if not found in the preferred digit count
           (0).upto(max_tries) do
             break unless found
-            test_id = random_id(digit_count)
+            test_id = self.integer_time_hash(digit_count)
             found = id_persisted?(test_id)
           end
           break unless found
@@ -515,6 +531,8 @@ module ActiveTriples
         test_id
       end
 
+    private
+
       ##
       # Generate a random integer using a time hash.
       #
@@ -523,10 +541,14 @@ module ActiveTriples
       #
       # @return [Integer] the random integer
       def self.integer_time_hash( digit_count=3 )
-        rnd_id = Time.now.hash
+        rnd_id = 0
+        rnd_id = Time.now.hash until rnd_id != 0
         rnd_id *= -1 if rnd_id < 0
-        rnd_id /= 10 while rnd_id > digit_count
+        rnd_id /= 10 until rnd_id < (10**digit_count)
+        rnd_id
       end
+
+    protected
 
       ##
       # Test if the rdf_subject that would be generated using a

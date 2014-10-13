@@ -254,6 +254,96 @@ describe ActiveTriples::Resource do
     end
   end
 
+  describe "#generate_id" do
+
+    subject {DummyResourceWithBaseURI.new('1')}
+
+    before do
+      class DummyResourceWithBaseURI < ActiveTriples::Resource
+        configure :base_uri => "http://example.org",
+                  :type => RDF::URI("http://example.org/SomeClass"),
+                  :repository => :default
+      end
+      ActiveTriples::Repositories.add_repository :default, RDF::Repository.new
+    end
+    after do
+      Object.send(:remove_const, "DummyResourceWithBaseURI") if Object
+      ActiveTriples::Repositories.clear_repositories!
+    end
+
+    context "when class doesn't have base_uri defined" do
+      it "should raise an Exception" do
+        expect{ DummyResource.generate_id }.to raise_error(RuntimeError, "Requires base_uri to be defined.")
+      end
+    end
+    context "when all IDs available" do
+      it "should generate an ID" do
+        expect(DummyResourceWithBaseURI.generate_id(digit_count: 1)).to be_between(1,9)
+      end
+
+      it "should use suggested ID" do
+        expect(DummyResourceWithBaseURI.generate_id(suggested_id: 11)).to eq 11
+      end
+    end
+    context "when some IDs available" do
+      before do
+        DummyResourceWithBaseURI.new('3').persist!
+        DummyResourceWithBaseURI.new('4').persist!
+        DummyResourceWithBaseURI.new('8').persist!
+      end
+      after do
+        d = DummyResourceWithBaseURI.new('3')
+        d.destroy!
+        d = DummyResourceWithBaseURI.new('4')
+        d.destroy!
+        d = DummyResourceWithBaseURI.new('8')
+        d.destroy!
+      end
+
+      it "should generate an ID not already in use" do
+        id = DummyResourceWithBaseURI.generate_id(digit_count: 1)
+        expect(id).to be_between(1,9)
+        expect(id).not_to eq 3
+        expect(id).not_to eq 4
+        expect(id).not_to eq 8
+      end
+
+      it "should generate an ID if suggested ID is already in use" do
+        id = DummyResourceWithBaseURI.generate_id(suggested_id: 3, digit_count: 1)
+        expect(id).to be_between(1,9)
+        expect(id).not_to eq 3
+        expect(id).not_to eq 4
+        expect(id).not_to eq 8
+      end
+
+      it "should use suggested ID if not already in use" do
+        expect(DummyResourceWithBaseURI.generate_id(suggested_id: 5)).to eq 5
+      end
+    end
+
+    context "when no IDs available" do
+      before do
+        1.upto(9) { |id| DummyResourceWithBaseURI.new(id).persist! }
+      end
+      after do
+        1.upto(9) { |id| DummyResourceWithBaseURI.new(id).destroy! }
+      end
+
+      context "and extra_digits are not allowed" do
+        it "should raise an Exception" do
+          expect{ DummyResourceWithBaseURI.generate_id(digit_count: 1, extra_digits: 0) }.
+              to raise_error(RuntimeError, "Available ID not found.  Exceeded maximum tries.")
+        end
+      end
+
+      context "and extra_digits are allowed" do
+        it "should generate an ID" do
+          expect(DummyResourceWithBaseURI.generate_id(digit_count: 1, extra_digits: 1)).to be_between(10,99)
+        end
+      end
+    end
+  end
+
   describe '#destroy!' do
     before do
       subject.title = 'Creative Commons'
