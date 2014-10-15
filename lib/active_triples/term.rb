@@ -30,6 +30,7 @@ module ActiveTriples
 
     def set(values)
       values = [values].compact unless values.kind_of?(Array)
+      values = values.to_a if values.class == Term
       empty_property
       values.each do |val|
         set_value(val)

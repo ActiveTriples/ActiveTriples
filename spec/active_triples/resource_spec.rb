@@ -304,7 +304,7 @@ describe ActiveTriples::Resource do
     before do 
       DummyResource.property :aggregates, :predicate => RDF::DC.relation
     end
-
+ 
     it "should be empty array if we haven't set it" do
       expect(subject.aggregates).to match_array([])
     end
@@ -435,6 +435,21 @@ describe ActiveTriples::Resource do
       end
     end
 
+    it "safely handles terms passed in" do
+      vals = subject.get_values('license')
+      vals << "foo"
+      subject.set_value('license',vals)
+      expect(subject.get_values('license')).to eq ["foo"]
+    end
+ 
+    it "safely handles terms passed in with pre-existing values" do
+      subject.license = "foo"
+      vals = subject.get_values('license')
+      vals << "bar"
+      subject.set_value('license',vals)
+      expect(subject.get_values('license')).to eq ["foo","bar"]
+    end
+
     it 'should set a value in the when given a registered property symbol' do
       subject.set_value(:title, 'Comet in Moominland')
       expect(subject.title).to eq ['Comet in Moominland']
@@ -449,6 +464,7 @@ describe ActiveTriples::Resource do
       expect(subject.query(:subject => RDF::URI("http://opaquenamespace.org/jokes"), :predicate => RDF::DC.title).statements.to_a.length).to eq 1
     end
   end
+
   describe '#[]=' do
     it 'should set a value in the graph' do
       subject[RDF::DC.title] = 'Comet in Moominland'
