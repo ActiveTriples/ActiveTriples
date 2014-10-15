@@ -320,76 +320,38 @@ describe ActiveTriples::Resource do
       ['id']
     end
 
-    it "should be settable to multiple values" do
-      bib1 = RDF::URI("http://example.org/b1")
-      bib2 = RDF::URI("http://example.org/b2")
-      bib3 = RDF::URI("http://example.org/b3")
-      subject.aggregates = bib1
-      subject.aggregates << bib2
-      subject.aggregates << bib3
-      expect(subject.aggregates[0].rdf_subject).to eq bib1
-      expect(subject.aggregates[1].rdf_subject).to eq bib2
-      expect(subject.aggregates[2].rdf_subject).to eq bib3
-    end
-    
-    it "should be changeable" do
-      orig_bib = RDF::URI("http://example.org/b1")
-      new_bib  = RDF::URI("http://example.org/b1_NEW")
-      subject.aggregates = orig_bib
-      subject.aggregates = new_bib
-      expect(subject.aggregates.first.rdf_subject).to eq new_bib
-    end
-    
-    it "should be changeable for multiple values" do
-      orig_bib1 = RDF::URI("http://example.org/b1")
-      orig_bib2 = RDF::URI("http://example.org/b2")
-      orig_bib3 = RDF::URI("http://example.org/b3")
+    context 'with values' do
+      let(:bib1) { RDF::URI("http://example.org/b1") }
+      let(:bib2) { RDF::URI("http://example.org/b2") }
+      let(:bib3) { RDF::URI("http://example.org/b3") }
       
-      new_bib1 = RDF::URI("http://example.org/b1_NEW")
-      new_bib2 = RDF::URI("http://example.org/b2_NEW")
-      new_bib3 = RDF::URI("http://example.org/b3_NEW")
-      
-      subject.aggregates = orig_bib1
-      subject.aggregates << orig_bib2
-      subject.aggregates << orig_bib3
-      
-      aggregates = subject.aggregates.dup
-      aggregates[0] = new_bib1
-      # aggregates[1] = new_bib2
-      aggregates[2] = new_bib3
-      subject.aggregates = aggregates
- 
-      expect(subject.aggregates[0].rdf_subject).to eq new_bib1
-      # expect(subject.aggregates[1].rdf_subject).to eq new_bib2
-      expect(subject.aggregates[1].rdf_subject).to eq orig_bib2
-      expect(subject.aggregates[2].rdf_subject).to eq new_bib3
-    end
+      before do
+        subject.aggregates = bib1
+        subject.aggregates << bib2
+        subject.aggregates << bib3
+      end
+        
+      it 'raises error when trying to set nil value' do
+        expect { subject.aggregates[1] = nil }.to raise_error /value must be an RDF URI, Node, Literal, or a valid datatype/
+      end
 
-    it "raises an error for out of bounds index" do
-      expect { subject.aggregates[4] = 'blah' }.to raise_error IndexError
-    end
-    
-    it "should be directly changeable for multiple values" do
-      orig_bib1 = RDF::URI("http://example.org/b1")
-      orig_bib2 = RDF::URI("http://example.org/b2")
-      orig_bib3 = RDF::URI("http://example.org/b3")
-      
-      new_bib1 = RDF::URI("http://example.org/b1_NEW")
-      new_bib2 = RDF::URI("http://example.org/b2_NEW")
-      new_bib3 = RDF::URI("http://example.org/b3_NEW")
-      
-      subject.aggregates = orig_bib1
-      subject.aggregates << orig_bib2
-      subject.aggregates << orig_bib3
-      
-      subject.aggregates[0] = new_bib1
-      # subject.aggregates[1] = new_bib2
-      subject.aggregates[2] = new_bib3
-      
-      expect(subject.aggregates[0].rdf_subject).to eq new_bib1
-      # expect(subject.aggregates[1].rdf_subject).to eq new_bib2
-      expect(subject.aggregates[1].rdf_subject).to eq orig_bib2
-      expect(subject.aggregates[2].rdf_subject).to eq new_bib3
+      it "should be changeable for multiple values" do
+        new_bib1 = RDF::URI("http://example.org/b1_NEW")
+        new_bib3 = RDF::URI("http://example.org/b3_NEW")
+        
+        aggregates = subject.aggregates.dup
+        aggregates[0] = new_bib1
+        aggregates[2] = new_bib3
+        subject.aggregates = aggregates
+        
+        expect(subject.aggregates[0].rdf_subject).to eq new_bib1
+        expect(subject.aggregates[1].rdf_subject).to eq bib2
+        expect(subject.aggregates[2].rdf_subject).to eq new_bib3
+      end
+
+      it "raises an error for out of bounds index" do
+        expect { subject.aggregates[4] = 'blah' }.to raise_error IndexError
+      end
     end
   end
   
