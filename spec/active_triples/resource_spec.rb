@@ -325,6 +325,23 @@ describe ActiveTriples::Resource do
       end
     end
 
+    context "when given a URI" do
+      before do
+        subject.set_value(RDF::DC.title, RDF::URI("http://opaquenamespace.org/jokes/1"))
+      end
+      it "should return a resource" do
+        expect(subject.title.first).to be_kind_of(ActiveTriples::Resource)
+      end
+      context "and it's configured to not cast" do
+        before do
+          subject.class.property :title, predicate: RDF::DC.title, cast: false
+        end
+        it "should return a URI" do
+          expect(subject.title.first).to be_kind_of(RDF::URI)
+        end
+      end
+    end
+
     it 'should set a value in the when given a registered property symbol' do
       subject.set_value(:title, 'Comet in Moominland')
       expect(subject.title).to eq ['Comet in Moominland']

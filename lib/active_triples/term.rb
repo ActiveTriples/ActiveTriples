@@ -82,7 +82,7 @@ module ActiveTriples
     end
 
     def type_property
-      { :multivalue => true, :predicate => RDF.type }
+      { :multivalue => true, :predicate => RDF.type, :cast => false }
     end
 
     def reset!
@@ -162,6 +162,7 @@ module ActiveTriples
       # Builds the resource from the class_name specified for the
       # property.
       def make_node(value)
+        return value unless cast?
         klass = class_for_value(value)
         value = RDF::Node.new if value.nil?
         node = node_cache[value] if node_cache[value]
@@ -169,6 +170,11 @@ module ActiveTriples
         return nil if (property_config && property_config[:class_name]) && (class_for_value(value) != class_for_property)
         self.node_cache[value] ||= node
         node
+      end
+
+      def cast?
+        return true unless property_config
+        !!property_config[:cast]
       end
 
       def final_parent

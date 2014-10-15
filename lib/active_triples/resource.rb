@@ -181,7 +181,7 @@ module ActiveTriples
     end
 
     def type
-      self.get_values(:type).to_a.map{|x| x.rdf_subject}
+      self.get_values(:type).to_a
     end
 
     def type=(type)
