@@ -316,8 +316,8 @@ module ActiveTriples
     def get_term(args)
       @term_cache ||= {}
       term = Term.new(self, args)
-      @term_cache["#{term.rdf_subject}/#{term.property}"] ||= term
-      @term_cache["#{term.rdf_subject}/#{term.property}"]
+      @term_cache["#{term.send(:rdf_subject)}/#{term.property}"] ||= term
+      @term_cache["#{term.send(:rdf_subject)}/#{term.property}"]
     end
 
     ##

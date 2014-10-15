@@ -92,15 +92,6 @@ module ActiveTriples
       value_arguments.last
     end
 
-    def rdf_subject
-      raise ArgumentError, "wrong number of arguments (#{value_arguments.length} for 1-2)" if value_arguments.length < 1 || value_arguments.length > 2
-      if value_arguments.length > 1
-        value_arguments.first
-      else
-        parent.rdf_subject
-      end
-    end
-
     protected
 
       def node_cache
@@ -197,6 +188,15 @@ module ActiveTriples
         klass ||= Resource
         klass = ActiveTriples.class_from_string(klass, final_parent.class) if klass.kind_of? String
         klass
+      end
+
+      def rdf_subject
+        raise ArgumentError, "wrong number of arguments (#{value_arguments.length} for 1-2)" if value_arguments.length < 1 || value_arguments.length > 2
+        if value_arguments.length > 1
+          value_arguments.first
+        else
+          parent.rdf_subject
+        end
       end
 
   end
