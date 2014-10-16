@@ -30,6 +30,7 @@ module ActiveTriples
 
     def set(values)
       values = [values].compact unless values.kind_of?(Array)
+      values = values.to_a if values.class == Term
       empty_property
       values.each do |val|
         set_value(val)
@@ -75,6 +76,13 @@ module ActiveTriples
     end
 
     alias_method :push, :<<
+
+    def []=(index, value)
+      values = Array.wrap(result)
+      raise IndexError, "Index #{index} out of bounds." if values[index].nil?
+      values[index] = value
+      self.set(values)
+    end
 
     def property_config
       return type_property if (property == RDF.type || property.to_s == "type") && (!reflections.kind_of?(Resource) || !reflections.reflect_on_property(property))

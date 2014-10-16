@@ -300,6 +300,61 @@ describe ActiveTriples::Resource do
     end
   end
 
+  describe 'array setters' do
+    before do 
+      DummyResource.property :aggregates, :predicate => RDF::DC.relation
+    end
+ 
+    it "should be empty array if we haven't set it" do
+      expect(subject.aggregates).to match_array([])
+    end
+    
+    it "should be set to a URI producing an ActiveTriple::Resource" do
+      subject.aggregates = RDF::URI("http://example.org/b1")
+      expect(subject.aggregates.first).to be_a ActiveTriples::Resource
+    end
+    
+    it "should be settable" do
+      subject.aggregates = RDF::URI("http://example.org/b1")
+      expect(subject.aggregates.first.rdf_subject).to eq RDF::URI("http://example.org/b1")
+      ['id']
+    end
+
+    context 'with values' do
+      let(:bib1) { RDF::URI("http://example.org/b1") }
+      let(:bib2) { RDF::URI("http://example.org/b2") }
+      let(:bib3) { RDF::URI("http://example.org/b3") }
+      
+      before do
+        subject.aggregates = bib1
+        subject.aggregates << bib2
+        subject.aggregates << bib3
+      end
+        
+      it 'raises error when trying to set nil value' do
+        expect { subject.aggregates[1] = nil }.to raise_error /value must be an RDF URI, Node, Literal, or a valid datatype/
+      end
+
+      it "should be changeable for multiple values" do
+        new_bib1 = RDF::URI("http://example.org/b1_NEW")
+        new_bib3 = RDF::URI("http://example.org/b3_NEW")
+        
+        aggregates = subject.aggregates.dup
+        aggregates[0] = new_bib1
+        aggregates[2] = new_bib3
+        subject.aggregates = aggregates
+        
+        expect(subject.aggregates[0].rdf_subject).to eq new_bib1
+        expect(subject.aggregates[1].rdf_subject).to eq bib2
+        expect(subject.aggregates[2].rdf_subject).to eq new_bib3
+      end
+
+      it "raises an error for out of bounds index" do
+        expect { subject.aggregates[4] = 'blah' }.to raise_error IndexError
+      end
+    end
+  end
+  
   describe 'child nodes' do
     it 'should return an object of the correct class when the value is a URI' do
       subject.license = DummyLicense.new('http://example.org/license')
@@ -342,6 +397,21 @@ describe ActiveTriples::Resource do
       end
     end
 
+    it "safely handles terms passed in" do
+      vals = subject.get_values('license')
+      vals << "foo"
+      subject.set_value('license',vals)
+      expect(subject.get_values('license')).to eq ["foo"]
+    end
+ 
+    it "safely handles terms passed in with pre-existing values" do
+      subject.license = "foo"
+      vals = subject.get_values('license')
+      vals << "bar"
+      subject.set_value('license',vals)
+      expect(subject.get_values('license')).to eq ["foo","bar"]
+    end
+
     it 'should set a value in the when given a registered property symbol' do
       subject.set_value(:title, 'Comet in Moominland')
       expect(subject.title).to eq ['Comet in Moominland']
@@ -356,6 +426,7 @@ describe ActiveTriples::Resource do
       expect(subject.query(:subject => RDF::URI("http://opaquenamespace.org/jokes"), :predicate => RDF::DC.title).statements.to_a.length).to eq 1
     end
   end
+
   describe '#[]=' do
     it 'should set a value in the graph' do
       subject[RDF::DC.title] = 'Comet in Moominland'
