@@ -16,6 +16,7 @@ module ActiveTriples
     autoload :Repositories
     autoload :NodeConfig
     autoload :NestedAttributes
+    autoload :IDMinter
   end
 
   def self.class_from_string(class_name, container_class=Kernel)

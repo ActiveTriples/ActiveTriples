@@ -407,7 +407,39 @@ module ActiveTriples
         else
           repository.delete [rdf_subject, nil, nil]
         end
-     end
+      end
+
+      ##
+      # Test if the rdf_subject that would be generated using a
+      # specific ID is already in use in the triplestore.
+      #
+      # @param [Integer, #read] ID to test
+      #
+      # @return [TrueClass, FalseClass] true, if the ID is in
+      #    use in the triplestore; otherwise, false.
+      #    NOTE: If the ID is in use in an object not yet
+      #          persisted, false will be returned presenting
+      #          a window of opportunity for an ID clash.
+      def self.id_persisted?(test_id)
+        rdf_subject = self.new(test_id).rdf_subject
+        ActiveTriples::Repositories.has_subject?(rdf_subject)
+      end
+
+      ##
+      # Test if the rdf_subject that would be generated using a
+      # specific URI is already in use in the triplestore.
+      #
+      # @param [String, RDF::URI, #read] URI to test
+      #
+      # @return [TrueClass, FalseClass] true, if the URI is in
+      #    use in the triplestore; otherwise, false.
+      #    NOTE: If the URI is in use in an object not yet
+      #          persisted, false will be returned presenting
+      #          a window of opportunity for an ID clash.
+      def self.uri_persisted?(test_uri)
+        rdf_subject = test_uri.kind_of?(RDF::URI) ? test_uri : RDF::URI(test_uri)
+        ActiveTriples::Repositories.has_subject?(rdf_subject)
+      end
 
     private
 
@@ -475,115 +507,6 @@ module ActiveTriples
             Repositories.repositories[self.class.repository]
           end
       end
-
-
-    protected
-
-      ##
-      # Generate a random ID that does not already exist in the
-      # triplestore.
-      #
-      # @param [Integer, #read] max_tries: max attempts at finding a
-      #    unique ID
-      #    NOTE: Will try max_tries again for each extra digit added.
-      # @param [Integer, #read] digit_count: preferred number of
-      #    digits in the ID
-      # @param [Integer, #read] extra_digits: number of extra digits
-      #    that can be added to the preferred number of digits if a
-      #    unique ID is not found
-      # @param [Integer, #read] suggested_id: suggested ID to test
-      #    first before generating a random ID
-      #
-      # @return [Integer] the generated id
-      #
-      # @raise [Exception] if an available ID is not found in
-      #    the maximum allowed tries.
-      #
-      # @TODO This is inefficient if max_tries is large. Could try
-      #    multi-threading. Likely it won't be a problem and should
-      #    find an ID within the first few attempts.
-      def self.generate_id(options = {} )
-
-        raise 'Requires base_uri to be defined.' if !self.base_uri
-
-        max_tries    = options[:maxtries]     || 10
-        digit_count  = options[:digit_count]  || 3
-        extra_digits = options[:extra_digits] || 2
-        suggested_id = options[:suggested_id] || self.integer_time_hash(digit_count)
-
-        raise ArgumentError, "Argument max_tries must be >= 1 if passed in"    if max_tries    <= 0
-        raise ArgumentError, "Argument digit_count must be >= 1 if passed in"  if digit_count  <= 0
-        raise ArgumentError, "Argument extra_digits must be >= 0 if passed in" if extra_digits <  0
-        raise ArgumentError, "Argument suggested_id must be >= 0 if passed in" if suggested_id <= 0
-
-        test_id = suggested_id
-        found = id_persisted?(test_id)
-        (0).upto(extra_digits) do     # try adding a few more digits if not found in the preferred digit count
-          (0).upto(max_tries) do
-            break unless found
-            test_id = self.integer_time_hash(digit_count)
-            found = id_persisted?(test_id)
-          end
-          break unless found
-          digit_count += 1
-        end
-        raise 'Available ID not found.  Exceeded maximum tries.' if found
-        test_id
-      end
-
-    private
-
-      ##
-      # Generate a random integer using a time hash.
-      #
-      # @param [Integer, #read] preferred number of digits in the
-      #    returned integer
-      #
-      # @return [Integer] the random integer
-      def self.integer_time_hash( digit_count=3 )
-        rnd_id = 0
-        rnd_id = Time.now.hash until rnd_id != 0
-        rnd_id *= -1 if rnd_id < 0
-        rnd_id /= 10 until rnd_id < (10**digit_count)
-        rnd_id
-      end
-
-    protected
-
-      ##
-      # Test if the rdf_subject that would be generated using a
-      # specific ID is already in use in the triplestore.
-      #
-      # @param [Integer, #read] ID to test
-      #
-      # @return [TrueClass, FalseClass] true, if the ID is in
-      #    use in the triplestore; otherwise, false.
-      #    NOTE: If the ID is in use in an object not yet
-      #          persisted, false will be returned presenting
-      #          a window of opportunity for an ID clash.
-      def self.id_persisted?(test_id)
-        # TODO Does ActiveTriples::Resource have a class method to do this test instead of having to instantiate an object and then checking for persistence?
-        self.new(test_id).persisted?
-      end
-
-      ##
-      # Test if the rdf_subject that would be generated using a
-      # specific URI is already in use in the triplestore.
-      #
-      # @param [String, RDF::URI, #read] URI to test
-      #
-      # @return [TrueClass, FalseClass] true, if the URI is in
-      #    use in the triplestore; otherwise, false.
-      #    NOTE: If the URI is in use in an object not yet
-      #          persisted, false will be returned presenting
-      #          a window of opportunity for an ID clash.
-      def self.uri_persisted?(test_uri)
-        # TODO Does ActiveTriples::Resource have a class method to do this test instead of having to instantiate an object and then checking for persistence?
-        test_uri = test_uri.kind_of?(RDF::URI) ? test_uri : RDF::URI(test_uri)
-        self.new(test_uri).persisted?
-      end
-
-    private
 
       ##
       # Takes a URI or String and aggressively tries to convert it into
