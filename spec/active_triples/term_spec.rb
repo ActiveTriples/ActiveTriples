@@ -11,7 +11,7 @@ describe ActiveTriples::Term do
     context "when term has 0 value arguments" do
       before { subject.value_arguments = double(length: 0) }
       it "should raise an error" do
-        expect { subject.rdf_subject }.to raise_error
+        expect { subject.send(:rdf_subject) }.to raise_error
       end
     end
     context "when term has 1 value argument" do
@@ -20,19 +20,22 @@ describe ActiveTriples::Term do
         subject.value_arguments = double(length: 1)
       end
       it "should call `rdf_subject' on the parent" do
-        expect(subject.rdf_subject).to eq "parent subject"
+        expect(subject.send(:rdf_subject) ).to eq "parent subject"
+      end
+      it " is a private method" do
+        expect { subject.rdf_subject }.to raise_error NoMethodError
       end
     end
     context "when term has 2 value arguments" do
       before { subject.value_arguments = double(length: 2, first: "first") }
       it "should return the first value argument" do
-        expect(subject.rdf_subject).to eq "first"
+        expect(subject.send(:rdf_subject) ).to eq "first"
       end
     end
     context "when term has 3 value arguments" do
       before { subject.value_arguments = double(length: 3) }
       it "should raise an error" do
-        expect { subject.rdf_subject }.to raise_error
+        expect { subject.send(:rdf_subject)  }.to raise_error
       end
     end
   end

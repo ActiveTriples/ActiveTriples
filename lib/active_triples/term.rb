@@ -30,6 +30,7 @@ module ActiveTriples
 
     def set(values)
       values = [values].compact unless values.kind_of?(Array)
+      values = values.to_a if values.class == Term
       empty_property
       values.each do |val|
         set_value(val)
@@ -76,13 +77,20 @@ module ActiveTriples
 
     alias_method :push, :<<
 
+    def []=(index, value)
+      values = Array.wrap(result)
+      raise IndexError, "Index #{index} out of bounds." if values[index].nil?
+      values[index] = value
+      self.set(values)
+    end
+
     def property_config
       return type_property if (property == RDF.type || property.to_s == "type") && (!reflections.kind_of?(Resource) || !reflections.reflect_on_property(property))
       reflections.reflect_on_property(property)
     end
 
     def type_property
-      { :multivalue => true, :predicate => RDF.type }
+      { :multivalue => true, :predicate => RDF.type, :cast => false }
     end
 
     def reset!
@@ -90,15 +98,6 @@ module ActiveTriples
 
     def property
       value_arguments.last
-    end
-
-    def rdf_subject
-      raise ArgumentError, "wrong number of arguments (#{value_arguments.length} for 1-2)" if value_arguments.length < 1 || value_arguments.length > 2
-      if value_arguments.length > 1
-        value_arguments.first
-      else
-        parent.rdf_subject
-      end
     end
 
     protected
@@ -162,6 +161,7 @@ module ActiveTriples
       # Builds the resource from the class_name specified for the
       # property.
       def make_node(value)
+        return value unless cast?
         klass = class_for_value(value)
         value = RDF::Node.new if value.nil?
         node = node_cache[value] if node_cache[value]
@@ -169,6 +169,11 @@ module ActiveTriples
         return nil if (property_config && property_config[:class_name]) && (class_for_value(value) != class_for_property)
         self.node_cache[value] ||= node
         node
+      end
+
+      def cast?
+        return true unless property_config
+        !!property_config[:cast]
       end
 
       def final_parent
@@ -197,6 +202,15 @@ module ActiveTriples
         klass ||= Resource
         klass = ActiveTriples.class_from_string(klass, final_parent.class) if klass.kind_of? String
         klass
+      end
+
+      def rdf_subject
+        raise ArgumentError, "wrong number of arguments (#{value_arguments.length} for 1-2)" if value_arguments.length < 1 || value_arguments.length > 2
+        if value_arguments.length > 1
+          value_arguments.first
+        else
+          parent.rdf_subject
+        end
       end
 
   end

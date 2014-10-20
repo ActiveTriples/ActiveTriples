@@ -1,12 +1,13 @@
 module ActiveTriples
   class NodeConfig
-    attr_accessor :predicate, :term, :class_name, :type, :behaviors, :multivalue
+    attr_accessor :predicate, :term, :class_name, :type, :behaviors, :multivalue, :cast
 
     def initialize(term, predicate, args={})
       self.term = term
       self.predicate = predicate
       self.class_name = args.delete(:class_name)
       self.multivalue = args.delete(:multivalue) { true }
+      self.cast = args.delete(:cast) { true }
       raise ArgumentError, "Invalid arguments for Rdf Node configuration: #{args} on #{predicate}" unless args.empty?
       yield(self) if block_given?
     end
