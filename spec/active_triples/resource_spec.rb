@@ -549,7 +549,7 @@ describe ActiveTriples::Resource do
     before do
       class DummyPerson < ActiveTriples::Resource
         configure :type => RDF::URI('http://example.org/Person')
-        property :name, :predicate => RDF::FOAF.name
+        property :foaf_name, :predicate => RDF::FOAF.name
         property :publications, :predicate => RDF::FOAF.publications, :class_name => 'DummyDocument'
         property :knows, :predicate => RDF::FOAF.knows, :class_name => DummyPerson
       end
@@ -579,13 +579,13 @@ describe ActiveTriples::Resource do
 
     let (:person1) do
       p = DummyPerson.new
-      p.name = 'Alice'
+      p.foaf_name = 'Alice'
       p
     end
 
     let (:person2) do
       p = DummyPerson.new
-      p.name = 'Bob'
+      p.foaf_name = 'Bob'
       p
     end
 
@@ -614,7 +614,7 @@ END
       document2.creator = person1
       person1.knows = person2
       subject.item = [document1]
-      expect(subject.item.first.creator.first.knows.first.name).to eq ['Bob']
+      expect(subject.item.first.creator.first.knows.first.foaf_name).to eq ['Bob']
     end
   end
 end
