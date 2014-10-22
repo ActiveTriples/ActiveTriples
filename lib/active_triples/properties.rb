@@ -53,6 +53,7 @@ module ActiveTriples
       # @param [Hash]  opts for this property, must include a :predicate
       # @yield [index] index sets solr behaviors for the property
       def property(name, opts={}, &block)
+        raise ArgumentError "#{name} is a keyword and not an acceptable property name." if self.methods.include? name
         reflection = PropertyBuilder.build(self, name, opts, &block)
         Reflection.add_reflection self, name, reflection
       end
