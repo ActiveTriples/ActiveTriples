@@ -59,7 +59,8 @@ module ActiveTriples
       end
       
       def protected_property_name?(name)
-        reject = self.instance_methods - (properties.keys.map { |k| k.to_sym })
+        reject = self.instance_methods.map! { |s| s.to_s.gsub(/=$/, '').to_sym }
+        reject -= properties.keys.map { |k| k.to_sym }
         reject.include? name
       end
 
