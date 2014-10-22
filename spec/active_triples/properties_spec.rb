@@ -38,6 +38,17 @@ describe ActiveTriples::Properties do
       DummyProperties.property :title, :predicate => RDF::DC.title, :class_name => "FakeClassName"
       expect(DummyProperties.reflect_on_property(:title)[:class_name]).to eq "FakeClassName"
     end
+
+    it 'raises error when defining properties that are already methods' do
+      DummyProperties.send :define_method, :type, lambda { }
+      expect { DummyProperties.property :type, :predicate => RDF::DC.type }.to raise_error ArgumentError
+    end
+
+    it 'allows resetting of properties' do
+      DummyProperties.property :title, :predicate => RDF::DC.alternative
+      DummyProperties.property :title, :predicate => RDF::DC.title
+      expect(DummyProperties.reflect_on_property(:title).predicate).to eq RDF::DC.title
+    end
   end
 
   describe '#config_for_term_or_uri' do
