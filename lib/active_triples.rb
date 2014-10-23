@@ -16,6 +16,7 @@ module ActiveTriples
     autoload :Repositories
     autoload :NodeConfig
     autoload :NestedAttributes
+    autoload :Identifiable
     autoload :MintLocalName
   end
 
