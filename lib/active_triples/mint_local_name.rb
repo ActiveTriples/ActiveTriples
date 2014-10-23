@@ -2,7 +2,7 @@ module ActiveTriples
   ##
   # Provide a standard interface for minting new IDs and validating
   # the ID is not in use in any known (i.e., registered) repository.
-  class IDMinter
+  class MintLocalName
 
     ##
     # Generate a random ID that does not already exist in the
@@ -25,30 +25,31 @@ module ActiveTriples
     # @TODO This is inefficient if max_tries is large. Could try
     #    multi-threading. Likely it won't be a problem and should
     #    find an ID within the first few attempts.
-    def self.generate_id(for_class, minter_func=nil, options = {}, max_tries=10 )
-
-      raise ArgumentError, 'Argument max_tries must be >= 1 if passed in' if max_tries    <= 0
+    def self.generate_local_name(for_class, max_tries=10, *minter_args, &minter_block)
+      raise ArgumentError, 'Argument max_tries must be >= 1 if passed in' if     max_tries    <= 0
       raise ArgumentError, 'Argument for_class must be of type class'     unless for_class.class == Class
       raise 'Requires base_uri to be defined in for_class.'               unless for_class.base_uri
 
-      minter_func ||= lambda { |opts| default_minter(opts) }
+      raise ArgumentError, 'Invalid minter_block.'    if minter_block && !minter_block.kind_of?(Proc)
+      minter_block ||= proc { default_minter }
 
       found   = true
       test_id = nil
       (1).upto(max_tries) do
-          test_id = minter_func.call(options)
-          found = for_class.id_persisted?(test_id)
-          break unless found
+        test_id = minter_block.call *minter_args
+        found = for_class.id_persisted?(test_id)
+        break unless found
       end
       raise 'Available ID not found.  Exceeded maximum tries.' if found
       test_id
     end
 
+
     ##
     # Default minter used by generate_id.
     # @param [Hash] options - not used by this minter
     # @return [String] a uuid
-    def self.default_minter( options={} )
+    def self.default_minter( *args )
       SecureRandom.uuid
     end
   end
