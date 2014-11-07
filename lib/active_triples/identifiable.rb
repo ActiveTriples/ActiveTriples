@@ -50,7 +50,7 @@ module ActiveTriples::Identifiable
       delegate :configure, :property, :properties, to: :resource_class
 
       def resource_class
-        @resource_class ||= Class.new(ActiveTriples::Resource)
+        @resource_class ||= self.const_set(:GeneratedResourceSchema, Class.new(ActiveTriples::Resource))
       end
 
       def from_uri(uri, *args)
