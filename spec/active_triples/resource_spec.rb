@@ -162,6 +162,98 @@ describe ActiveTriples::Resource do
     end
   end
 
+  describe "#id_persisted?" do
+
+    subject {DummyResourceWithBaseURI.new('1')}
+
+    before do
+      class DummyResourceWithBaseURI < ActiveTriples::Resource
+        configure :base_uri => "http://example.org",
+                  :type => RDF::URI("http://example.org/SomeClass"),
+                  :repository => :default
+      end
+      ActiveTriples::Repositories.add_repository :default, RDF::Repository.new
+      subject.persist!
+    end
+    after do
+      Object.send(:remove_const, "DummyResourceWithBaseURI") if Object
+      ActiveTriples::Repositories.clear_repositories!
+    end
+
+    context "when ID is a string" do
+      it "should be false if ID does not exist" do
+        expect(DummyResourceWithBaseURI.id_persisted?('2')).to be_falsey
+      end
+
+      it "should be true if ID exists" do
+        expect(DummyResourceWithBaseURI.id_persisted?('1')).to be_truthy
+      end
+    end
+
+    context "when ID is numeric" do
+      it "should be false if ID does not exist" do
+        expect(DummyResourceWithBaseURI.id_persisted?(2)).to be_falsey
+      end
+
+      it "should be true if ID exists" do
+        expect(DummyResourceWithBaseURI.id_persisted?(1)).to be_truthy
+      end
+    end
+
+    context "when object with ID in use is not persisted" do
+      it "should be false" do
+        DummyResourceWithBaseURI.new('3')
+        expect(DummyResourceWithBaseURI.id_persisted?(3)).to be_falsey
+      end
+    end
+  end
+
+  describe "#uri_persisted?" do
+
+    subject {DummyResourceWithBaseURI.new('11')}
+
+    before do
+      class DummyResourceWithBaseURI < ActiveTriples::Resource
+        configure :base_uri => "http://example.org",
+                  :type => RDF::URI("http://example.org/SomeClass"),
+                  :repository => :default
+      end
+      ActiveTriples::Repositories.add_repository :default, RDF::Repository.new
+      subject.persist!
+    end
+    after do
+      Object.send(:remove_const, "DummyResourceWithBaseURI") if Object
+      ActiveTriples::Repositories.clear_repositories!
+    end
+
+    context "when URI is a http string" do
+      it "should be false if URI does not exist" do
+        expect(DummyResourceWithBaseURI.uri_persisted?("http://example.org/22")).to be_falsey
+      end
+
+      it "should be true if URI does exist" do
+        expect(DummyResourceWithBaseURI.uri_persisted?("http://example.org/11")).to be_truthy
+      end
+    end
+
+    context "when URI is a RDF::URI" do
+      it "should be false if URI does not exist" do
+        expect(DummyResourceWithBaseURI.uri_persisted?(RDF::URI("http://example.org/22"))).to be_falsey
+      end
+
+      it "should be true if URI does exist" do
+        expect(DummyResourceWithBaseURI.uri_persisted?(RDF::URI("http://example.org/11"))).to be_truthy
+      end
+    end
+
+    context "when object with URI is not persisted" do
+      it "should be false" do
+        DummyResourceWithBaseURI.new('13')
+        expect(DummyResourceWithBaseURI.uri_persisted?("http://example.org/13")).to be_falsey
+      end
+    end
+  end
+
   describe '#destroy!' do
     before do
       subject.title = 'Creative Commons'

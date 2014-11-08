@@ -32,5 +32,22 @@ module ActiveTriples
     end
     module_function :repositories
 
+    ##
+    # Check for the specified rdf_subject in the specified repository
+    # defaulting to search all registered repositories.
+    # @param [String] rdf_subject
+    # @param [Symbol] repository name
+    def has_subject?(rdf_subject,repo_name=nil)
+      search_repositories = [repositories[repo_name]] if repo_name
+      search_repositories ||= repositories.values
+      found = false
+      search_repositories.each do |repo|
+        found = repo.has_subject? rdf_subject
+        break if found
+      end
+      found
+    end
+    module_function :has_subject?
+
   end
 end

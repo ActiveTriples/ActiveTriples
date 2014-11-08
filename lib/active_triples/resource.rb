@@ -407,7 +407,39 @@ module ActiveTriples
         else
           repository.delete [rdf_subject, nil, nil]
         end
-     end
+      end
+
+      ##
+      # Test if the rdf_subject that would be generated using a
+      # specific ID is already in use in the triplestore.
+      #
+      # @param [Integer, #read] ID to test
+      #
+      # @return [TrueClass, FalseClass] true, if the ID is in
+      #    use in the triplestore; otherwise, false.
+      #    NOTE: If the ID is in use in an object not yet
+      #          persisted, false will be returned presenting
+      #          a window of opportunity for an ID clash.
+      def self.id_persisted?(test_id)
+        rdf_subject = self.new(test_id).rdf_subject
+        ActiveTriples::Repositories.has_subject?(rdf_subject)
+      end
+
+      ##
+      # Test if the rdf_subject that would be generated using a
+      # specific URI is already in use in the triplestore.
+      #
+      # @param [String, RDF::URI, #read] URI to test
+      #
+      # @return [TrueClass, FalseClass] true, if the URI is in
+      #    use in the triplestore; otherwise, false.
+      #    NOTE: If the URI is in use in an object not yet
+      #          persisted, false will be returned presenting
+      #          a window of opportunity for an ID clash.
+      def self.uri_persisted?(test_uri)
+        rdf_subject = test_uri.kind_of?(RDF::URI) ? test_uri : RDF::URI(test_uri)
+        ActiveTriples::Repositories.has_subject?(rdf_subject)
+      end
 
     private
 
