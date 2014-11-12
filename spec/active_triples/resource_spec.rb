@@ -555,6 +555,26 @@ describe ActiveTriples::Resource do
       subject.set_value(RDF::URI("http://opaquenamespace.org/jokes"), RDF::DC.title, 'Comet in Moominland')
       expect(subject.get_values(RDF::URI("http://opaquenamespace.org/jokes"),:title)).to eq ["Comet in Moominland"]
     end
+
+    context "literals are set" do
+      let(:literal1) { RDF::Literal.new("test", :language => :en) }
+      let(:literal2) { RDF::Literal.new("test", :language => :fr) }
+      before do
+        subject.set_value(RDF::DC.title, [literal1, literal2]) 
+      end
+      context "and literals are not requested" do
+        it "should return a string" do
+          # Should this de-duplicate?
+          expect(subject.get_values(RDF::DC.title)).to eq ["test", "test"]
+        end
+      end
+      context "and literals are requested" do
+        it "should return literals" do
+          expect(subject.get_values(RDF::DC.title, :literal => true)).to eq [literal1, literal2]
+        end
+      end
+    end
+
   end
 
   describe '#[]' do
