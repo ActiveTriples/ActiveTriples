@@ -3,7 +3,7 @@ require 'active_support/core_ext/module/delegation'
 module ActiveTriples
   class Term
 
-    attr_accessor :parent, :value_arguments, :node_cache
+    attr_accessor :parent, :value_arguments, :node_cache, :term_args
     attr_reader :reflections
 
     delegate *(Array.public_instance_methods - [:send, :__send__, :__id__, :class, :object_id] + [:as_json]), :to => :result
@@ -12,6 +12,13 @@ module ActiveTriples
       self.parent = parent_resource
       @reflections = parent_resource.reflections
       self.value_arguments = value_arguments
+    end
+
+    def value_arguments=(value_args)
+      if value_args.kind_of?(Array) && value_args.last.kind_of?(Hash)
+        self.term_args = value_args.pop
+      end
+      @value_arguments = value_args
     end
 
     def clear
@@ -147,7 +154,7 @@ module ActiveTriples
       def convert_object(value)
         case value
         when RDF::Literal
-          value.object
+          return_literals? ? value : value.object
         when RDF::Resource
           make_node(value)
         else
@@ -174,6 +181,10 @@ module ActiveTriples
       def cast?
         return true unless property_config
         !!property_config[:cast]
+      end
+
+      def return_literals?
+        term_args && term_args[:literal]
       end
 
       def final_parent
