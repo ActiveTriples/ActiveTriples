@@ -33,16 +33,6 @@ module ActiveTriples::Identifiable
       self.class.resource_class
     end
 
-    def update_resource(&block)
-      resource_class.properties.each do |name, property|
-        if block_given?
-          yield name, property
-        else
-          resource.set_value(property.predicate, self.send(property.term))
-        end
-      end
-    end
-
   public
 
     module ClassMethods
