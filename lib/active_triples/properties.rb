@@ -57,7 +57,7 @@ module ActiveTriples
         reflection = PropertyBuilder.build(self, name, opts, &block)
         Reflection.add_reflection self, name, reflection
       end
-      
+
       def protected_property_name?(name)
         reject = self.instance_methods.map! { |s| s.to_s.gsub(/=$/, '').to_sym }
         reject -= properties.keys.map { |k| k.to_sym }
