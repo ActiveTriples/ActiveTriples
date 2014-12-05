@@ -17,18 +17,6 @@ module ActiveTriples
       initialize_generated_modules
     end
 
-    ##
-    # Registers properties for Resource-like classes
-    # @param [Symbol]  name of the property (and its accessor methods)
-    # @param [Hash]  opts for this property, must include a :predicate
-    # @yield [index] index sets solr behaviors for the property
-    def property(name, opts={}, &block)
-      self.config[name] = NodeConfig.new(name, opts[:predicate], opts.except(:predicate)).tap do |config|
-        config.with_index(&block) if block_given?
-      end
-      register_property(name)
-    end
-
     module ClassMethods
       def inherited(child_class) #:nodoc:
         child_class.initialize_generated_modules
