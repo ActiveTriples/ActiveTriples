@@ -301,7 +301,8 @@ module ActiveTriples
     # passing the rdf_subject to be used in th statement:
     #    get_values(uri, property)
     def get_values(*args)
-      get_term(args)
+      term = get_term(args)
+      term.multivalue?  ? term : term.first
     end
 
     ##

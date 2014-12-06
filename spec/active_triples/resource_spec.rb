@@ -390,6 +390,19 @@ describe ActiveTriples::Resource do
       subject.title = 'Comet in Moominland'
       expect(subject.title).to eq ['Comet in Moominland']
     end
+
+    context "for single value properties" do
+      before do
+        DummyResource.property :creator, predicate: RDF::DC.creator, multivalue: false
+        subject.creator = "Snorkmaiden"
+      end
+
+      it "should return a string" do
+        # We're checking the class explicitly because 'kind_of?' is delegated to the Term.
+        expect(subject.creator.class).to eq String
+        expect(subject.creator).to eq 'Snorkmaiden'
+      end
+    end
   end
 
   describe 'array setters' do

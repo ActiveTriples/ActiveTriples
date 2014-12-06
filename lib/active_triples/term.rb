@@ -26,13 +26,15 @@ module ActiveTriples
     end
 
     def result
-      result = parent.query(:subject => rdf_subject, :predicate => predicate)
-      .each_with_object([]) do |x, collector|
-        converted_object = convert_object(x.object)
-        collector << converted_object unless converted_object.nil?
-      end
-      return result if !property_config || property_config[:multivalue]
-      result.first
+      parent.query(:subject => rdf_subject, :predicate => predicate)
+        .each_with_object([]) do |x, collector|
+          converted_object = convert_object(x.object)
+          collector << converted_object unless converted_object.nil?
+        end
+    end
+
+    def multivalue?
+      !property_config || property_config[:multivalue]
     end
 
     def set(values)
