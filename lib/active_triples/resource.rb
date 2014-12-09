@@ -20,7 +20,6 @@ module ActiveTriples
   #      end
   #    end
   class Resource < RDF::Graph
-    @@type_registry
     extend Configurable
     include Properties
     extend Deprecation
