@@ -729,4 +729,24 @@ END
       expect(subject.item.first.creator.first.knows.first.foaf_name).to eq ['Bob']
     end
   end
+
+  describe "callbacks" do
+    describe ".before_persist" do
+      before do
+        class DummyResource < ActiveTriples::Resource
+          def bla
+            self.title = "test"
+          end
+        end
+        DummyResource.before_persist :bla
+        repository = RDF::Repository.new
+        allow(subject).to receive(:repository).and_return(repository)
+      end
+      it "should call prior to persisting" do
+        expect(subject.title).to be_blank
+        subject.persist!
+        expect(subject.title).to eq ["test"]
+      end
+    end
+  end
 end
