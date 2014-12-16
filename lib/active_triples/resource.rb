@@ -25,6 +25,7 @@ module ActiveTriples
     extend Deprecation
     extend  ActiveModel::Naming
     extend  ActiveModel::Translation
+    extend  ActiveModel::Callbacks
     include ActiveModel::Validations
     include ActiveModel::Conversion
     include ActiveModel::Serialization
@@ -32,6 +33,7 @@ module ActiveTriples
     include NestedAttributes
     include Reflection
     attr_accessor :parent
+    define_model_callbacks :persist
 
     class << self
       def type_registry
@@ -227,10 +229,15 @@ module ActiveTriples
     end
 
     def persist!
-      raise "failed when trying to persist to non-existant repository or parent resource" unless repository
-      erase_old_resource
-      repository << self
-      @persisted = true
+      return if @persisting
+      @persisting = true
+      run_callbacks :persist do
+        raise "failed when trying to persist to non-existant repository or parent resource" unless repository
+        erase_old_resource
+        repository << self
+        @persisted = true
+      end
+      @persisting = false
     end
 
     ##
