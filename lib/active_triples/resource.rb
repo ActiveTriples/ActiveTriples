@@ -228,8 +228,9 @@ module ActiveTriples
       self
     end
 
-    def persist!
+    def persist!(opts={})
       return if @persisting
+      return false if opts[:validate] && !valid?
       @persisting = true
       run_callbacks :persist do
         raise "failed when trying to persist to non-existant repository or parent resource" unless repository
@@ -238,6 +239,7 @@ module ActiveTriples
         @persisted = true
       end
       @persisting = false
+      true
     end
 
     ##
