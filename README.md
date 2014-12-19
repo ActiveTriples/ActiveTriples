@@ -1,7 +1,7 @@
 Description
 -----------
 
-[![Build Status](https://travis-ci.org/no-reply/ActiveTriples.png?branch=master)](https://travis-ci.org/no-reply/ActiveTriples)
+[![Build Status](https://travis-ci.org/ActiveTriples/ActiveTriples.png?branch=master)](https://travis-ci.org/ActiveTriples/ActiveTriples)
 
 An ActiveModel-like interface for RDF data. Models graphs as Resources with property/attribute configuration, accessors, and other methods to support Linked Data in a Ruby/Rails enviornment.
 
