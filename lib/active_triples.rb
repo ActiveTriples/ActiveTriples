@@ -8,7 +8,6 @@ module ActiveTriples
     autoload :Resource
     autoload :List
     autoload :Term
-    autoload :Indexing
     autoload :Configurable
     autoload :Properties
     autoload :PropertyBuilder
