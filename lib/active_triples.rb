@@ -18,6 +18,10 @@ module ActiveTriples
     autoload :Identifiable
   end
 
+  # Raised when a declared repository doesn't have a definition
+  class RepositoryNotFoundError < StandardError
+  end
+
   def self.class_from_string(class_name, container_class=Kernel)
     container_class = container_class.name if container_class.is_a? Module
     container_parts = container_class.split('::')

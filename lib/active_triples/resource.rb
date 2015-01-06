@@ -259,9 +259,7 @@ module ActiveTriples
     # @return [true, false]
     def reload
       @term_cache ||= {}
-      if self.class.repository == :parent
-        return false if final_parent.nil?
-      end
+      return false unless repository
       self << repository.query(subject: rdf_subject)
       unless empty?
         @persisted = true
@@ -512,7 +510,9 @@ module ActiveTriples
           if self.class.repository == :parent
             final_parent
           else
-            Repositories.repositories[self.class.repository]
+            repo = Repositories.repositories[self.class.repository]
+            raise RepositoryNotFoundError, "The class #{self.class} expects a repository called #{self.class.repository}, but none was declared" unless repo
+            repo
           end
       end
 

@@ -281,6 +281,15 @@ describe ActiveTriples::Resource do
     end
   end
 
+  describe '#repository' do
+    subject { DummyLicense.new('http://example.org/cc')}
+
+    it "should warn when the repo doesn't exist" do
+      allow(DummyLicense).to receive(:repository).and_return('repo2')
+      expect { subject }.to raise_error ActiveTriples::RepositoryNotFoundError, 'The class DummyLicense expects a repository called repo2, but none was declared'
+    end
+  end
+
   describe '#destroy!' do
     before do
       subject.title = 'Creative Commons'
@@ -293,7 +302,7 @@ describe ActiveTriples::Resource do
       expect(subject.destroy!).to be true
       expect(subject.destroy).to be true
     end
-    
+
     it 'should delete the graph' do
       subject.destroy
       expect(subject).to be_empty
