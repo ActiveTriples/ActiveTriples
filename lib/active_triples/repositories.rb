@@ -7,7 +7,7 @@ module ActiveTriples
   # RDF::Repository implementation to be used for persistence of
   # resources that will be shared between ActiveFedora::Base objects.
   #
-  #    ActiveFedora::Rdf::Repositories.add_repository :blah, RDF::Repository.new
+  #    ActiveTriples::Repositories.add_repository :blah, RDF::Repository.new
   #
   # Multiple repositories can be registered to keep different kinds of
   # resources seperate. This is configurable on subclasses of Resource
