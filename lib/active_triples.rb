@@ -33,4 +33,22 @@ module ActiveTriples
       end
     end
   end
+
+  def self.ActiveTripels
+    puts <<-eos
+
+        ###########
+        ******o****
+         **o******
+          *******
+           \\***/
+            | |
+            ( )
+            / \\
+        ,---------.
+
+eos
+"Yum"
+  end
+
 end
