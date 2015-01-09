@@ -1,4 +1,7 @@
-require 'bundler/setup'
+require 'coveralls'
+Coveralls.wear!
+
+rrequire 'bundler/setup'
 Bundler.setup
 
 require 'active_triples'
