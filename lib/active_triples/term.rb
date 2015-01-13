@@ -11,6 +11,7 @@ module ActiveTriples
     def initialize(parent_resource, value_arguments)
       self.parent = parent_resource
       @reflections = parent_resource.reflections
+      self.term_args ||= {}
       self.value_arguments = value_arguments
     end
 
@@ -177,7 +178,8 @@ module ActiveTriples
       end
 
       def cast?
-        return true unless property_config
+        return true unless property_config || (term_args && term_args[:cast])
+        return term_args[:cast] if term_args.has_key?(:cast)
         !!property_config[:cast]
       end
 

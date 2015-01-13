@@ -436,10 +436,18 @@ describe ActiveTriples::Resource do
     it "should be empty array if we haven't set it" do
       expect(subject.aggregates).to match_array([])
     end
-    
-    it "should be set to a URI producing an ActiveTriple::Resource" do
-      subject.aggregates = RDF::URI("http://example.org/b1")
-      expect(subject.aggregates.first).to be_a ActiveTriples::Resource
+
+    context "when set to a URI" do
+      let(:aggregates_uri) { RDF::URI("http://example.org/b1") }
+      before do
+        subject.aggregates = aggregates_uri
+      end
+      it "produce an ActiveTriple::Resource" do
+        expect(subject.aggregates.first).to be_a ActiveTriples::Resource
+      end
+      it "should have an ID accessor" do
+        expect(subject.aggregates_ids).to eq [aggregates_uri]
+      end
     end
     
     it "should be settable" do
