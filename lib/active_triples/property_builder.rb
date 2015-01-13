@@ -39,7 +39,7 @@ module ActiveTriples
 
     def self.define_id_reader(mixin, name)
       mixin.class_eval <<-CODE, __FILE__, __LINE__ + 1
-        def #{name}_id(*args)
+        def #{name}_ids(*args)
           get_values(:#{name}, :cast => false)
         end
       CODE

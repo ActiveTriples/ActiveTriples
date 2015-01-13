@@ -446,7 +446,7 @@ describe ActiveTriples::Resource do
         expect(subject.aggregates.first).to be_a ActiveTriples::Resource
       end
       it "should have an ID accessor" do
-        expect(subject.aggregates_id).to eq [aggregates_uri]
+        expect(subject.aggregates_ids).to eq [aggregates_uri]
       end
     end
     
