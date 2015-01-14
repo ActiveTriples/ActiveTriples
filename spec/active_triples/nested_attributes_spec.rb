@@ -141,8 +141,8 @@ describe "nesting attribute behavior" do
       end
     end
 
-    describe "with an existing object" do
-      before(:each) do
+    context "a simple model" do
+      before do
         class SpecResource < ActiveTriples::Resource
           property :parts, predicate: RDF::DC.hasPart, :class_name=>'Component'
           accepts_nested_attributes_for :parts, allow_destroy: true
@@ -152,31 +152,57 @@ describe "nesting attribute behavior" do
           end
         end
 
+        SpecResource.accepts_nested_attributes_for *args
       end
+      after { Object.send(:remove_const, :SpecResource) }
 
-      after(:each) do
-        Object.send(:remove_const, :SpecResource)
-      end
+      let(:args) { [:parts] }
       subject { SpecResource.new }
-      before do
-        subject.attributes = { parts_attributes: [
-                                  {label: 'Alternator'},
-                                  {label: 'Distributor'},
-                                  {label: 'Transmission'},
-                                  {label: 'Fuel Filter'}]}
+
+      context "for an existing object" do
+        before do
+          subject.attributes = { parts_attributes: [
+                                    {label: 'Alternator'},
+                                    {label: 'Distributor'},
+                                    {label: 'Transmission'},
+                                    {label: 'Fuel Filter'}]}
+          subject.parts_attributes = new_attributes
+        end
+
+        context "that allows destroy" do
+          let(:args) { [:parts, allow_destroy: true] }
+          let (:replace_object_id) { subject.parts[1].rdf_subject.to_s }
+          let (:remove_object_id) { subject.parts[3].rdf_subject.to_s }
+
+          let(:new_attributes) { [{ id: replace_object_id, label: "Universal Joint" },
+                                  { label:"Oil Pump" },
+                                  { id: remove_object_id, _destroy: '1', label: "bar1 uno" }] }
+
+          it "should update nested objects" do
+            expect(subject.parts.map{|p| p.label.first}).to eq ['Alternator', 'Universal Joint', 'Transmission', 'Oil Pump']
+          end
+        end
+
+        context "when an id is provided" do
+          let(:new_attributes) { [{ id: 'http://example.com/part#1', label: "Universal Joint" }] }
+
+          it "creates a new statement" do
+            expect(subject.parts.last.rdf_subject).to eq RDF::URI('http://example.com/part#1')
+          end
+        end
       end
-      let (:replace_object_id) { subject.parts[1].rdf_subject.to_s }
-      let (:remove_object_id) { subject.parts[3].rdf_subject.to_s }
 
-      it "should update nested objects" do
-        subject.parts_attributes= [{id: replace_object_id, label: "Universal Joint"}, {label:"Oil Pump"}, {id: remove_object_id, _destroy: '1', label: "bar1 uno"}]
+      context "for a new B-node" do
+        context "when called with reject_if" do
+          let(:args) { [:parts, reject_if: reject_proc] }
+          let(:reject_proc) { lambda { |attributes| attributes[:label] == 'Bar' } }
+          let(:new_attributes) { [{ label: "Universal Joint" }, { label: 'Bar'} ] }
+          before { subject.parts_attributes = new_attributes }
 
-        expect(subject.parts.map{|p| p.label.first}).to eq ['Alternator', 'Universal Joint', 'Transmission', 'Oil Pump']
-
-      end
-      it "create a new object when the id is provided" do
-       subject.parts_attributes= [{id: 'http://example.com/part#1', label: "Universal Joint"}]
-       expect(subject.parts.last.rdf_subject).to eq RDF::URI('http://example.com/part#1')
+          it "should call the reject if proc" do
+            expect(subject.parts.map(&:label)).to eq [['Universal Joint']]
+          end
+        end
       end
     end
   end

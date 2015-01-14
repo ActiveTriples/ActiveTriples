@@ -51,13 +51,12 @@ module ActiveTriples
       attributes_collection.each do |attributes|
         attributes = attributes.with_indifferent_access
 
-        if attributes['id'] && existing_record = association.detect { |record| record.rdf_subject.to_s == attributes['id'].to_s }
-          if !call_reject_if(association_name, attributes)
-            assign_to_or_mark_for_destruction(existing_record, attributes, options[:allow_destroy])
+        if !call_reject_if(association_name, attributes)
+          if attributes['id'] && existing_record = association.detect { |record| record.rdf_subject.to_s == attributes['id'].to_s }
+              assign_to_or_mark_for_destruction(existing_record, attributes, options[:allow_destroy])
+          else
+            association.build(attributes.except(*UNASSIGNABLE_KEYS))
           end
-        else
-          attributes = attributes.with_indifferent_access
-          association.build(attributes.except(*UNASSIGNABLE_KEYS))
         end
       end
     end
