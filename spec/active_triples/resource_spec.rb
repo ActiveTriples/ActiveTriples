@@ -69,7 +69,7 @@ describe ActiveTriples::Resource do
       before do
         subject.set_subject! RDF::URI(nil)
       end
-      
+
       it 'should have a subject of <>' do
         expect(subject.rdf_subject).to eq RDF::URI(nil)
       end
@@ -144,7 +144,7 @@ describe ActiveTriples::Resource do
           subject.title = "bla"
           result
         end
-        
+
         it "should return true" do
           expect(result).to eq true
         end
@@ -391,7 +391,7 @@ describe ActiveTriples::Resource do
         subject << RDF::Statement(RDF::URI('http://example.org/moomi'), RDF::DC.relation, node)
         subject << RDF::Statement(node, RDF::DC.title, 'bnode')
       end
-      
+
       it 'should include data with URIs as attribute names' do
         expect(subject.attributes[RDF::DC.contributor.to_s]).to eq ['Tove Jansson']
       end
@@ -402,7 +402,7 @@ describe ActiveTriples::Resource do
 
       it 'should build deep data for Resources' do
         expect(subject.attributes[RDF::DC.relation.to_s].first.get_values(RDF::DC.relation).
-               first.get_values(RDF::DC.title)).to eq ['bnode']      
+               first.get_values(RDF::DC.title)).to eq ['bnode']
       end
 
       it 'should include deep data in serializable_hash' do
