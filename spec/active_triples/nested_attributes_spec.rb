@@ -159,7 +159,7 @@ describe "nesting attribute behavior" do
       let(:args) { [:parts] }
       subject { SpecResource.new }
 
-      context "for an existing object" do
+      context "for an existing B-nodes" do
         before do
           subject.attributes = { parts_attributes: [
                                     {label: 'Alternator'},
@@ -191,6 +191,26 @@ describe "nesting attribute behavior" do
           end
         end
       end
+
+      context "for an existing resources" do
+        before do
+          subject.attributes = { parts_attributes: [
+                                    { id: 'http://id.loc.gov/authorities/subjects/sh85010251' },
+                                    { id: 'http://id.loc.gov/authorities/subjects/sh2001009145' }]}
+          subject.parts_attributes = new_attributes
+        end
+
+        let(:args) { [:parts] }
+
+        let(:new_attributes) { [{ id: 'http://id.loc.gov/authorities/subjects/sh85010251' },
+                                { id: 'http://id.loc.gov/authorities/subjects/sh2001009145' },
+                                { id: 'http://id.loc.gov/authorities/subjects/sh85052223' }] }
+
+        it "should update nested objects" do
+          expect(subject.parts.map{|p| p.id}).to eq ["http://id.loc.gov/authorities/subjects/sh85010251", "http://id.loc.gov/authorities/subjects/sh2001009145", "http://id.loc.gov/authorities/subjects/sh85052223"]
+        end
+      end
+
 
       context "for a new B-node" do
         context "when called with reject_if" do

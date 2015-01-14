@@ -125,7 +125,8 @@ module ActiveTriples
     def attributes=(values)
       raise ArgumentError, "values must be a Hash, you provided #{values.class}" unless values.kind_of? Hash
       values = values.with_indifferent_access
-      set_subject!(values.delete(:id)) if values.has_key?(:id) and node?
+      id = values.delete(:id)
+      set_subject!(id) if id && node?
       values.each do |key, value|
         if reflections.reflect_on_property(key)
           set_value(rdf_subject, key, value)
