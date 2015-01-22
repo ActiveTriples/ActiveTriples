@@ -365,10 +365,10 @@ module ActiveTriples
       @destroyed = true
     end
     alias_method :destroy!, :destroy
-    
+
     ##
     # Indicates if the Resource has been destroyed.
-    # 
+    #
     # @return [true, false]
     def destroyed?
       @destroyed ||= false
@@ -386,12 +386,6 @@ module ActiveTriples
     # @return [true, false]
     def new_record?
       not persisted?
-    end
-
-    ##
-    # @return [String] the string representation of the resource
-    def solrize
-      node? ? rdf_label : rdf_subject.to_s
     end
 
     def mark_for_destruction

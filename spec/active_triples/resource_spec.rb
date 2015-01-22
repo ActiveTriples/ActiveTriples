@@ -429,10 +429,10 @@ describe ActiveTriples::Resource do
   end
 
   describe 'array setters' do
-    before do 
+    before do
       DummyResource.property :aggregates, :predicate => RDF::DC.relation
     end
- 
+
     it "should be empty array if we haven't set it" do
       expect(subject.aggregates).to match_array([])
     end
@@ -449,7 +449,7 @@ describe ActiveTriples::Resource do
         expect(subject.aggregates_ids).to eq [aggregates_uri]
       end
     end
-    
+
     it "should be settable" do
       subject.aggregates = RDF::URI("http://example.org/b1")
       expect(subject.aggregates.first.rdf_subject).to eq RDF::URI("http://example.org/b1")
@@ -460,13 +460,13 @@ describe ActiveTriples::Resource do
       let(:bib1) { RDF::URI("http://example.org/b1") }
       let(:bib2) { RDF::URI("http://example.org/b2") }
       let(:bib3) { RDF::URI("http://example.org/b3") }
-      
+
       before do
         subject.aggregates = bib1
         subject.aggregates << bib2
         subject.aggregates << bib3
       end
-        
+
       it 'raises error when trying to set nil value' do
         expect { subject.aggregates[1] = nil }.to raise_error /value must be an RDF URI, Node, Literal, or a valid datatype/
       end
@@ -474,12 +474,12 @@ describe ActiveTriples::Resource do
       it "should be changeable for multiple values" do
         new_bib1 = RDF::URI("http://example.org/b1_NEW")
         new_bib3 = RDF::URI("http://example.org/b3_NEW")
-        
+
         aggregates = subject.aggregates.dup
         aggregates[0] = new_bib1
         aggregates[2] = new_bib3
         subject.aggregates = aggregates
-        
+
         expect(subject.aggregates[0].rdf_subject).to eq new_bib1
         expect(subject.aggregates[1].rdf_subject).to eq bib2
         expect(subject.aggregates[2].rdf_subject).to eq new_bib3
@@ -490,7 +490,7 @@ describe ActiveTriples::Resource do
       end
     end
   end
-  
+
   describe 'child nodes' do
     it 'should return an object of the correct class when the value is a URI' do
       subject.license = DummyLicense.new('http://example.org/license')
@@ -539,7 +539,7 @@ describe ActiveTriples::Resource do
       subject.set_value('license',vals)
       expect(subject.get_values('license')).to eq ["foo"]
     end
- 
+
     it "safely handles terms passed in with pre-existing values" do
       subject.license = "foo"
       vals = subject.get_values('license')
@@ -604,7 +604,7 @@ describe ActiveTriples::Resource do
       let(:literal1) { RDF::Literal.new("test", :language => :en) }
       let(:literal2) { RDF::Literal.new("test", :language => :fr) }
       before do
-        subject.set_value(RDF::DC.title, [literal1, literal2]) 
+        subject.set_value(RDF::DC.title, [literal1, literal2])
       end
       context "and literals are not requested" do
         it "should return a string" do
@@ -674,17 +674,6 @@ describe ActiveTriples::Resource do
       subject << RDF::Statement(subject.rdf_subject, custom_label, RDF::Literal('New Label'))
       subject.title = 'Comet in Moominland'
       expect(subject.rdf_label).to eq ['New Label']
-    end
-  end
-
-  describe '#solrize' do
-    it 'should return a label for bnodes' do
-      expect(subject.solrize).to eq subject.rdf_label
-    end
-
-    it 'should return a string of the resource uri' do
-      subject.set_subject! 'http://example.org/moomin'
-      expect(subject.solrize).to eq 'http://example.org/moomin'
     end
   end
 
