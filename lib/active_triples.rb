@@ -5,6 +5,7 @@ require 'active_support'
 module ActiveTriples
   extend ActiveSupport::Autoload
   eager_autoload do
+    autoload :RDFSource
     autoload :Resource
     autoload :List
     autoload :Term

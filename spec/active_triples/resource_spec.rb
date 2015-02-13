@@ -527,7 +527,7 @@ describe ActiveTriples::Resource do
         subject.set_value(RDF::DC.title, RDF::URI("http://opaquenamespace.org/jokes/1"))
       end
       it "should return a resource" do
-        expect(subject.title.first).to be_kind_of(ActiveTriples::Resource)
+        expect(subject.title.first).to be_kind_of(ActiveTriples::RDFSource)
       end
       context "and it's configured to not cast" do
         before do
@@ -698,14 +698,16 @@ describe ActiveTriples::Resource do
 
   describe 'big complex graphs' do
     before do
-      class DummyPerson < ActiveTriples::Resource
+      class DummyPerson
+        include ActiveTriples::RDFSource
         configure :type => RDF::URI('http://example.org/Person')
         property :foaf_name, :predicate => RDF::FOAF.name
         property :publications, :predicate => RDF::FOAF.publications, :class_name => 'DummyDocument'
         property :knows, :predicate => RDF::FOAF.knows, :class_name => DummyPerson
       end
 
-      class DummyDocument < ActiveTriples::Resource
+      class DummyDocument
+        include ActiveTriples::RDFSource
         configure :type => RDF::URI('http://example.org/Document')
         property :title, :predicate => RDF::DC.title
         property :creator, :predicate => RDF::DC.creator, :class_name => 'DummyPerson'
@@ -772,7 +774,8 @@ END
   describe "callbacks" do
     describe ".before_persist" do
       before do
-        class DummyResource < ActiveTriples::Resource
+        class DummyResource
+          include ActiveTriples::RDFSource
           def bla
             self.title = "test"
           end

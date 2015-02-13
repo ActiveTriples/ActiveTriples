@@ -24,7 +24,8 @@ describe "nesting attribute behavior" do
           property :DateNameElement
         end
 
-        class ComplexResource < ActiveTriples::Resource
+        class ComplexResource
+          include ActiveTriples::RDFSource
           property :topic, predicate: DummyMADS.Topic, class_name: "Topic"
           property :personalName, predicate: DummyMADS.PersonalName, class_name: "PersonalName"
           property :title, predicate: RDF::DC.title
@@ -32,11 +33,13 @@ describe "nesting attribute behavior" do
 
           accepts_nested_attributes_for :topic, :personalName
 
-          class Topic < ActiveTriples::Resource
+          class Topic
+            include ActiveTriples::RDFSource
             property :elementList, predicate: DummyMADS.elementList, class_name: "ComplexResource::ElementList"
             accepts_nested_attributes_for :elementList
           end
-          class PersonalName < ActiveTriples::Resource
+          class PersonalName
+            include ActiveTriples::RDFSource
             property :elementList, predicate: DummyMADS.elementList, class_name: "ComplexResource::ElementList"
             property :extraProperty, predicate: DummyMADS.elementValue, class_name: "ComplexResource::Topic"
             accepts_nested_attributes_for :elementList, :extraProperty
@@ -51,7 +54,8 @@ describe "nesting attribute behavior" do
             property :elementValue, predicate: DummyMADS.elementValue
             accepts_nested_attributes_for :topicElement
           end
-          class MadsTopicElement < ActiveTriples::Resource
+          class MadsTopicElement
+            include ActiveTriples::RDFSource
             configure :type => DummyMADS.TopicElement
             property :elementValue, predicate: DummyMADS.elementValue
           end
@@ -143,11 +147,13 @@ describe "nesting attribute behavior" do
 
     context "a simple model" do
       before do
-        class SpecResource < ActiveTriples::Resource
+        class SpecResource
+          include ActiveTriples::RDFSource
           property :parts, predicate: RDF::DC.hasPart, :class_name=>'Component'
           accepts_nested_attributes_for :parts, allow_destroy: true
 
-          class Component < ActiveTriples::Resource
+          class Component
+            include ActiveTriples::RDFSource
             property :label, predicate: RDF::DC.title
           end
         end
