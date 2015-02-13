@@ -5,11 +5,11 @@ describe ActiveTriples::Identifiable do
   before do
     class ActiveExample
       include ActiveTriples::Identifiable
-      
+
       def self.property(*args)
         prop = args.first
 
-        define_method prop.to_s do 
+        define_method prop.to_s do
           resource.get_values(prop)
         end
 
@@ -34,7 +34,8 @@ describe ActiveTriples::Identifiable do
     let(:parent) { MyResource.new }
 
     before do
-      class MyResource < ActiveTriples::Resource
+      class MyResource
+        include ActiveTriples::Entity
         property :relation, predicate: RDF::DC.relation, class_name: 'ActiveExample'
       end
 
@@ -56,7 +57,7 @@ describe ActiveTriples::Identifiable do
   context 'without implementation' do
     describe '::from_uri' do
       it 'raises a NotImplementedError' do
-       expect{ klass.from_uri(RDF::URI('http://example.org/blah')) }.to raise_error NotImplementedError 
+       expect{ klass.from_uri(RDF::URI('http://example.org/blah')) }.to raise_error NotImplementedError
       end
     end
 
@@ -66,7 +67,7 @@ describe ActiveTriples::Identifiable do
       end
     end
   end
-    
+
   context 'with implementation' do
     before do
       class ActiveExample
@@ -82,7 +83,7 @@ describe ActiveTriples::Identifiable do
         def self.property(*args)
           prop = args.first
 
-          define_method prop.to_s do 
+          define_method prop.to_s do
             resource.get_values(prop)
           end
 
@@ -97,7 +98,7 @@ describe ActiveTriples::Identifiable do
 
       subject.id = '123'
     end
-    
+
     describe '::properties' do
       before do
         klass.property :title, :predicate => RDF::DC.title
@@ -115,7 +116,7 @@ describe ActiveTriples::Identifiable do
         subject.title << 'Finn Family Moomintroll'
         expect(subject.resource.title).to eq ['Finn Family Moomintroll']
       end
-      
+
       it 'returns correct values in property getters' do
         subject.resource.title = 'Finn Family Moomintroll'
         expect(subject.title).to eq subject.resource.title
@@ -152,18 +153,18 @@ describe ActiveTriples::Identifiable do
 
       context 'with relationships' do
         include_context 'with data'
-        
+
         it 'has a parent' do
           expect(parent.relation.first.parent).to eq parent
         end
-        
+
         it 'has a parent after reload' do
           parent.relation.node_cache = {}
           expect(parent.relation.first.parent).to eq parent
         end
       end
     end
-    
+
     describe '#rdf_subject' do
       it 'has a subject' do
         expect(subject.rdf_subject).to eq 'http://example.org/ns/123'

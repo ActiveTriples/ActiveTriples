@@ -5,6 +5,7 @@ require 'active_support'
 module ActiveTriples
   extend ActiveSupport::Autoload
   eager_autoload do
+    autoload :Entity
     autoload :Resource
     autoload :List
     autoload :Term

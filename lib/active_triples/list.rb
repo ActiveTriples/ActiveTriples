@@ -28,7 +28,7 @@ module ActiveTriples
     def initialize(*args)
       super
       parent = graph.parent if graph.respond_to? :parent
-      @graph = ListResource.new(subject) << graph unless graph.kind_of? Resource
+      @graph = ListResource.new(subject) << graph unless graph.kind_of? Entity
       graph << parent if parent
       graph.list = self
       graph.reload
@@ -97,7 +97,9 @@ module ActiveTriples
     ##
     # This class is the graph/Resource that backs the List and
     # supplies integration with the rest of ActiveTriples
-    class ListResource < Resource
+    class ListResource
+      include ActiveTriples::Entity
+
       attr_reader :list
 
       def list=(list)
@@ -171,11 +173,11 @@ module ActiveTriples
         @graph.type = RDF.List
         resource.set_value(RDF.first, value)
         resource.insert([subject, RDF.rest, RDF.nil])
-        resource << value if value.kind_of? Resource
+        resource << value if value.kind_of? Entity
         return self
       end
       super
-      resource << value if value.kind_of? Resource
+      resource << value if value.kind_of? Entity
     end
   end
 end

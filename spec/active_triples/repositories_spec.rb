@@ -1,6 +1,6 @@
 require "spec_helper"
 describe ActiveTriples::Repositories do
-  subject {ActiveTriples::Repositories}
+  subject { ActiveTriples::Repositories }
 
   after(:each) do
     subject.clear_repositories!
@@ -32,17 +32,20 @@ describe ActiveTriples::Repositories do
     end
 
     before do
-      class DummyResource1 < ActiveTriples::Resource
+      class DummyResource1
+        include ActiveTriples::Entity
         configure :base_uri => "http://example.org/r1/",
                   :type => RDF::URI("http://example.org/SomeClass"),
                   :repository => :repo1
       end
-      class DummyResource2 < ActiveTriples::Resource
+      class DummyResource2
+        include ActiveTriples::Entity
         configure :base_uri => "http://example.org/r2/",
                   :type => RDF::URI("http://example.org/SomeClass"),
                   :repository => :repo2
       end
-      class DummyResource3 < ActiveTriples::Resource
+      class DummyResource3
+        include ActiveTriples::Entity
         configure :base_uri => "http://example.org/r3/",
                   :type => RDF::URI("http://example.org/SomeClass"),
                   :repository => :repo3

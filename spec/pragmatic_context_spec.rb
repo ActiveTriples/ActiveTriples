@@ -3,14 +3,16 @@ require 'pragmatic_context'
 
 describe 'PragmaticContext integration' do
   before do
-    class DummyLicense < ActiveTriples::Resource
+    class DummyLicense
+      include ActiveTriples::Entity
       include PragmaticContext::Contextualizable
       property :title, :predicate => RDF::DC.title
 
       contextualize :title, :as => RDF::DC.title.to_s
     end
 
-    class DummyResource < ActiveTriples::Resource
+    class DummyResource
+      include ActiveTriples::Entity
       include PragmaticContext::Contextualizable
 
       configure :type => RDF::URI('http://example.org/SomeClass')
@@ -43,7 +45,7 @@ describe 'PragmaticContext integration' do
   it 'should have contexts' do
     expect(subject.as_jsonld['@context'].keys).to eq ["license", "title"]
   end
-  
+
   it 'should use context with dump' do
     context = JSON.parse(subject.dump :jsonld)['@context']
     subject.class.properties.keys.each do |prop|
