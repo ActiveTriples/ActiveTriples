@@ -1,11 +1,10 @@
 require 'spec_helper'
 
 class ActiveTriples::ProxyList
-  class UnproxiableObjectError < RuntimeError
-  end
+  include Enumerable
+  extend Forwardable
 
-  class InvalidAggregatorObjectError < RuntimeError
-  end
+  def_delegators :elements, :concat
 
   def initialize(aggregator)
     @aggregator = convert_to_aggregator(aggregator)
@@ -19,8 +18,6 @@ class ActiveTriples::ProxyList
     elements << value
   end
 
-  include Enumerable
-
   def each
     elements.each { |node| yield(node) }
   end
@@ -33,7 +30,6 @@ class ActiveTriples::ProxyList
       previous_proxy = proxy
       proxy = RDF::Node.new
 
-      graph << RDF::Statement(aggregator, FOBJ.hasMember, element)
       graph << RDF::Statement(proxy, ORE.proxyIn, aggregator)
       graph << RDF::Statement(proxy, ORE.proxyFor, element)
 
@@ -70,6 +66,14 @@ class ActiveTriples::ProxyList
       fail UnproxiableObjectError, "Unable to convert #{value} to a ProxyList element"
     end
   end
+
+  public
+
+  class UnproxiableObjectError < RuntimeError
+  end
+
+  class InvalidAggregatorObjectError < RuntimeError
+  end
 end
 
 class ORE < RDF::Vocabulary('http://www.openarchives.org/ore/1.0/datamodel#'); end
@@ -78,37 +82,59 @@ class FOBJ < RDF::Vocabulary('http://fedora.info/definitions/v4/models#'); end
 describe ActiveTriples::ProxyList do
   subject { ActiveTriples::ProxyList.new(aggregator) }
   let(:aggregator) { RDF::URI('http://example.org/agg') }
+  let(:uri) { RDF::URI('http://example.org') }
 
-  context 'with list items (integration test)' do
-
-    before do
-      proxy = nil
-      10.times do |i|
-        uri = RDF::URI('http://example.org') / i
-        subject << uri
-
-        prev = proxy
-        proxy = RDF::Node.new
-
-        graph << RDF::Statement(aggregator, FOBJ.hasMember, uri)
-        graph << RDF::Statement(proxy, ORE.proxyIn, aggregator)
-        graph << RDF::Statement(proxy, ORE.proxyFor, uri)
-
-        if prev.nil?
-          graph << RDF::Statement(aggregator, ORE['first'], proxy)
-        else
-          graph << RDF::Statement(prev, ORE.next, proxy)
-          graph << RDF::Statement(proxy, ORE.prev, prev)
-        end
-      end
-
-      graph << RDF::Statement(aggregator, ORE.last, proxy)
+  ##
+  # Queries a given predicate with a proxyable value returning the node the
+  # proxy stands in for.
+  def query_proxy_for(proxy_list, predicate)
+    query = RDF::Query.new do
+      pattern [proxy_list.aggregator, predicate, :proxy]
+      pattern [:proxy, ORE.proxyFor, :value]
     end
 
-    let(:graph) { RDF::Graph.new }
+    query.execute(proxy_list.graph).map(&:value)
+  end
 
-    it 'outputs the correct graph' do
-      # expect(subject.dump(:ntriples)).to eq graph.dump(:ntriples)
+  def query_next_node(proxy_list, current)
+    query = RDF::Query.new do
+      pattern [:current_proxy, ORE.proxyFor, current]
+      pattern [:current_proxy, ORE.next, :next_proxy]
+      pattern [:next_proxy, ORE.proxyFor, :next_node]
+    end
+
+    query.execute(proxy_list.graph).map(&:next_node)
+  end
+
+  RSpec::Matchers.define :have_ore_first_of do |expected|
+    match { |actual| query_proxy_for(actual, ORE['first']) == [expected] }
+  end
+
+  RSpec::Matchers.define :have_ore_last_of do |expected|
+    match { |actual| query_proxy_for(actual, ORE.last) == [expected] }
+  end
+
+  RSpec::Matchers.define :have_ore_order_of do |*expected|
+    match do |actual|
+      current = query_proxy_for(actual, ORE['first']).first
+      expected.each do |item|
+        return false unless current == item
+        current = query_next_node(actual, current)
+        current = current.first if current.count == 1
+      end
+      true
+    end
+  end
+
+  RSpec::Matchers.define :have_ore_proxy_in do |*expected|
+    match do |actual|
+      query = RDF::Query.new do
+        pattern [:proxy, ORE.proxyIn, actual.aggregator]
+        pattern [:proxy, ORE.proxyFor, :member]
+      end
+
+      members = query.execute(actual.graph).map(&:member)
+      expected.each { |item| return false unless members.include? item }
     end
   end
 
@@ -116,24 +142,30 @@ describe ActiveTriples::ProxyList do
     expect(subject.aggregator.to_uri).to eq('http://example.org/agg')
   end
 
-  context '#<<' do
-    let(:uri) { RDF::URI('http://example.org') }
-
-    it 'will accept an RDF::URI' do
+  describe '#<<' do
+    it 'accepts an RDF::URI' do
       expect { subject << uri }.to change { subject.count }.by(1)
     end
 
-    it 'will fail without an RDF::URI (is this correct?)' do
-      expect { subject << 'http://google.com' }.to raise_error(subject.class::UnproxiableObjectError)
+    it 'fails without an RDF::URI (is this correct?)' do
+      expect { subject << 'http://google.com' }
+        .to raise_error(subject.class::UnproxiableObjectError)
     end
 
-    it 'will allow you to push the same RDF::URI' do
+    it 'allows you to push the same RDF::URI' do
       subject << uri
       expect { subject << uri }.to change { subject.count }.by(1)
     end
   end
 
-  context '#graph' do
+  describe '#concat' do
+    it 'pushes items to list' do
+      expect { subject.concat([uri, uri, uri]) }
+        .to change { subject.count }.by(3)
+    end
+  end
+
+  describe '#graph' do
     let(:uri) { RDF::URI('http://example.org') }
 
     it 'will return a just in time RDF::Graph' do
@@ -144,9 +176,40 @@ describe ActiveTriples::ProxyList do
     end
 
     context 'with one element' do
-      it 'will return a graph with 5 statements' do
-        subject << uri
-        expect(subject.graph.count).to eq(5)
+      before { subject << uri }
+
+      it 'specifies first element' do
+        expect(subject).to have_ore_first_of uri
+      end
+
+      it 'specifies last element' do
+        expect(subject).to have_ore_last_of uri
+      end
+    end
+
+    context 'with multiple elements' do
+      before { subject.concat(uris) }
+
+      let(:uris) do
+        uris = []
+        10.times { |i| uris << RDF::URI('http://example.org') / i }
+        uris
+      end
+
+      it 'specifies last element' do
+        expect(subject).to have_ore_first_of uris.first
+      end
+
+      it 'specifies last element' do
+        expect(subject).to have_ore_last_of uris.last
+      end
+
+      it 'returns a graph with full order' do
+        expect(subject).to have_ore_order_of(*uris)
+      end
+
+      it 'returns a graph with correct ORE.proxyIn ' do
+        expect(subject).to have_ore_proxy_in(*uris)
       end
     end
 
