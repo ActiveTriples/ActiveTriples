@@ -6,10 +6,12 @@ require 'spec_helper'
 # The implementation is backed by an `elements` array and builds an RDF::Graph
 # just-in-time.
 class RDF::ProxyList
-  include Enumerable
+  include RDF::Enumerable
+  include RDF::Value
   extend Forwardable
 
   def_delegators :elements, :empty?
+  def_delegators :graph, :each_statement
 
   class << self
     def first_from_graph(aggregator, graph)
@@ -56,8 +58,12 @@ class RDF::ProxyList
     @elements = elements_from_graph(graph)
   end
 
+  # @!attribute [r] aggregator
+  # @return [RDF::Resource] the subject term of this list.
   attr_reader :elements, :aggregator
   private :elements
+
+  alias_method :to_term, :aggregator
 
   def <<(value)
     resource = convert_to_proxiable_element(value)
@@ -69,7 +75,8 @@ class RDF::ProxyList
     self
   end
 
-  def each
+  def each(&block)
+    return to_enum unless block_given?
     elements.each { |node| yield(node) }
   end
 
@@ -212,6 +219,11 @@ describe RDF::ProxyList do
     end
   end
 
+  shared_context 'with values' do
+    include_context 'with uri list'
+    before { subject.concat(uris) }
+  end
+
   it 'will have an aggregator that is an RDF::Resource' do
     expect(subject.aggregator.to_uri).to eq('http://example.org/agg')
   end
@@ -299,6 +311,18 @@ describe RDF::ProxyList do
     end
   end
 
+  describe '#each' do
+    include_context 'with values'
+
+    it 'returns an enum' do
+      expect(subject.each).to be_a Enumerator
+    end
+
+    it 'yields elements to block' do
+      expect { |b| subject.each(&b) }.to yield_successive_args(*uris)
+    end
+  end
+
   describe '#graph' do
     let(:uri) { RDF::URI('http://example.org') }
 
@@ -322,9 +346,7 @@ describe RDF::ProxyList do
     end
 
     context 'with multiple elements' do
-      include_context 'with uri list'
-
-      before { subject.concat(uris) }
+      include_context 'with values'
 
       it 'specifies last element' do
         expect(subject).to have_ore_first_of uris.first
@@ -346,6 +368,25 @@ describe RDF::ProxyList do
     context 'with no elements' do
       it 'will return an empty graph' do
         expect(subject.graph.count).to eq(0)
+      end
+    end
+  end
+
+  describe 'RDF::Value compliance' do
+    describe '#to_term' do
+      it 'returns aggregator' do
+        expect(subject.to_term).to eq aggregator
+      end
+    end
+  end
+
+  describe 'RDF::Enumerable compliance' do
+    describe '#each_statement' do
+      include_context 'with values'
+
+      it 'returns an Enumerator over statements' do
+        expect { |b| subject.each_statement(&b) }
+          .to yield_control.exactly(subject.graph.count).times
       end
     end
   end
