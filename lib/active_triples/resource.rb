@@ -521,20 +521,17 @@ module ActiveTriples
       # #to_uri, a String that represents a valid URI, or a String that
       # appends to the Resource's base_uri to create a valid URI.
       #
-      # @TODO: URI.scheme_list is naive and incomplete. Find a better
-      #   way to check for an existing scheme.
-      #
       # @param uri_or_str [RDF::Resource, String]
       #
       # @return [RDF::Resource] A term
       # @raise [RuntimeError] no valid RDF term could be built
       def get_uri(uri_or_str)
         return uri_or_str.to_uri if uri_or_str.respond_to? :to_uri
-        return uri_or_str if uri_or_str.kind_of? RDF::Node
+        return uri_or_str if uri_or_str.is_a? RDF::Node
+        uri_or_node = RDF::Resource.new(uri_or_str)
+        return uri_or_node if uri_or_node.valid?
         uri_or_str = uri_or_str.to_s
-        return RDF::Node(uri_or_str[2..-1]) if uri_or_str.start_with? '_:'
-        return RDF::URI(uri_or_str) if RDF::URI(uri_or_str).valid? and (URI.scheme_list.include?(RDF::URI.new(uri_or_str).scheme.upcase) or RDF::URI.new(uri_or_str).scheme == 'info')
-        return RDF::URI(self.base_uri.to_s + (self.base_uri.to_s[-1,1] =~ /(\/|#)/ ? '' : '/') + uri_or_str) if base_uri && !uri_or_str.start_with?(base_uri.to_s)
+        return RDF::URI(base_uri.to_s) / uri_or_str if base_uri && !uri_or_str.start_with?(base_uri.to_s)
         raise RuntimeError, "could not make a valid RDF::URI from #{uri_or_str}"
       end
   end
