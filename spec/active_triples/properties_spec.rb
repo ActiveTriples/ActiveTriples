@@ -12,9 +12,19 @@ describe ActiveTriples::Properties do
   end
 
   describe '#property' do
-    it 'should set a property' do
+    it 'should set a property as a NodeConfig' do
       DummyProperties.property :title, :predicate => RDF::DC.title
       expect(DummyProperties.reflect_on_property(:title)).to be_kind_of ActiveTriples::NodeConfig
+    end
+
+    it 'should set the correct property' do
+      DummyProperties.property :title, :predicate => RDF::DC.title
+      expect(DummyProperties.reflect_on_property(:title).predicate).to eql RDF::DC.title
+    end
+
+    it 'should set the correct property from string' do
+      DummyProperties.property :title, :predicate => RDF::DC.title.to_s
+      expect(DummyProperties.reflect_on_property(:title).predicate).to eql RDF::DC.title
     end
 
     it 'should set index behaviors' do
@@ -46,6 +56,10 @@ describe ActiveTriples::Properties do
 
     it 'raises error when defining properties with no predicate' do
       expect { DummyProperties.property :type }.to raise_error ArgumentError
+    end
+
+    it 'raises error when defining properties with a non-Roesource predicate' do
+      expect { DummyProperties.property :type, :predicate => 123 }.to raise_error ArgumentError
     end
 
     it 'raises error when defining properties already have method setters' do
