@@ -9,7 +9,10 @@ module ActiveTriples
     end
 
     def self.create_builder(name, options, &block)
-      raise ArgumentError, "property names must be a Symbol" unless name.kind_of?(Symbol)
+      raise ArgumentError, "property names must be a Symbol" unless
+        name.kind_of?(Symbol)
+      raise ArgumentError, "must provide a :predicate" unless
+        options.keys.include? :predicate
 
       new(name, options, &block)
     end

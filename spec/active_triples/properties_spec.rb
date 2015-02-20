@@ -44,6 +44,10 @@ describe ActiveTriples::Properties do
       expect { DummyProperties.property :type, :predicate => RDF::DC.type }.to raise_error ArgumentError
     end
 
+    it 'raises error when defining properties with no predicate' do
+      expect { DummyProperties.property :type }.to raise_error ArgumentError
+    end
+
     it 'raises error when defining properties already have method setters' do
       DummyProperties.send :define_method, :type=, lambda { }
       expect { DummyProperties.property :type, :predicate => RDF::DC.type }.to raise_error ArgumentError
