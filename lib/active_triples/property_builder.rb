@@ -9,7 +9,13 @@ module ActiveTriples
     end
 
     def self.create_builder(name, options, &block)
-      raise ArgumentError, "property names must be a Symbol" unless name.kind_of?(Symbol)
+      raise ArgumentError, "property names must be a Symbol" unless
+        name.kind_of?(Symbol)
+
+      options[:predicate] = RDF::Resource.new(options[:predicate])
+      raise ArgumentError, "must provide an RDF::Resource to :predicate" unless
+        options[:predicate].valid?
+
 
       new(name, options, &block)
     end
@@ -54,7 +60,9 @@ module ActiveTriples
     end
 
     def build(&block)
-      NodeConfig.new(name, options[:predicate], options.except(:predicate)) do |config|
+      NodeConfig.new(name,
+                     options[:predicate],
+                     options.except(:predicate)) do |config|
         config.with_index(&block) if block_given?
       end
     end
