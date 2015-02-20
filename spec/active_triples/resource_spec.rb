@@ -20,6 +20,12 @@ describe ActiveTriples::Resource do
 
   subject { DummyResource.new }
 
+  describe '#property' do
+    it 'raises error when set directly on Resource' do
+      expect { ActiveTriples::Resource.property :blah, :predicate => RDF::DC.title }.to raise_error
+    end
+  end
+
   describe 'rdf_subject' do
     it "should be a blank node if we haven't set it" do
       expect(subject.rdf_subject.node?).to be true

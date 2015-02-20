@@ -52,6 +52,12 @@ module ActiveTriples
       def from_uri(uri,vals=nil)
         new(uri, vals)
       end
+
+      def property(*)
+        raise "Properties not definable directly on ActiveTriples::Resource, use a subclass" if
+          self == ActiveTriples::Resource
+        super
+      end
     end
 
     ##
