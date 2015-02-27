@@ -10,7 +10,7 @@ module ActiveTriples
 
     class << self
       def type_registry
-        Entity.type_registry
+        RDFSource.type_registry
       end
 
       def property(*)
