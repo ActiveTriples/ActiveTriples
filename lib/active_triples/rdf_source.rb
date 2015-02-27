@@ -4,9 +4,9 @@ require 'active_support/core_ext/hash'
 
 module ActiveTriples
   ##
-  # Defines a concern for managing `RDF::Graph` driven resources as discrete
-  # subgraphs with property configuration, accessors, and persistence to
-  # `RDF::Repositories`.
+  # Defines a concern for managing `RDF::Graph` driven Resources as discrete,
+  # stateful subgraphs. Comes with property configuration, accessors, and
+  # persistence to `RDF::Repositories`.
   #
   #    class License
   #      include Active::Triples::Entity
@@ -14,6 +14,8 @@ module ActiveTriples
   #      configure repository: :default
   #      property :title, predicate: RDF::DC.title, class_name: RDF::Literal
   #    end
+  #
+  # @see http://www.w3.org/TR/2014/REC-rdf11-concepts-20140225/#change-over-time
   module RDFSource
     extend ActiveSupport::Concern
 
