@@ -6,7 +6,6 @@ module ActiveTriples
   # provides a basic `Entity` type for classless resources.
   class Resource
     include RDFSource
-    extend  Deprecation
 
     class << self
       def type_registry
