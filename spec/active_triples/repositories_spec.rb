@@ -33,19 +33,19 @@ describe ActiveTriples::Repositories do
 
     before do
       class DummyResource1
-        include ActiveTriples::Entity
+        include ActiveTriples::RDFSource
         configure :base_uri => "http://example.org/r1/",
                   :type => RDF::URI("http://example.org/SomeClass"),
                   :repository => :repo1
       end
       class DummyResource2
-        include ActiveTriples::Entity
+        include ActiveTriples::RDFSource
         configure :base_uri => "http://example.org/r2/",
                   :type => RDF::URI("http://example.org/SomeClass"),
                   :repository => :repo2
       end
       class DummyResource3
-        include ActiveTriples::Entity
+        include ActiveTriples::RDFSource
         configure :base_uri => "http://example.org/r3/",
                   :type => RDF::URI("http://example.org/SomeClass"),
                   :repository => :repo3

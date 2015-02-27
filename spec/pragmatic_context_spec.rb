@@ -4,7 +4,7 @@ require 'pragmatic_context'
 describe 'PragmaticContext integration' do
   before do
     class DummyLicense
-      include ActiveTriples::Entity
+      include ActiveTriples::RDFSource
       include PragmaticContext::Contextualizable
       property :title, :predicate => RDF::DC.title
 
@@ -12,7 +12,7 @@ describe 'PragmaticContext integration' do
     end
 
     class DummyResource
-      include ActiveTriples::Entity
+      include ActiveTriples::RDFSource
       include PragmaticContext::Contextualizable
 
       configure :type => RDF::URI('http://example.org/SomeClass')

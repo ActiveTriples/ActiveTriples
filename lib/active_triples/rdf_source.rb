@@ -14,7 +14,7 @@ module ActiveTriples
   #      configure repository: :default
   #      property :title, predicate: RDF::DC.title, class_name: RDF::Literal
   #    end
-  module Entity
+  module RDFSource
     extend ActiveSupport::Concern
 
     include NestedAttributes

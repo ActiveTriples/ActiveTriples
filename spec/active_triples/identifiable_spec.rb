@@ -35,7 +35,7 @@ describe ActiveTriples::Identifiable do
 
     before do
       class MyResource
-        include ActiveTriples::Entity
+        include ActiveTriples::RDFSource
         property :relation, predicate: RDF::DC.relation, class_name: 'ActiveExample'
       end
 

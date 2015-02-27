@@ -71,19 +71,19 @@ describe ActiveTriples::List do
         property :TemporalElement
       end
       class DemoList
-        include ActiveTriples::Entity
+        include ActiveTriples::RDFSource
         property :elementList, :predicate => MADS.elementList, :class_name => 'DemoList::List'
         class List < ActiveTriples::List
           property :topicElement, :predicate => MADS.TopicElement, :class_name => 'DemoList::List::TopicElement'
           property :temporalElement, :predicate => MADS.TemporalElement, :class_name => 'DemoList::List::TemporalElement'
 
           class TopicElement
-            include ActiveTriples::Entity
+            include ActiveTriples::RDFSource
             configure :type => MADS.TopicElement
             property :elementValue, :predicate => MADS.elementValue
           end
           class TemporalElement
-            include ActiveTriples::Entity
+            include ActiveTriples::RDFSource
             configure :type => MADS.TemporalElement
             property :elementValue, :predicate => MADS.elementValue
           end

@@ -4,12 +4,12 @@ describe ActiveTriples::Resource do
   # it_behaves_like 'an ActiveModel'
   before do
     class DummyLicense
-      include ActiveTriples::Entity
+      include ActiveTriples::RDFSource
       property :title, :predicate => RDF::DC.title
     end
 
     class DummyResource
-      include ActiveTriples::Entity
+      include ActiveTriples::RDFSource
       configure :type => RDF::URI('http://example.org/SomeClass')
       property :license, :predicate => RDF::DC.license, :class_name => DummyLicense
       property :title, :predicate => RDF::DC.title
@@ -203,7 +203,7 @@ describe ActiveTriples::Resource do
 
     before do
       class DummyResourceWithBaseURI
-        include ActiveTriples::Entity
+        include ActiveTriples::RDFSource
         configure :base_uri => "http://example.org",
                   :type => RDF::URI("http://example.org/SomeClass"),
                   :repository => :default
@@ -250,7 +250,7 @@ describe ActiveTriples::Resource do
 
     before do
       class DummyResourceWithBaseURI
-        include ActiveTriples::Entity
+        include ActiveTriples::RDFSource
         configure :base_uri => "http://example.org",
                   :type => RDF::URI("http://example.org/SomeClass"),
                   :repository => :default
@@ -407,7 +407,7 @@ describe ActiveTriples::Resource do
       end
 
       it 'should return generic Resources' do
-        expect(subject.attributes[RDF::DC.relation.to_s].first).to be_a ActiveTriples::Entity
+        expect(subject.attributes[RDF::DC.relation.to_s].first).to be_a ActiveTriples::RDFSource
       end
 
       it 'should build deep data for Resources' do
@@ -531,7 +531,7 @@ describe ActiveTriples::Resource do
         subject.set_value(RDF::DC.title, RDF::URI("http://opaquenamespace.org/jokes/1"))
       end
       it "should return a resource" do
-        expect(subject.title.first).to be_kind_of(ActiveTriples::Entity)
+        expect(subject.title.first).to be_kind_of(ActiveTriples::RDFSource)
       end
       context "and it's configured to not cast" do
         before do
@@ -703,7 +703,7 @@ describe ActiveTriples::Resource do
   describe 'big complex graphs' do
     before do
       class DummyPerson
-        include ActiveTriples::Entity
+        include ActiveTriples::RDFSource
         configure :type => RDF::URI('http://example.org/Person')
         property :foaf_name, :predicate => RDF::FOAF.name
         property :publications, :predicate => RDF::FOAF.publications, :class_name => 'DummyDocument'
@@ -711,7 +711,7 @@ describe ActiveTriples::Resource do
       end
 
       class DummyDocument
-        include ActiveTriples::Entity
+        include ActiveTriples::RDFSource
         configure :type => RDF::URI('http://example.org/Document')
         property :title, :predicate => RDF::DC.title
         property :creator, :predicate => RDF::DC.creator, :class_name => 'DummyPerson'
@@ -779,7 +779,7 @@ END
     describe ".before_persist" do
       before do
         class DummyResource
-          include ActiveTriples::Entity
+          include ActiveTriples::RDFSource
           def bla
             self.title = "test"
           end

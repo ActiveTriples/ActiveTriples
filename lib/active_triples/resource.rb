@@ -5,7 +5,7 @@ module ActiveTriples
   # Defines a generic RDF `Resource` as an `ActiveTriples::Entity`. This
   # provides a basic `Entity` type for classless resources.
   class Resource
-    include Entity
+    include RDFSource
     extend  Deprecation
 
     class << self

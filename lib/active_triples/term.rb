@@ -91,7 +91,7 @@ module ActiveTriples
     end
 
     def property_config
-      return type_property if (property == RDF.type || property.to_s == "type") && (!reflections.kind_of?(Entity) || !reflections.reflect_on_property(property))
+      return type_property if (property == RDF.type || property.to_s == "type") && (!reflections.kind_of?(RDFSource) || !reflections.reflect_on_property(property))
       reflections.reflect_on_property(property)
     end
 
@@ -116,7 +116,7 @@ module ActiveTriples
         object = val
         val = val.resource if val.respond_to?(:resource)
         val = value_to_node(val)
-        if val.kind_of? Entity
+        if val.kind_of? RDFSource
           node_cache[val.rdf_subject] = nil
           add_child_node(val, object)
           return
