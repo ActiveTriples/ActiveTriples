@@ -51,52 +51,6 @@ module ActiveTriples
 
       define_model_callbacks :persist
 
-      ##
-      # Adapter for a consistent interface for creating a new Resource
-      # from a URI. Similar functionality should exist in all objects
-      # which can become a Resource.
-      #
-      # @param uri [#to_uri, String]
-      # @param vals values to pass as arguments to ::new
-      #
-      # @return [ActiveTriples::Entity] a Resource with the given uri
-      def self.from_uri(uri, vals = nil)
-        new(uri, vals)
-      end
-
-      ##
-      # Test if the rdf_subject that would be generated using a
-      # specific ID is already in use in the triplestore.
-      #
-      # @param [Integer, #read] ID to test
-      #
-      # @return [TrueClass, FalseClass] true, if the ID is in
-      #    use in the triplestore; otherwise, false.
-      #    NOTE: If the ID is in use in an object not yet
-      #          persisted, false will be returned presenting
-      #          a window of opportunity for an ID clash.
-      def self.id_persisted?(test_id)
-        rdf_subject = self.new(test_id).rdf_subject
-        ActiveTriples::Repositories.has_subject?(rdf_subject)
-      end
-
-
-      ##
-      # Test if the rdf_subject that would be generated using a
-      # specific URI is already in use in the triplestore.
-      #
-      # @param [String, RDF::URI, #read] URI to test
-      #
-      # @return [TrueClass, FalseClass] true, if the URI is in
-      #    use in the triplestore; otherwise, false.
-      #    NOTE: If the URI is in use in an object not yet
-      #          persisted, false will be returned presenting
-      #          a window of opportunity for an ID clash.
-      def self.uri_persisted?(test_uri)
-        rdf_subject = test_uri.kind_of?(RDF::URI) ? test_uri : RDF::URI(test_uri)
-        ActiveTriples::Repositories.has_subject?(rdf_subject)
-      end
-
       protected
 
       def insert_statement(*args)
@@ -549,5 +503,54 @@ module ActiveTriples
         return RDF::URI(base_uri.to_s) / uri_or_str if base_uri && !uri_or_str.start_with?(base_uri.to_s)
         raise RuntimeError, "could not make a valid RDF::URI from #{uri_or_str}"
       end
+
+    public
+
+    module ClassMethods
+      ##
+      # Adapter for a consistent interface for creating a new Resource
+      # from a URI. Similar functionality should exist in all objects
+      # which can become a Resource.
+      #
+      # @param uri [#to_uri, String]
+      # @param vals values to pass as arguments to ::new
+      #
+      # @return [ActiveTriples::Entity] a Resource with the given uri
+      def from_uri(uri, vals = nil)
+        new(uri, vals)
+      end
+
+      ##
+      # Test if the rdf_subject that would be generated using a
+      # specific ID is already in use in the triplestore.
+      #
+      # @param [Integer, #read] ID to test
+      #
+      # @return [TrueClass, FalseClass] true, if the ID is in
+      #    use in the triplestore; otherwise, false.
+      #    NOTE: If the ID is in use in an object not yet
+      #          persisted, false will be returned presenting
+      #          a window of opportunity for an ID clash.
+      def id_persisted?(test_id)
+        rdf_subject = self.new(test_id).rdf_subject
+        ActiveTriples::Repositories.has_subject?(rdf_subject)
+      end
+
+      ##
+      # Test if the rdf_subject that would be generated using a
+      # specific URI is already in use in the triplestore.
+      #
+      # @param [String, RDF::URI, #read] URI to test
+      #
+      # @return [TrueClass, FalseClass] true, if the URI is in
+      #    use in the triplestore; otherwise, false.
+      #    NOTE: If the URI is in use in an object not yet
+      #          persisted, false will be returned presenting
+      #          a window of opportunity for an ID clash.
+      def uri_persisted?(test_uri)
+        rdf_subject = test_uri.kind_of?(RDF::URI) ? test_uri : RDF::URI(test_uri)
+        ActiveTriples::Repositories.has_subject?(rdf_subject)
+      end
+    end
   end
 end
