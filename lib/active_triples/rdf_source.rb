@@ -1,4 +1,3 @@
-require 'deprecation'
 require 'active_model'
 require 'active_support/core_ext/hash'
 
@@ -39,18 +38,20 @@ module ActiveTriples
     extend ActiveSupport::Concern
 
     include NestedAttributes
+    include Persistable
     include Properties
     include Reflection
     include RDF::Value
     include RDF::Countable
     include RDF::Enumerable
+    include RDF::Durable
     include RDF::Queryable
-    include RDF::Mutable
     include ActiveModel::Validations
     include ActiveModel::Conversion
     include ActiveModel::Serialization
     include ActiveModel::Serializers::JSON
 
+    #TODO: delegate
     attr_accessor :parent
 
     def type_registry
@@ -60,24 +61,13 @@ module ActiveTriples
 
     included do
       extend Configurable
-      extend Deprecation
       extend ActiveModel::Naming
       extend ActiveModel::Translation
       extend ActiveModel::Callbacks
 
-      delegate :each, :load!, :count, :has_statement?, :to => :@graph
+      delegate :each, :load!, :count, :to => :graph
 
       define_model_callbacks :persist
-
-      protected
-
-      def insert_statement(*args)
-        @graph.send(:insert_statement, *args)
-      end
-
-      def delete_statement(*args)
-        @graph.send(:delete_statement, *args)
-      end
     end
 
     ##
@@ -107,6 +97,8 @@ module ActiveTriples
       end
     end
 
+    ##
+    # TODO: Remove
     def final_parent
       @final_parent ||= begin
         parent = self.parent
@@ -426,7 +418,15 @@ module ActiveTriples
         end
       end
 
-    private
+      private
+
+      def graph
+        @graph
+      end
+
+      ######
+      ## BEGIN Move these methods to `Properties`
+      ######
 
       ##
       # Returns the properties registered and their configurations.
@@ -469,6 +469,10 @@ module ActiveTriples
         end
         return nil
       end
+
+      ######
+      ## END Move these methods to `Properties`
+      ######
 
       def default_labels
         [RDF::SKOS.prefLabel,

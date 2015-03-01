@@ -10,6 +10,7 @@ module ActiveTriples
     autoload :List
     autoload :Relation
     autoload :Configurable
+    autoload :Persistable
     autoload :Properties
     autoload :PropertyBuilder
     autoload :Reflection
