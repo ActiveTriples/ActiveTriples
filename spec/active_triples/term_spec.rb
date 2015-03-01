@@ -69,14 +69,15 @@ describe ActiveTriples::Term do
       after { Object.send(:remove_const, :DummyResource) }
       let(:resource) { DummyResource.new }
       context "and the resource class does not include RDF::Isomorphic" do
-        before { class DummyResource < ActiveTriples::Resource; end }
+        before { class DummyResource; include ActiveTriples::RDFSource; end }
         it "should be false" do
           expect(subject.send(:valid_datatype?, resource)).to be false
         end
       end
       context "and the resource class includes RDF:Isomorphic" do
         before do
-          class DummyResource < ActiveTriples::Resource
+          class DummyResource
+            include ActiveTriples::RDFSource
             include RDF::Isomorphic
           end
         end
@@ -86,7 +87,8 @@ describe ActiveTriples::Term do
       end
       context "and the resource class includes RDF::Isomorphic and aliases :== to :isomorphic_with?" do
         before do
-          class DummyResource < ActiveTriples::Resource
+          class DummyResource
+            include ActiveTriples::RDFSource
             include RDF::Isomorphic
             alias_method :==, :isomorphic_with?
           end

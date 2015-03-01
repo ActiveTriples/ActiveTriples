@@ -5,7 +5,7 @@ Description
 [![Coverage Status](https://coveralls.io/repos/ActiveTriples/ActiveTriples/badge.png?branch=master)](https://coveralls.io/r/ActiveTriples/ActiveTriples?branch=master)
 [![Gem Version](https://badge.fury.io/rb/active-triples.svg)](http://badge.fury.io/rb/active-triples)
 
-An ActiveModel-like interface for RDF data. Models graphs as Resources with property/attribute configuration, accessors, and other methods to support Linked Data in a Ruby/Rails enviornment.
+An ActiveModel-like interface for RDF data. Models graphs as RDFSources with property/attribute configuration, accessors, and other methods to support Linked Data in a Ruby/Rails enviornment. See [RDF Concepts and Abstract Syntax](http://www.w3.org/TR/2014/REC-rdf11-concepts-20140225/#change-over-time) for an informal definition of an RDF Source.
 
 This library was extracted from work on [ActiveFedora](https://github.com/projecthydra/active_fedora). It is closely related to (and borrows some syntax from) [Spira](https://github.com/ruby-rdf/spira), but does some important things differently.
 
@@ -16,14 +16,15 @@ Add `gem "active-triples"` to your Gemfile and run `bundle`.
 
 Or install manually with `gem install active-triples`.
 
-Defining Resource Models
-------------------------
+Defining RDFSource Models
+-------------------------
 
-The core class of ActiveTriples is ActiveTriples::Resource. You can subclass this to create ActiveModel-like classes that represent a node in an RDF graph, and its surrounding statements. Resources implement all the functionality of an RDF::Graph. You can manipulate them by adding or deleting statements, query, serialize, and load arbitrary RDF. 
+The core module of ActiveTriples is ActiveTriples::RDFSource. You can subclass this to create ActiveModel-like classes that represent a node in an RDF graph, and its surrounding statements. RDFSources implement all the functionality of an RDF::Graph. You can manipulate them by adding or deleting statements, query, serialize, and load arbitrary RDF.
 
 
 ```ruby
-class Thing < ActiveTriples::Resource
+class Thing
+  include  ActiveTriples::RDFSource
   configure :type => RDF::OWL.Thing, :base_uri => 'http://example.org/things#'
   property :title, :predicate => RDF::DC.title
   property :description, :predicate => RDF::DC.description
@@ -34,12 +35,13 @@ obj.title = 'Resource'
 obj.description = 'A resource.'
 obj.dump :ntriples # => "<http://example.org/things#123> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#Thing> .\n<http://example.org/things#123> <http://purl.org/dc/terms/title> \"Resource\" .\n<http://example.org/things#123> <http://purl.org/dc/terms/description> \"A resource.\" .\n"
 ```
-URI and bnode values are built out as Resources when accessed, and a model class can be configured on individual properties.
+URI and bnode values are built out as generic Resources when accessed. A more specific model class can be configured on individual properties.
 
 ```ruby
 Thing.property :creator, :predicate => RDF::DC.creator, :class_name => 'Person'
 
-class Person < ActiveTriples::Resource
+class Person
+  include  ActiveTriples::RDFSource
   configure :type => RDF::FOAF.Person, :base_uri => 'http://example.org/people#'
   property :name, :predicate => RDF::FOAF.name
 end
@@ -56,24 +58,24 @@ obj_2.dump :ntriples # => "<http://example.org/things#2> <http://www.w3.org/1999
 Open Model
 -----------
 
-A Resource lets you handle data as a graph, independent of whether it is defined in the model. This is important for working in a Linked Data context, where you will want access to data you may not have known about when your models were written.
+An RDFSource lets you handle data as a graph, independent of whether it is defined in the model. This is important for working in a Linked Data context, where you will want access to data you may not have known about when your models were written.
 
 ```ruby
 related = Thing.new
 
 related << RDF::Statement(related, RDF::DC.relation, obj)
 related << RDF::Statement(related, RDF::DC.subject, 'ActiveTriples')
-	
+
 related.query(:subject => related, :predicate => RDF::DC.relation).each_statement {|s,p,o| puts o}
 # => http://example.org/things#123
 related.query(:subject => subject, :predicate => RDF::DC.relation).each_statement {|s,p,o| puts o}
 # => http://example.org/things#123
 ```
 
-Any operation you can run against an RDF::Graph works with Resources, too. Or you can use generic setters and getters with URI predicates:
+Any operation you can run against an RDF::Graph works with RDFSources, too. Or you can use generic setters and getters with URI predicates:
 
 ```ruby
-related.set_value(RDF::DC.relation, obj) 
+related.set_value(RDF::DC.relation, obj)
 related.set_value(RDF::DC.subject, 'ActiveTriples')
 
 related.get_values(RDF::DC.relation) # => [#<Thing:0x3f949c6a2294(default)>]
@@ -81,7 +83,7 @@ related.get_values(RDF::DC.subject) # => ["ActiveTriples"]
 ```
 
 Some convienience methods provide support for handling data from web sources:
-  * `fetch` loads data from the Resource's #rdf_subject URI
+  * `fetch` loads data from the RDFSource's #rdf_subject URI
   * `rdf_label` queries across common (& configured) label fields and returning the best match
 
 ```ruby
@@ -115,10 +117,10 @@ Data is cast back to the appropriate class when it is accessed.
 my_thing.date
 # => [Thu, 19 Jun 2014]
 ```
-   
+
 Note that you can mix types on a single property.
 
-```ruby     
+```ruby
 my_thing.date << DateTime.now
 my_thing.date << "circa 2014"
 my_thing.date
@@ -143,12 +145,15 @@ Resources can persist to various databases and triplestores though integration w
 ActiveTriples::Repositories.add_repository :default, RDF::Repository.new
 ActiveTriples::Repositories.add_repository :people, RDF::Repository.new
 
-class Person < ActiveTriples::Resource
+class Person
+  include  ActiveTriples::RDFSource
   configure :type => RDF::FOAF.Person, :base_uri => 'http://example.org/people#', :repository => :people
   property :name, :predicate => RDF::FOAF.name
 end
 
-class Thing < ActiveTriples::Resource
+class Thing
+  include  ActiveTriples::RDFSource
+
   configure :type => RDF::OWL.Thing, :base_uri => 'http://example.org/things#', :repository => :default
   property :title, :predicate => RDF::DC.title
   property :description, :predicate => RDF::DC.description
@@ -183,4 +188,3 @@ Please observe the following guidelines:
  - Organize your commits into logical units.
  - Don't leave trailing whitespace (i.e. run ```git diff --check``` before committing).
  - Use [well formed](http://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html) commit messages.
-

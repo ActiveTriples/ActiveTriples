@@ -49,7 +49,7 @@ describe ActiveTriples::List do
         subject.clear
         subject << 1
       end
-      
+
       it 'has a type of rdf:List' do
         expect(subject.type.first).to eq RDF.List
       end
@@ -70,17 +70,20 @@ describe ActiveTriples::List do
         property :TopicElement
         property :TemporalElement
       end
-      class DemoList < ActiveTriples::Resource
+      class DemoList
+        include ActiveTriples::RDFSource
         property :elementList, :predicate => MADS.elementList, :class_name => 'DemoList::List'
         class List < ActiveTriples::List
           property :topicElement, :predicate => MADS.TopicElement, :class_name => 'DemoList::List::TopicElement'
           property :temporalElement, :predicate => MADS.TemporalElement, :class_name => 'DemoList::List::TemporalElement'
 
-          class TopicElement < ActiveTriples::Resource
+          class TopicElement
+            include ActiveTriples::RDFSource
             configure :type => MADS.TopicElement
             property :elementValue, :predicate => MADS.elementValue
           end
-          class TemporalElement < ActiveTriples::Resource
+          class TemporalElement
+            include ActiveTriples::RDFSource
             configure :type => MADS.TemporalElement
             property :elementValue, :predicate => MADS.elementValue
           end
@@ -143,7 +146,7 @@ describe ActiveTriples::List do
     end
 
     describe "an empty list" do
-      subject { DemoList.new.elementList.build } 
+      subject { DemoList.new.elementList.build }
       it "should have to_ary" do
         expect(subject.to_ary).to eq []
       end
@@ -151,7 +154,7 @@ describe ActiveTriples::List do
 
     describe "a list that has a constructed element" do
       let(:ds) { DemoList.new('http://example.org/foo') }
-      let(:list) { ds.elementList.build } 
+      let(:list) { ds.elementList.build }
       let!(:topic) { list.topicElement.build }
 
       it "should have to_ary" do
@@ -222,7 +225,10 @@ END
       it "should have each" do
         foo = []
         list.each { |n| foo << n.class }
-        expect(foo).to eq [ActiveTriples::Resource, DemoList::List::TopicElement, ActiveTriples::Resource, DemoList::List::TemporalElement]
+        expect(foo).to eq [ActiveTriples::Resource,
+                           DemoList::List::TopicElement,
+                           ActiveTriples::Resource,
+                           DemoList::List::TemporalElement]
       end
 
       it "should have to_ary" do
