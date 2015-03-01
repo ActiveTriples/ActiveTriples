@@ -51,9 +51,6 @@ module ActiveTriples
     include ActiveModel::Serialization
     include ActiveModel::Serializers::JSON
 
-    #TODO: delegate
-    attr_accessor :parent
-
     def type_registry
       @@type_registry ||= {}
     end
@@ -83,7 +80,12 @@ module ActiveTriples
     # @todo move this logic out to a Builder?
     def initialize(*args, &block)
       resource_uri = args.shift unless args.first.is_a?(Hash)
-      self.parent = args.shift unless args.first.is_a?(Hash)
+      unless args.first.is_a?(Hash) || args.empty?
+        set_persistence_strategy(ParentStrategy)
+        persistence_strategy.parent = args.shift
+      else
+        set_persistence_strategy(RepositoryStrategy)
+      end
       @graph = RDF::Graph.new(*args, &block)
       set_subject!(resource_uri) if resource_uri
 
@@ -98,15 +100,18 @@ module ActiveTriples
     end
 
     ##
-    # TODO: Remove
-    def final_parent
-      @final_parent ||= begin
-        parent = self.parent
-        while parent && parent.parent && parent.parent != parent
-          parent = parent.parent
-        end
-        parent
-      end
+    # Delegate parent to the persistence strategy if possible
+    #
+    # @todo establish a better pattern for this. `#parent` has been a public method
+    #   in the past, but it's probably time to deprecate it.
+    def parent
+      persistence_strategy.respond_to?(:parent) ? persistence_strategy.parent : nil
+    end
+
+    ##
+    # @see #parent
+    def parent=(parent)
+      persistence_strategy.respond_to?(:parent=) ? (persistence_strategy.parent = parent) : nil
     end
 
     def attributes
@@ -171,7 +176,8 @@ module ActiveTriples
     alias_method :to_term, :rdf_subject
 
     ##
-    # A string identifier for the resource
+    # @return [String, nil] A string identifier for the resource; nil if the
+    #   resource is a node
     def id
       node? ? nil : rdf_subject.to_s
     end
@@ -239,17 +245,24 @@ module ActiveTriples
 
     def persist!(opts={})
       return if @persisting
-      return false if opts[:validate] && !valid?
+      result = false
+      return result if opts[:validate] && !valid?
       @persisting = true
       run_callbacks :persist do
-        raise "failed when trying to persist to non-existant repository or parent resource" unless repository
-        erase_old_resource
-        repository << self
-        @persisted = true
+        result = persistence_strategy.persist!
       end
       @persisting = false
-      true
+      result
     end
+
+    ##
+    # Romoves the statements in this RDFSource's graph from the persisted graph
+    #
+    # @return [Boolean]
+    def destroy
+      persistence_strategy.destroy
+    end
+    alias_method :destroy!, :destroy
 
     ##
     # Indicates if the resource is persisted.
@@ -257,23 +270,16 @@ module ActiveTriples
     # @see #persist
     # @return [true, false]
     def persisted?
-      @persisted ||= false
-      return (@persisted and parent.persisted?) if parent
-      @persisted
+      persistence_strategy.persisted?
     end
 
     ##
-    # Repopulates the graph from the repository or parent resource.
+    # Repopulates the graph according to the persistence strategy
     #
-    # @return [true, false]
+    # @return [Boolean]
     def reload
-      @relation_cache ||= {}
-      return false unless repository
-      self << repository.query(subject: rdf_subject)
-      unless empty?
-        @persisted = true
-      end
-      true
+      @term_cache ||= {}
+      persistence_strategy.reload
     end
 
     ##
@@ -327,7 +333,6 @@ module ActiveTriples
       get_relation([uri_or_term_property])
     end
 
-
     def get_relation(args)
       @relation_cache ||= {}
       rel = Relation.new(self, args)
@@ -366,22 +371,6 @@ module ActiveTriples
       end
     end
 
-    def destroy
-      clear
-      persist! if repository
-      parent.destroy_child(self) if parent
-      @destroyed = true
-    end
-    alias_method :destroy!, :destroy
-
-    ##
-    # Indicates if the Resource has been destroyed.
-    #
-    # @return [true, false]
-    def destroyed?
-      @destroyed ||= false
-    end
-
     def destroy_child(child)
       statements.each do |statement|
         delete_statement(statement) if statement.subject == child.rdf_subject || statement.object == child.rdf_subject
@@ -391,7 +380,7 @@ module ActiveTriples
     ##
     # Indicates if the record is 'new' (has not yet been persisted).
     #
-    # @return [true, false]
+    # @return [Boolean]
     def new_record?
       not persisted?
     end
@@ -404,21 +393,7 @@ module ActiveTriples
       @marked_for_destruction
     end
 
-    protected
-
-      #Clear out any old assertions in the repository about this node or statement
-      # thus preparing to receive the updated assertions.
-      def erase_old_resource
-        if node?
-          repository.statements.each do |statement|
-            repository.send(:delete_statement, statement) if statement.subject == rdf_subject
-          end
-        else
-          repository.delete [rdf_subject, nil, nil]
-        end
-      end
-
-      private
+    private
 
       def graph
         @graph
@@ -483,23 +458,6 @@ module ActiveTriples
       end
 
       ##
-      # Return the repository (or parent) that this resource should
-      # write to when persisting.
-      #
-      # @return [RDF::Repository, ActiveTriples::Entity] the target
-      #   repository
-      def repository
-        @repository ||=
-          if self.class.repository == :parent
-            final_parent
-          else
-            repo = Repositories.repositories[self.class.repository]
-            raise RepositoryNotFoundError, "The class #{self.class} expects a repository called #{self.class.repository}, but none was declared" unless repo
-            repo
-          end
-      end
-
-      ##
       # Takes a URI or String and aggressively tries to convert it into
       # an RDF term. If a String is given, first tries to interpret it
       # as a valid URI, then tries to append it to base_uri. Finally,
@@ -535,11 +493,11 @@ module ActiveTriples
       # which can become a Resource.
       #
       # @param uri [#to_uri, String]
-      # @param vals values to pass as arguments to ::new
+      # @param args values to pass as arguments to ::new
       #
       # @return [ActiveTriples::Entity] a Resource with the given uri
-      def from_uri(uri, vals = nil)
-        new(uri, vals)
+      def from_uri(uri, *args)
+        new(uri, *args)
       end
 
       ##

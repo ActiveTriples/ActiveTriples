@@ -36,21 +36,21 @@ module ActiveTriples
     end
 
     def repository
-      configuration[:repository] || :parent
+      configuration[:repository]
     end
 
     ##
-    # API for configuring class properties on a Resource. This is an 
+    # API for configuring class properties on a Resource. This is an
     # alternative to overriding the methods in this module.
     #
     # Can configure the following values:
-    #  - base_uri (allows passing slugs to the Resource initializer 
+    #  - base_uri (allows passing slugs to the Resource initializer
     #    in place of fully qualified URIs)
     #  - rdf_label (overrides default label predicates)
     #  - type (a default rdf:type to include when initializing a
     #    new Resource)
     #  - repository (the target persist location to for the Resource)
-    # 
+    #
     #   configure base_uri: "http://oregondigital.org/resource/", repository: :default
     #
     # @param options [Hash]

@@ -20,6 +20,9 @@ module ActiveTriples
     autoload :Identifiable
     autoload :Configuration
 
+    autoload :ParentStrategy, 'active_triples/persistence_strategies/parent_strategy'
+    autoload :RepositoryStrategy, 'active_triples/persistence_strategies/repository_strategy'
+
     # deprecated class
     autoload :Term, 'active_triples/relation'
   end

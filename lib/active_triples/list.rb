@@ -126,13 +126,15 @@ module ActiveTriples
       end
 
       protected
+
       # Clear out any old assertions in the repository about this node or statement
       # thus preparing to receive the updated assertions.
       def erase_old_resource
-        RDF::List.new(rdf_subject, repository).clear
+        RDF::List.new(rdf_subject, self).clear
       end
 
       private
+
         def attributes_to_list(value, klass)
           value.each do |entry|
             item = klass.new()
