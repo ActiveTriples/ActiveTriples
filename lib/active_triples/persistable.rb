@@ -31,5 +31,21 @@ module ActiveTriples
     def delete_statement(*args)
       graph.send(:delete_statement, *args)
     end
+
+    ##
+    # Returns the persistence strategy object that handles this object's
+    # persistence
+    def persistence_strategy
+      @persistence_strategy || set_persistence_strategy(RepositoryStrategy)
+    end
+
+    ##
+    # Sets a persistence strategy
+    #
+    # @param klass [Class] A class implementing the persistence strategy
+    #   interface
+    def set_persistence_strategy(klass)
+      @persistence_strategy = klass.new(self)
+    end
   end
 end
