@@ -26,12 +26,13 @@ module ActiveTriples
       set(nil)
     end
 
-    def result
-      parent.query(:subject => rdf_subject, :predicate => predicate)
-        .each_with_object([]) do |x, collector|
-          converted_object = convert_object(x.object)
-          collector << converted_object unless converted_object.nil?
-        end
+    def result(convert=true)
+      results = parent.query(:subject => rdf_subject, :predicate => predicate)
+      convert ? convert(results) : results.to_a
+    end
+
+    def convert(results)
+      results.map { |x| convert_object(x.object) }
     end
 
     def set(values)

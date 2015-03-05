@@ -98,4 +98,30 @@ describe ActiveTriples::Term do
     end
   end
 
+  describe "#result" do
+    before do
+      class DummyResource < ActiveTriples::Resource
+        property :pref, predicate: RDF::SKOS.prefLabel
+      end
+      resource.pref = ['one', 'two']
+    end
+    after { Object.send(:remove_const, :DummyResource) }
+    let(:resource) { DummyResource.new }
+
+    let(:term) { resource.get_term([:pref]) }
+
+    context "converted" do
+      subject { term.result }
+      it { is_expected.to eq ['one', 'two'] }
+    end
+
+    context "not converted" do
+      subject { term.result(false) }
+      it "is a list of RDF::Statements" do
+        expect(subject.map(&:object)).to eq ['one', 'two']
+        expect(subject).to all(be_kind_of RDF::Statement)
+      end
+    end
+  end
+
 end
