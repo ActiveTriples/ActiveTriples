@@ -266,7 +266,7 @@ module ActiveTriples
     # @return [true, false]
     def reload
       @term_cache ||= {}
-      return false unless repository
+      return false if (node? && self.class.repository != :parent) || !repository
       self << repository.query(subject: rdf_subject)
       unless empty?
         @persisted = true
