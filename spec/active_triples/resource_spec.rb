@@ -87,6 +87,46 @@ describe ActiveTriples::Resource do
     end
   end
 
+  describe "#reload" do
+    context 'with a repository' do
+      let(:resource) { DummyResourceWithRepo.new }
+      let(:repository) { RDF::Repository.new }
+      before do
+        class DummyResourceWithRepo < ActiveTriples::Resource
+          configure repository: :default
+          property :title, predicate: RDF::DC.title
+        end
+        ActiveTriples::Repositories.add_repository :default, repository
+
+        resource.title = "bla"
+      end
+      after do
+        Object.send(:remove_const, :DummyResourceWithRepo)
+        ActiveTriples::Repositories.clear_repositories!
+      end
+
+      context "and a persisted resource" do
+        before do
+          resource.persist!
+          resource.title = 'Foo'
+          resource.reload
+        end
+        subject { resource.title }
+        it { is_expected.to eq ['Foo'] }
+      end
+
+      context "and a b-node" do
+        before do
+          expect(repository).not_to receive(:query).with(subject: resource.rdf_subject)
+          resource.reload
+          resource.title = 'Foo'
+        end
+        subject { resource.title }
+        it { is_expected.to eq ['Foo'] }
+      end
+    end
+  end
+
   describe "#persisted?" do
     context 'with a repository' do
       before do
@@ -119,6 +159,7 @@ describe ActiveTriples::Resource do
             expect(subject).to be_persisted
           end
         end
+
         context "and then reloaded" do
           before do
             subject.reload
