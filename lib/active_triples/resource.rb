@@ -329,8 +329,10 @@ module ActiveTriples
     def get_term(args)
       @term_cache ||= {}
       term = Term.new(self, args)
-      @term_cache["#{term.send(:rdf_subject)}/#{term.property}/#{term.term_args}"] ||= term
-      @term_cache["#{term.send(:rdf_subject)}/#{term.property}/#{term.term_args}"]
+      cache_key = "#{term.send(:rdf_subject)}/#{term.property}/#{term.term_args}"
+      @term_cache[cache_key] ||= term
+      @term_cache[cache_key].language = term.language
+      @term_cache[cache_key]
     end
 
     ##
