@@ -50,7 +50,9 @@ module ActiveTriples
       #
       # @return [ActiveTriples::Resource] a Resource with
       def from_uri(uri,vals=nil)
-        new(uri, vals)
+        new(uri, vals).tap do |o|
+          o.reload
+        end
       end
 
       def property(*)
@@ -83,8 +85,8 @@ module ActiveTriples
       self.parent = args.shift unless args.first.is_a?(Hash)
       set_subject!(resource_uri) if resource_uri
       super(*args, &block)
-      reload
       # Append type to graph if necessary.
+      @loaded = false
       self.get_values(:type) << self.class.type if self.class.type.kind_of?(RDF::URI) && type.empty?
     end
 
@@ -265,6 +267,7 @@ module ActiveTriples
     #
     # @return [true, false]
     def reload
+      @loaded = true
       @term_cache ||= {}
       return false unless repository
       self << repository.query(subject: rdf_subject)
@@ -286,12 +289,17 @@ module ActiveTriples
     #
     # @note This method will delete existing statements with the correct subject and predicate from the graph
     def set_value(*args)
+      reload unless loaded?
       # Add support for legacy 3-parameter syntax
       if args.length > 3 || args.length < 2
         raise ArgumentError, "wrong number of arguments (#{args.length} for 2-3)"
       end
       values = args.pop
       get_term(args).set(values)
+    end
+
+    def loaded?
+      @loaded
     end
 
     ##
@@ -327,6 +335,7 @@ module ActiveTriples
 
 
     def get_term(args)
+      reload unless loaded?
       @term_cache ||= {}
       term = Term.new(self, args)
       @term_cache["#{term.send(:rdf_subject)}/#{term.property}/#{term.term_args}"] ||= term
