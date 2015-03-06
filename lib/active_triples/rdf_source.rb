@@ -106,7 +106,7 @@ module ActiveTriples
       @graph = RDF::Graph.new(*args, &block)
       set_subject!(resource_uri) if resource_uri
 
-      reload
+      @loaded = false
       # Append type to graph if necessary.
       Array(self.class.type).each do |type|
         unless self.get_values(:type).include?(type)
@@ -285,8 +285,10 @@ module ActiveTriples
     def reload
       @relation_cache ||= {}
       return false unless repository
+      @loaded = true
       self << repository.query(subject: rdf_subject)
-      unless empty?
+      # Default types are added on initialize, so check to see if it's more than just types
+      if has_statements_besides_default_types?
         @persisted = true
       end
       true
@@ -304,12 +306,19 @@ module ActiveTriples
     #
     # @note This method will delete existing statements with the correct subject and predicate from the graph
     def set_value(*args)
+      reload unless loaded?
       # Add support for legacy 3-parameter syntax
       if args.length > 3 || args.length < 2
         raise ArgumentError, "wrong number of arguments (#{args.length} for 2-3)"
       end
       values = args.pop
       get_relation(args).set(values)
+    end
+
+    ##
+    # Returns true if the object has been loaded from the repository
+    def loaded?
+      @loaded
     end
 
     ##
@@ -345,6 +354,7 @@ module ActiveTriples
 
 
     def get_relation(args)
+      reload unless loaded?
       @relation_cache ||= {}
       rel = Relation.new(self, args)
       @relation_cache["#{rel.send(:rdf_subject)}/#{rel.property}/#{rel.rel_args}"] ||= rel
@@ -435,6 +445,12 @@ module ActiveTriples
       end
 
     private
+
+      ##
+      # Returns true if the graph has more than the default types added on initialize
+      def has_statements_besides_default_types?
+        count > query(subject: rdf_subject, predicate: RDF.type).count
+      end
 
       ##
       # Returns the properties registered and their configurations.
@@ -543,12 +559,14 @@ module ActiveTriples
       #
       # @return [ActiveTriples::Entity] a Resource with the given uri
       def from_uri(uri, vals = nil)
-        new(uri, vals)
+        new(uri, vals).tap do |o|
+          o.reload
+        end
       end
 
       ##
       # Apply a predicate mapping using a given strategy.
-      # 
+      #
       # @param [ActiveTriples::Schema, #properties] schema A schema to apply.
       # @param [#apply!] strategy A strategy for applying. Defaults
       #   to ActiveTriples::ExtensionStrategy

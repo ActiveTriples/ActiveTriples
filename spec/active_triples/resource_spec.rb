@@ -292,7 +292,7 @@ describe ActiveTriples::Resource do
 
     it "should warn when the repo doesn't exist" do
       allow(DummyLicense).to receive(:repository).and_return('repo2')
-      expect { subject }.to raise_error ActiveTriples::RepositoryNotFoundError, 'The class DummyLicense expects a repository called repo2, but none was declared'
+      expect { subject.title }.to raise_error ActiveTriples::RepositoryNotFoundError, 'The class DummyLicense expects a repository called repo2, but none was declared'
     end
   end
 
