@@ -279,7 +279,7 @@ module ActiveTriples
     #
     # @return [true, false]
     def reload
-      @term_cache ||= {}
+      @relation_cache ||= {}
       return false unless repository
       self << repository.query(subject: rdf_subject)
       unless empty?
@@ -305,7 +305,7 @@ module ActiveTriples
         raise ArgumentError, "wrong number of arguments (#{args.length} for 2-3)"
       end
       values = args.pop
-      get_term(args).set(values)
+      get_relation(args).set(values)
     end
 
     ##
@@ -328,7 +328,7 @@ module ActiveTriples
     # passing the rdf_subject to be used in th statement:
     #    get_values(uri, property)
     def get_values(*args)
-      get_term(args)
+      get_relation(args)
     end
 
     ##
@@ -336,15 +336,15 @@ module ActiveTriples
     # requested. Elements in the array may RdfResource objects or a
     # valid datatype.
     def [](uri_or_term_property)
-      get_term([uri_or_term_property])
+      get_relation([uri_or_term_property])
     end
 
 
-    def get_term(args)
-      @term_cache ||= {}
-      term = Term.new(self, args)
-      @term_cache["#{term.send(:rdf_subject)}/#{term.property}/#{term.term_args}"] ||= term
-      @term_cache["#{term.send(:rdf_subject)}/#{term.property}/#{term.term_args}"]
+    def get_relation(args)
+      @relation_cache ||= {}
+      rel = Relation.new(self, args)
+      @relation_cache["#{rel.send(:rdf_subject)}/#{rel.property}/#{rel.rel_args}"] ||= rel
+      @relation_cache["#{rel.send(:rdf_subject)}/#{rel.property}/#{rel.rel_args}"]
     end
 
     ##

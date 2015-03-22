@@ -1,23 +1,34 @@
 require 'active_support/core_ext/module/delegation'
 
 module ActiveTriples
-  class Term
+  ##
+  # A `Relation` represents the values of a specific property/predicate on an
+  # {RDFSource}. Each relation is a set ({Array}) of {RDF::Terms} that are
+  # objects in the of source's triples of the form:
+  #
+  #   <{#parent}> <{#predicate}> [term] .
+  #
+  # Relations, then, express n binary relationships between the parent node and
+  # a term.
+  #
+  # @see RDF::Term
+  class Relation
 
-    attr_accessor :parent, :value_arguments, :node_cache, :term_args
+    attr_accessor :parent, :value_arguments, :node_cache, :rel_args
     attr_reader :reflections
 
     delegate *(Array.public_instance_methods - [:send, :__send__, :__id__, :class, :object_id] + [:as_json]), :to => :result
 
-    def initialize(parent_resource, value_arguments)
-      self.parent = parent_resource
-      @reflections = parent_resource.reflections
-      self.term_args ||= {}
+    def initialize(parent_source, value_arguments)
+      self.parent = parent_source
+      @reflections = parent_source.reflections
+      self.rel_args ||= {}
       self.value_arguments = value_arguments
     end
 
     def value_arguments=(value_args)
       if value_args.kind_of?(Array) && value_args.last.kind_of?(Hash)
-        self.term_args = value_args.pop
+        self.rel_args = value_args.pop
       end
       @value_arguments = value_args
     end
@@ -36,7 +47,7 @@ module ActiveTriples
 
     def set(values)
       values = [values].compact unless values.kind_of?(Array)
-      values = values.to_a if values.class == Term
+      values = values.to_a if values.class == Relation
       empty_property
       values.each do |val|
         set_value(val)
@@ -178,13 +189,13 @@ module ActiveTriples
       end
 
       def cast?
-        return true unless property_config || (term_args && term_args[:cast])
-        return term_args[:cast] if term_args.has_key?(:cast)
+        return true unless property_config || (rel_args && rel_args[:cast])
+        return rel_args[:cast] if rel_args.has_key?(:cast)
         !!property_config[:cast]
       end
 
       def return_literals?
-        term_args && term_args[:literal]
+        rel_args && rel_args[:literal]
       end
 
       def final_parent
@@ -224,6 +235,5 @@ module ActiveTriples
           parent.rdf_subject
         end
       end
-
   end
 end

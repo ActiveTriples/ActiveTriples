@@ -8,7 +8,7 @@ module ActiveTriples
     autoload :RDFSource
     autoload :Resource
     autoload :List
-    autoload :Term
+    autoload :Relation
     autoload :Configurable
     autoload :Properties
     autoload :PropertyBuilder
