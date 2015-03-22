@@ -2,6 +2,8 @@ module ActiveTriples
   ##
   # Persistence strategy for projecting `RDFSource` to `RDF::Repositories`.
   class RepositoryStrategy
+    include PersistenceStrategy
+
     # @!attribute [r] obj
     #   the source to persist with this strategy
     attr_reader :obj
@@ -28,40 +30,13 @@ module ActiveTriples
     end
 
     ##
-    # Deletes the resource from the repository.
-    #
-    # @return [Boolean] true if the resource was sucessfully destroyed
-    def destroy
-      obj.clear
-      persist!
-      @destroyed = true
-    end
-    alias_method :destroy!, :destroy
-
-    ##
-    # Indicates if the Resource has been destroyed.
-    #
-    # @return [Boolean]
-    def destroyed?
-      @destroyed ||= false
-    end
-
-    ##
     # Persists the object to the repository
     #
-    # @return [Boolean]
+    # @return [true] returns true if the save did not error
     def persist!
       erase_old_resource
       repository << obj
       @persisted = true
-    end
-
-    ##
-    # Indicates if the resource is persisted to the repository
-    #
-    # @return [Boolean] true if persisted; else false.
-    def persisted?
-      @persisted ||= false
     end
 
     ##

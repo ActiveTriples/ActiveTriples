@@ -6,14 +6,14 @@ shared_examples 'a persistence strategy' do
   end
 
   describe '#persist!' do
-    xit 'evaluates false with no changes' do
-      expect(subject.persist!).to be_falsey
+    it 'evaluates true on success' do
+      expect(subject.persist!).to be_truthy
     end
 
     context 'with changes' do
       include_context 'with changes'
 
-      it 'evaluates false with no changes' do
+      it 'evaluates true on success' do
         expect(subject.persist!).to be_truthy
       end
     end
