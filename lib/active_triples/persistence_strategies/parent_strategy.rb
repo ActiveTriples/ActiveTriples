@@ -4,6 +4,8 @@ module ActiveTriples
   # parent source. This allows individual resources to be treated as within the
   # scope of another `RDFSource`.
   class ParentStrategy
+    include PersistenceStrategy
+
     # @!attribute [r] obj
     #   the source to persist with this strategy
     # @!attribute [r] parent
@@ -18,19 +20,7 @@ module ActiveTriples
     end
 
     def destroy
-      obj.clear
-      persist!
-      parent.destroy_child(obj) if parent
-      @destroyed = true
-    end
-    alias_method :destroy!, :destroy
-
-    ##
-    # Indicates if the Resource has been destroyed.
-    #
-    # @return [true, false]
-    def destroyed?
-      @destroyed ||= false
+      super { parent.destroy_child(obj) }
     end
 
     # Clear out any old assertions in the repository about this node or statement
@@ -79,18 +69,6 @@ module ActiveTriples
       erase_old_resource
       final_parent << obj
       @persisted = true
-    end
-
-    ##
-    # Indicates if the resource is persisted to parent
-    #
-    # @return [Boolean] true if persisted; else false.
-    def persisted?
-      @persisted ||= false
-      # The following was untested(?) logic from ActiveTriples::RDFSource
-      # what was its purpose?
-      #
-      # @persisted && parent.persisted?
     end
 
     ##
