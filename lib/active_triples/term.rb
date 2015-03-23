@@ -3,15 +3,26 @@ require 'active_support/core_ext/module/delegation'
 module ActiveTriples
   class Term
 
-    attr_accessor :parent, :value_arguments, :node_cache, :term_args
+    attr_accessor :parent, :value_arguments, :language, :node_cache, :term_args
     attr_reader :reflections
 
     delegate *(Array.public_instance_methods - [:send, :__send__, :__id__, :class, :object_id] + [:as_json]), :to => :result
 
+    ##
+    # @param parent_resource
+    # @param [Array] value_arguements a list with 1 or two elements. The first element should be a symbol or an RDF::VocabularyTerm. The second element is a Hash that can hold options.
+    #
+    # @example
+    #   Term.new(parent, [:type])
+    #   Term.new(parent, [RDF::DC.term])
+    #   Term.new(parent, [:aggregates, { cast: false, language: :en }])
     def initialize(parent_resource, value_arguments)
       self.parent = parent_resource
       @reflections = parent_resource.reflections
       self.term_args ||= {}
+      if value_arguments.is_a?(Array) && value_arguments.last.is_a?(Hash)
+        self.language = value_arguments.last.delete(:language)
+      end
       self.value_arguments = value_arguments
     end
 
@@ -29,6 +40,7 @@ module ActiveTriples
     def result
       parent.query(:subject => rdf_subject, :predicate => predicate)
         .each_with_object([]) do |x, collector|
+          next unless language_matches?(x.object)
           converted_object = convert_object(x.object)
           collector << converted_object unless converted_object.nil?
         end
@@ -107,6 +119,10 @@ module ActiveTriples
     end
 
     protected
+      def language_matches?(obj)
+        return true unless self.language
+        obj.respond_to?(:language) && obj.language && obj.language.to_sym == self.language.to_sym
+      end
 
       def node_cache
         @node_cache ||= {}

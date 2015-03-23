@@ -9,7 +9,7 @@ describe ActiveTriples::Term do
     subject { described_class.new(parent_resource, double("value args") ) }
 
     context "when term has 0 value arguments" do
-      before { subject.value_arguments = double(length: 0) }
+      before { subject.value_arguments = double(length: 0, last: nil) }
       it "should raise an error" do
         expect { subject.send(:rdf_subject) }.to raise_error
       end

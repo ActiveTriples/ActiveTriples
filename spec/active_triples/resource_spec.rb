@@ -606,6 +606,37 @@ describe ActiveTriples::Resource do
       expect(subject.get_values(RDF::URI("http://opaquenamespace.org/jokes"),:title)).to eq ["Comet in Moominland"]
     end
 
+
+    context "when a language option is passed" do
+      context "and the language exists" do
+        before do
+          subject.title = [RDF::Literal.new("Comet in Moominland", language: :en), RDF::Literal.new("Finn Family Moomintroll", language: :fr), "Test"]
+        end
+        it "should return values that match that language" do
+          expect(subject.get_values(RDF::DC.title, language: :en)).to eq ["Comet in Moominland"]
+        end
+      end
+      context "and the language doesn't exist" do
+        before do
+          subject.title = [RDF::Literal.new("Finn Family Moomintroll", language: :fr), "Test"]
+        end
+        it "should return a blank array" do
+          expect(subject.get_values(RDF::DC.title, language: :en)).to eq []
+        end
+      end
+    end
+
+    context "when a language option is not passed" do
+      context "and there are literals with a language set" do
+        before do
+          subject.title = [RDF::Literal.new("Comet in Moominland", language: :en), RDF::Literal.new("Finn Family Moomintroll", language: :fr), "Test"]
+        end
+        it "should return them all as strings" do
+          expect(subject.get_values(:title)).to eq ["Comet in Moominland", "Finn Family Moomintroll", "Test"]
+        end
+      end
+    end
+
     context "literals are set" do
       let(:literal1) { RDF::Literal.new("test", :language => :en) }
       let(:literal2) { RDF::Literal.new("test", :language => :fr) }
