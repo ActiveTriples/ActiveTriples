@@ -17,6 +17,9 @@ module ActiveTriples
     autoload :NodeConfig
     autoload :NestedAttributes
     autoload :Identifiable
+
+    # deprecated class
+    autoload :Term, 'active_triples/relation'
   end
 
   # Raised when a declared repository doesn't have a definition
