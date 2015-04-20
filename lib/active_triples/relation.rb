@@ -52,7 +52,7 @@ module ActiveTriples
       values.each do |val|
         set_value(val)
       end
-      parent.persist! if parent.class.repository == :parent && parent.send(:repository)
+      parent.persist! if parent.persistence_strategy.is_a? ParentStrategy
     end
 
     def empty_property
@@ -150,7 +150,7 @@ module ActiveTriples
           resource.parent = parent
         end
         self.node_cache[resource.rdf_subject] = (object ? object : resource)
-        resource.persist! if resource.class.repository == :parent
+        resource.persist! if resource.persistence_strategy.is_a? ParentStrategy
       end
 
       def predicate

@@ -57,6 +57,12 @@ module ActiveTriples
     alias_method :destroy!, :destroy
 
     ##
+    # @return [Boolean] true if this item is destroyed
+    def destroyed?
+      persistence_strategy.destroyed?
+    end
+
+    ##
     # Sends a persistence message to the persistence_startegy, saving the
     # RDFSource.
     #
@@ -77,7 +83,7 @@ module ActiveTriples
     # Indicates if the resource is persisted.
     #
     # @see #persist
-    # @return [true, false]
+    # @return [Boolean]
     def persisted?
       persistence_strategy.persisted?
     end
