@@ -11,7 +11,7 @@ module ActiveTriples
     include Properties
     include Reflection
 
-    delegate :rdf_subject, :mark_for_destruction, :marked_for_destruction?, :set_value, :get_values, :parent, :type, :dump, :attributes=, to: :resource
+    delegate :rdf_subject, :mark_for_destruction, :marked_for_destruction?, :set_value, :get_values, :parent, :persist, :persist!, :type, :dump, :attributes=, to: :resource
     alias_method :to_ary, :to_a
 
     class << self
@@ -27,8 +27,8 @@ module ActiveTriples
 
     def initialize(*args)
       super
-      parent = graph.parent if graph.respond_to? :parent
-      @graph = ListResource.new(subject) << graph unless graph.kind_of? RDFSource
+      @graph = ListResource.new(subject) unless
+        graph.kind_of? RDFSource
       graph << parent if parent
       graph.list = self
       graph.reload
@@ -36,13 +36,10 @@ module ActiveTriples
 
     def clear
       graph.send :erase_old_resource
-      parent = graph.parent
       old_subject = subject
       super
       @subject = old_subject
       @graph = ListResource.new(subject)
-      graph << parent if parent
-      graph.parent = parent
       graph.list = self
     end
 
@@ -180,7 +177,12 @@ module ActiveTriples
         return self
       end
       super
-      resource << value if value.kind_of? RDFSource
+      if value.kind_of? RDFSource
+        resource << value
+        value.set_persistence_strategy(ParentStrategy)
+        value.persistence_strategy.parent = resource
+        value.persist!
+      end
     end
   end
 end
