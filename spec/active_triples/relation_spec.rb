@@ -1,14 +1,14 @@
 require 'spec_helper'
 require 'rdf/isomorphic'
 
-describe ActiveTriples::Term do
+describe ActiveTriples::Relation do
 
   describe "#rdf_subject" do
     let(:parent_resource) { double("parent resource", reflections: {}) }
 
     subject { described_class.new(parent_resource, double("value args") ) }
 
-    context "when term has 0 value arguments" do
+    context "when relation has 0 value arguments" do
       before { subject.value_arguments = double(length: 0) }
       it "should raise an error" do
         expect { subject.send(:rdf_subject) }.to raise_error
@@ -26,13 +26,13 @@ describe ActiveTriples::Term do
         expect { subject.rdf_subject }.to raise_error NoMethodError
       end
     end
-    context "when term has 2 value arguments" do
+    context "when relation has 2 value arguments" do
       before { subject.value_arguments = double(length: 2, first: "first") }
       it "should return the first value argument" do
         expect(subject.send(:rdf_subject) ).to eq "first"
       end
     end
-    context "when term has 3 value arguments" do
+    context "when relation has 3 value arguments" do
       before { subject.value_arguments = double(length: 3) }
       it "should raise an error" do
         expect { subject.send(:rdf_subject)  }.to raise_error
@@ -69,14 +69,15 @@ describe ActiveTriples::Term do
       after { Object.send(:remove_const, :DummyResource) }
       let(:resource) { DummyResource.new }
       context "and the resource class does not include RDF::Isomorphic" do
-        before { class DummyResource < ActiveTriples::Resource; end }
+        before { class DummyResource; include ActiveTriples::RDFSource; end }
         it "should be false" do
           expect(subject.send(:valid_datatype?, resource)).to be false
         end
       end
       context "and the resource class includes RDF:Isomorphic" do
         before do
-          class DummyResource < ActiveTriples::Resource
+          class DummyResource
+            include ActiveTriples::RDFSource
             include RDF::Isomorphic
           end
         end
@@ -86,7 +87,8 @@ describe ActiveTriples::Term do
       end
       context "and the resource class includes RDF::Isomorphic and aliases :== to :isomorphic_with?" do
         before do
-          class DummyResource < ActiveTriples::Resource
+          class DummyResource
+            include ActiveTriples::RDFSource
             include RDF::Isomorphic
             alias_method :==, :isomorphic_with?
           end

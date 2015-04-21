@@ -5,9 +5,10 @@ require 'active_support'
 module ActiveTriples
   extend ActiveSupport::Autoload
   eager_autoload do
+    autoload :RDFSource
     autoload :Resource
     autoload :List
-    autoload :Term
+    autoload :Relation
     autoload :Configurable
     autoload :Properties
     autoload :PropertyBuilder
@@ -16,6 +17,9 @@ module ActiveTriples
     autoload :NodeConfig
     autoload :NestedAttributes
     autoload :Identifiable
+
+    # deprecated class
+    autoload :Term, 'active_triples/relation'
   end
 
   # Raised when a declared repository doesn't have a definition
