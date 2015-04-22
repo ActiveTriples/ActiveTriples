@@ -43,7 +43,6 @@ module ActiveTriples
     include Reflection
     include RDF::Value
     include RDF::Countable
-    include RDF::Durable
     include RDF::Enumerable
     include RDF::Queryable
     include RDF::Mutable
@@ -108,7 +107,8 @@ module ActiveTriples
 
       reload
       # Append type to graph if necessary.
-      self.get_values(:type) << self.class.type if self.class.type.kind_of?(RDF::URI) && type.empty?
+      self.get_values(:type) << self.class.type if
+        self.class.type.kind_of?(RDF::URI) && type.empty?
     end
 
     def final_parent
@@ -517,7 +517,7 @@ module ActiveTriples
       # @return [RDF::Resource] A term
       # @raise [RuntimeError] no valid RDF term could be built
       def get_uri(uri_or_str)
-        return uri_or_str.to_uri if uri_or_str.respond_to? :to_uri
+        return uri_or_str.to_term if uri_or_str.respond_to? :to_term
         return uri_or_str if uri_or_str.is_a? RDF::Node
         uri_or_node = RDF::Resource.new(uri_or_str)
         return uri_or_node if uri_or_node.valid?

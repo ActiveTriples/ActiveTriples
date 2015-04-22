@@ -42,7 +42,7 @@ module ActiveTriples
         .each_with_object([]) do |x, collector|
           converted_object = convert_object(x.object)
           collector << converted_object unless converted_object.nil?
-        end
+      end
     end
 
     def set(values)
@@ -133,8 +133,9 @@ module ActiveTriples
           return
         end
         val = val.to_uri if val.respond_to? :to_uri
-        raise "value must be an RDF URI, Node, Literal, or a valid datatype. See RDF::Literal.\n\tYou provided #{val.inspect}" unless
-          val.kind_of? RDF::Value or val.kind_of? RDF::Literal
+        raise "value must be an RDF URI, Node, Literal, or a valid datatype." \
+              " See RDF::Literal.\n\tYou provided #{val.inspect}" unless
+          val.kind_of? RDF::Term
         parent.insert [rdf_subject, predicate, val]
       end
 
@@ -163,6 +164,8 @@ module ActiveTriples
       # Converts an object to the appropriate class.
       def convert_object(value)
         case value
+        when RDFSource
+          value
         when RDF::Literal
           return_literals? ? value : value.object
         when RDF::Resource

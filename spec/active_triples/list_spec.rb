@@ -3,7 +3,6 @@ require 'nokogiri'
 require 'linkeddata'
 
 describe ActiveTriples::List do
-
   subject { ActiveTriples::List.new }
 
   context 'when empty' do
