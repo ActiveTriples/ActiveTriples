@@ -85,13 +85,14 @@ module ActiveTriples
     ##
     # Find an AF::Rdf::Resource from the value returned by RDF::List
     def node_from_value(value)
-      if value.kind_of? RDF::Resource
-        type_uri = resource.query([value, RDF.type, nil]).to_a.first.try(:object)
-        klass = ActiveTriples::Resource.type_registry[type_uri]
-        klass ||= Resource
-        return klass.from_uri(value,resource)
-      end
-      value
+      return value unless value.is_a? RDF::Resource
+      return value if value.is_a? RDFSource
+
+      type_uri = resource.query([value, RDF.type, nil]).to_a.first.try(:object)
+      klass = Resource.type_registry[type_uri]
+      klass ||= Resource
+
+      klass.from_uri(value, resource)
     end
 
     ##

@@ -60,7 +60,8 @@ module ActiveTriples
       #
       # @return [ActiveTriples::NodeConfig]
       def config_for_term_or_uri(term)
-        return properties[term.to_s] unless term.kind_of? RDF::Resource
+        return properties[term.to_s] unless
+          term.is_a?(RDF::Resource) && !term.is_a?(RDFSource)
         properties.each_value { |v| return v if v.predicate == term.to_uri }
       end
 
