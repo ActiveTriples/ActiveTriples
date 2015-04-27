@@ -18,6 +18,7 @@ module ActiveTriples
     autoload :NodeConfig
     autoload :NestedAttributes
     autoload :Identifiable
+    autoload :Configuration
 
     autoload :PersistenceStrategy,
              'active_triples/persistence_strategies/persistence_strategy'

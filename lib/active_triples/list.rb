@@ -75,18 +75,14 @@ module ActiveTriples
       node_from_value(super)
     end
 
-    def shift
-      node_from_value(super)
-    end
-
     ##
-    # Find an AF::Rdf::Resource from the value returned by RDF::List
+    # find an AF::Rdf::Resource from the value returned by RDF::List
     def node_from_value(value)
       return value unless value.is_a? RDF::Resource
       return value if value.is_a? RDFSource
 
       type_uri = resource.query([value, RDF.type, nil]).to_a.first.try(:object)
-      klass = Resource.type_registry[type_uri]
+      klass = RDFSource.type_registry[type_uri]
       klass ||= Resource
 
       klass.from_uri(value, resource)
