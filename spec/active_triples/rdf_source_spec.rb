@@ -29,4 +29,28 @@ describe ActiveTriples::RDFSource do
     let(:mutable) { enumerable }
     it_behaves_like 'an RDF::Mutable'
   end
+
+  describe 'validation' do
+    it { is_expected.to be_valid }
+
+    it 'is valid with valid statements' do
+      subject.insert(*RDF::Spec.quads)
+      expect(subject).to be_valid
+    end
+
+    context 'with invalid statement' do
+      before { subject << RDF::Statement.from([nil, nil, nil]) }
+
+      it 'is invalid' do
+        expect(subject).to be_invalid
+      end
+
+      it 'adds error message' do
+        expect { subject.valid? }
+          .to change { subject.errors.messages }
+               .from({})
+               .to({ base: ["The underlying graph must be valid"] })
+      end
+    end
+  end
 end
