@@ -86,7 +86,7 @@ module ActiveTriples
       return value if value.is_a? RDFSource
 
       type_uri = resource.query([value, RDF.type, nil]).to_a.first.try(:object)
-      klass = Resource.type_registry[type_uri]
+      klass = RDFSource.type_registry[type_uri]
       klass ||= Resource
 
       klass.from_uri(value, resource)
