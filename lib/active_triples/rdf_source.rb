@@ -70,14 +70,6 @@ module ActiveTriples
     end
 
     ##
-    # Specifies whether the object is currently writable.
-    #
-    # @return [true, false]
-    def writable?
-      !frozen?
-    end
-
-    ##
     # Initialize an instance of this resource class. Defaults to a
     # blank node subject. In addition to RDF::Graph parameters, you
     # can pass in a URI and/or a parent to build a resource from a
