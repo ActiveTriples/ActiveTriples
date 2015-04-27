@@ -42,11 +42,7 @@ module ActiveTriples
     include Properties
     include Reflection
     include RDF::Value
-    include RDF::Countable
-    include RDF::Enumerable
-    include RDF::Durable
     include RDF::Queryable
-    include RDF::Mutable
     include ActiveModel::Validations
     include ActiveModel::Conversion
     include ActiveModel::Serialization
