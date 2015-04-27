@@ -46,6 +46,7 @@ module ActiveTriples
     include RDF::Enumerable
     include RDF::Durable
     include RDF::Queryable
+    include RDF::Mutable
     include ActiveModel::Validations
     include ActiveModel::Conversion
     include ActiveModel::Serialization
@@ -62,7 +63,12 @@ module ActiveTriples
       extend ActiveModel::Translation
       extend ActiveModel::Callbacks
 
-      delegate :each, :load!, :count, :to => :graph
+      validate do
+        errors.add(:base, 'The underlying graph must be valid') unless
+          graph.valid?
+      end
+
+      delegate :each, :load!, :count, :has_statement?, :to=> :graph
 
       define_model_callbacks :persist
     end
