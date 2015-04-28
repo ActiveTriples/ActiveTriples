@@ -31,6 +31,9 @@ module ActiveTriples
   # @see http://www.w3.org/TR/ldp/#dfn-linked-data-platform-rdf-source an
   #   example of the RDF source concept as defined in the LDP specification
   #
+  # An `RDFSource` is an {RDF::Term}---it can be used as a subject, predicate,
+  # object, or context in an {RDF::Statement}.
+  #
   # @see ActiveModel
   # @see RDF::Resource
   # @see RDF::Queryable
@@ -41,6 +44,7 @@ module ActiveTriples
     include Persistable
     include Properties
     include Reflection
+    # include RDF::Term
     include RDF::Value
     include RDF::Queryable
     include ActiveModel::Validations
@@ -60,6 +64,8 @@ module ActiveTriples
       extend ActiveModel::Callbacks
 
       validate do
+        errors.add(:rdf_subject, 'The #rdf_subject Term must be valid') unless
+          rdf_subject.valid?
         errors.add(:base, 'The underlying graph must be valid') unless
           graph.valid?
       end
@@ -128,6 +134,8 @@ module ActiveTriples
       hash
     end
 
+    ##
+    # @return [Class] gives `self#class`
     def reflections
       self.class
     end
@@ -167,8 +175,12 @@ module ActiveTriples
     end
 
     ##
-    # @return [RDF::URI, RDF::Node] a URI or Node which the resource's
-    #   properties are about.
+    # Gives the representation of this
+    #
+    # @return [RDF::URI, RDF::Node] the URI that identifies this `RDFSource`;
+    #   or a bnode identifier
+    #
+    # @see RDF::Term#to_term
     def rdf_subject
       @rdf_subject ||= RDF::Node.new
     end
@@ -182,11 +194,22 @@ module ActiveTriples
     end
 
     ##
-    # @return [Boolean]
+    # @return [Boolean] true if the Term is a node
+    #
     # @see RDF::Term#node?
     def node?
       rdf_subject.node?
     end
+
+    ##
+    # @return [Boolean] true if the Term is a uri
+    #
+    # @see RDF::Term#uri?
+    def uri?
+      rdf_subject.uri?
+    end
+
+    def term?; true; end
 
     ##
     # @return [String, nil] the base URI the resource will use when
@@ -215,14 +238,6 @@ module ActiveTriples
         return values unless values.empty?
       end
       node? ? [] : [rdf_subject.to_s]
-    end
-
-    ##
-    # Lists fields registered as properties on the object.
-    #
-    # @return [Array<Symbol>] the list of registered properties.
-    def fields
-      properties.keys.map(&:to_sym).reject{|x| x == :type}
     end
 
     ##
@@ -362,6 +377,14 @@ module ActiveTriples
       ######
       ## BEGIN Move these methods to `Properties`
       ######
+
+      ##
+      # Lists fields registered as properties on the object.
+      #
+      # @return [Array<Symbol>] the list of registered properties.
+      def fields
+        properties.keys.map(&:to_sym).reject{ |x| x == :type }
+      end
 
       ##
       # Returns the properties registered and their configurations.
