@@ -168,7 +168,7 @@ module ActiveTriples
       if empty?
         @graph.type = RDF.List
         resource.set_value(RDF.first, value)
-        resource.insert([subject, RDF.rest, RDF.nil])
+        resource.insert([subject.to_term, RDF.rest, RDF.nil])
         resource << value if value.kind_of? RDFSource
         return self
       end

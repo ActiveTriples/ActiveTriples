@@ -6,7 +6,10 @@ shared_examples_for "an ActiveModel" do
       expect(subject).to respond_to :to_key
     end
 
-    it 'should return nil when #persisted? is false ' do
+    ##
+    # @todo FIXME: this is wrong according to
+    #   http://api.rubyonrails.org/classes/ActiveModel/Conversion.html#method-i-to_key
+    xit 'should return nil when #persisted? is false ' do
       def subject.persisted?() false end
       expect(subject.to_key).to eq nil
     end
@@ -73,8 +76,8 @@ shared_examples_for "an ActiveModel" do
     end
   end
 
-  private 
-  
+  private
+
     def match_boolean(result)
       result == true || result == false
     end

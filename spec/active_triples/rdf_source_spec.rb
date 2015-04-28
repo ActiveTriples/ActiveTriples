@@ -6,8 +6,10 @@ require 'rdf/spec/mutable'
 
 describe ActiveTriples::RDFSource do
   before { @enumerable = subject }
+  let(:source_class) { Class.new { include ActiveTriples::RDFSource } }
+  let(:uri) { RDF::URI('http://example.org/moomin') }
 
-  subject { Class.new { include ActiveTriples::RDFSource }.new }
+  subject { source_class.new }
 
   describe 'RDF interface' do
     it { is_expected.to be_enumerable }
@@ -17,7 +19,7 @@ describe ActiveTriples::RDFSource do
     # it { is_expected.to be_a_term }
     # it { is_expected.to be_a_resource }
 
-    let(:enumerable) { Class.new { include ActiveTriples::RDFSource }.new }
+    let(:enumerable) { source_class.new }
     it_behaves_like 'an RDF::Enumerable'
 
     let(:queryable) { enumerable }
@@ -28,6 +30,100 @@ describe ActiveTriples::RDFSource do
 
     let(:mutable) { enumerable }
     it_behaves_like 'an RDF::Mutable'
+
+    describe 'Term behavior' do
+      it { is_expected.to be_term }
+
+      it 'is termified when added to an Statement' do
+        expect(RDF::Statement(subject, nil, nil).subject).to eq subject
+      end
+
+      context 'as a node' do
+        describe '#uri?' do
+          it { is_expected.not_to be_uri }
+        end
+
+        describe '#node?' do
+          it { is_expected.to be_node }
+        end
+
+        describe '#to_term' do
+          its(:to_term) { is_expected.to be_node }
+        end
+
+        describe '#to_base' do
+          its(:to_base) { is_expected.to be_a String }
+          its(:to_base) { is_expected.to eq subject.to_term.to_base }
+        end
+      end
+
+      context 'as a uri' do
+        subject { source_class.new(uri) }
+
+        describe '#uri?' do
+          it { is_expected.to be_uri }
+        end
+
+        describe '#node?' do
+          it { is_expected.not_to be_node }
+        end
+
+        describe '#to_term' do
+          its(:to_term) { is_expected.to be_uri }
+        end
+
+        describe '#to_uri' do
+          its(:to_uri) { is_expected.to be_uri }
+        end
+
+        describe '#to_base' do
+          its(:to_base) { is_expected.to be_a String }
+          its(:to_base) { is_expected.to eq subject.to_term.to_base }
+        end
+      end
+    end
+  end
+
+  describe '#==' do
+    shared_examples 'Term equality' do
+      it 'equals itself' do
+        expect(subject).to eq subject
+      end
+
+      it 'equals its own Term' do
+        expect(subject).to eq subject.to_term
+      end
+
+      it 'is symmetric' do
+        expect(subject.to_term).to eq subject
+      end
+
+      it 'does not equal another term' do
+        expect(subject).not_to eq RDF::Node.new
+      end
+    end
+
+    include_examples 'Term equality'
+
+    context 'with a URI' do
+      include_examples 'Term equality' do
+        subject { source_class.new(uri) }
+      end
+    end
+  end
+
+  describe '#id' do
+  end
+
+  describe '#rdf_subject' do
+    its(:rdf_subject) { is_expected.to be_a_node }
+
+    context 'with a URI' do
+      subject { source_class.new(uri) }
+
+      its(:rdf_subject) { is_expected.to be_a_uri }
+      its(:rdf_subject) { is_expected.to eq uri }
+    end
   end
 
   describe 'validation' do
@@ -36,6 +132,19 @@ describe ActiveTriples::RDFSource do
     it 'is valid with valid statements' do
       subject.insert(*RDF::Spec.quads)
       expect(subject).to be_valid
+    end
+
+    it 'is valid with valid URI' do
+      source_class.new(uri)
+      expect(subject).to be_valid
+    end
+
+    context 'with invalid URI' do
+      before do
+        allow(subject).to receive(:rdf_subject).and_return(RDF::URI('----'))
+      end
+
+      it { is_expected.not_to be_valid }
     end
 
     context 'with invalid statement' do

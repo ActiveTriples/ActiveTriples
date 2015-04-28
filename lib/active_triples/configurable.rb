@@ -53,6 +53,7 @@ module ActiveTriples
     #    new RDFSource)
     #  - repository (the target persist location to for the RDFSource)
     #
+    # @example
     #   configure base_uri: "http://oregondigital.org/resource/", repository: :default
     #
     # @param options [Hash]

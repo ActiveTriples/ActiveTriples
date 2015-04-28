@@ -4,7 +4,9 @@ describe ActiveTriples::RepositoryStrategy do
   subject { described_class.new(rdf_source) }
   let(:rdf_source) { ActiveTriples::Resource.new }
 
-  let(:statement) { RDF::Statement.new(rdf_source, RDF::DC.title, 'moomin') }
+  let(:statement) do
+    RDF::Statement.new(rdf_source.to_term, RDF::DC.title, 'moomin')
+  end
 
   it_behaves_like 'a persistence strategy'
 

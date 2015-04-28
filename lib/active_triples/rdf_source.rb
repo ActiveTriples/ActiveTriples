@@ -31,6 +31,11 @@ module ActiveTriples
   # @see http://www.w3.org/TR/ldp/#dfn-linked-data-platform-rdf-source an
   #   example of the RDF source concept as defined in the LDP specification
   #
+  # An `RDFSource` is an {RDF::Term}---it can be used as a subject, predicate,
+  # object, or context in an {RDF::Statement}.
+  #
+  # @todo complete RDF::Value/RDF::Term/RDF::Resource interfaces 
+  #
   # @see ActiveModel
   # @see RDF::Resource
   # @see RDF::Queryable
@@ -60,14 +65,17 @@ module ActiveTriples
       extend ActiveModel::Callbacks
 
       validate do
+        errors.add(:rdf_subject, 'The #rdf_subject Term must be valid') unless
+          rdf_subject.valid?
         errors.add(:base, 'The underlying graph must be valid') unless
           graph.valid?
       end
 
-      delegate :each, :load!, :count, :has_statement?, :to=> :graph
-
       define_model_callbacks :persist
     end
+
+    delegate :each, :load!, :count, :has_statement?, :to => :graph
+    delegate :to_base, :term?, :escape, :to => :to_term
 
     ##
     # Initialize an instance of this resource class. Defaults to a
@@ -102,6 +110,20 @@ module ActiveTriples
     end
 
     ##
+    # Compares self to other for {RDF::Term} equality.
+    #
+    # Delegates the check to `other#==` passing it the term version of `self`.
+    #
+    # @param other [Object]
+    #
+    # @see RDF::Term#==
+    # @see RDF::Node#==
+    # @see RDF::URI#==
+    def ==(other)
+      other == to_term
+    end
+
+    ##
     # Delegate parent to the persistence strategy if possible
     #
     # @todo establish a better pattern for this. `#parent` has been a public method
@@ -132,6 +154,8 @@ module ActiveTriples
       hash
     end
 
+    ##
+    # @return [Class] gives `self#class`
     def reflections
       self.class
     end
@@ -171,25 +195,52 @@ module ActiveTriples
     end
 
     ##
-    # @return [RDF::URI, RDF::Node] a URI or Node which the resource's
-    #   properties are about.
+    # Gives the representation of this
+    #
+    # @return [RDF::URI, RDF::Node] the URI that identifies this `RDFSource`;
+    #   or a bnode identifier
+    #
+    # @see RDF::Term#to_term
     def rdf_subject
       @rdf_subject ||= RDF::Node.new
     end
     alias_method :to_term, :rdf_subject
 
     ##
-    # @return [String, nil] A string identifier for the resource; nil if the
+    # @return [String] A string identifier for the resource; nil if the
     #   resource is a node
-    def id
-      node? ? nil : rdf_subject.to_s
+    def humanize
+      node? ? '' : rdf_subject.to_s
     end
 
     ##
-    # @return [Boolean]
+    # @return [RDF::URI] the uri
+    def to_uri
+      uri? ? rdf_subject : NullURI.new
+    end
+
+    ##
+    # @return [String]
+    #
+    # @see RDF::Node#id
+    def id
+      node? ? rdf_subject.id : rdf_subject.to_s
+    end
+
+    ##
+    # @return [Boolean] true if the Term is a node
+    #
     # @see RDF::Term#node?
     def node?
       rdf_subject.node?
+    end
+
+    ##
+    # @return [Boolean] true if the Term is a uri
+    #
+    # @see RDF::Term#uri?
+    def uri?
+      rdf_subject.uri?
     end
 
     ##
@@ -219,14 +270,6 @@ module ActiveTriples
         return values unless values.empty?
       end
       node? ? [] : [rdf_subject.to_s]
-    end
-
-    ##
-    # Lists fields registered as properties on the object.
-    #
-    # @return [Array<Symbol>] the list of registered properties.
-    def fields
-      properties.keys.map(&:to_sym).reject{|x| x == :type}
     end
 
     ##
@@ -366,6 +409,14 @@ module ActiveTriples
       ######
       ## BEGIN Move these methods to `Properties`
       ######
+
+      ##
+      # Lists fields registered as properties on the object.
+      #
+      # @return [Array<Symbol>] the list of registered properties.
+      def fields
+        properties.keys.map(&:to_sym).reject{ |x| x == :type }
+      end
 
       ##
       # Returns the properties registered and their configurations.

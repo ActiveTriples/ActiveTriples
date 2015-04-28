@@ -19,13 +19,13 @@ module ActiveTriples
     # Clear out any old assertions in the repository about this node or statement
     # thus preparing to receive the updated assertions.
     def erase_old_resource
-      if obj.rdf_subject.node?
+      if obj.node?
         repository.statements.each do |statement|
           repository.send(:delete_statement, statement) if
-            statement.subject == obj.rdf_subject
+            statement.subject == obj
         end
       else
-        repository.delete [obj.rdf_subject, nil, nil]
+        repository.delete [obj.to_term, nil, nil]
       end
     end
 
@@ -44,7 +44,7 @@ module ActiveTriples
     #
     # @return [Boolean]
     def reload
-      obj << repository.query(subject: obj.rdf_subject)
+      obj << repository.query(subject: obj)
       @persisted = true unless obj.empty?
       true
     end

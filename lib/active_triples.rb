@@ -6,6 +6,7 @@ module ActiveTriples
   extend ActiveSupport::Autoload
   eager_autoload do
     autoload :RDFSource
+
     autoload :Resource
     autoload :List
     autoload :Relation
@@ -20,6 +21,7 @@ module ActiveTriples
     autoload :Identifiable
     autoload :Configuration
 
+    # persistence strategies
     autoload :PersistenceStrategy,
              'active_triples/persistence_strategies/persistence_strategy'
     autoload :ParentStrategy,
