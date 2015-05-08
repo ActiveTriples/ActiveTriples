@@ -10,6 +10,7 @@ module ActiveTriples
     autoload :List
     autoload :Relation
     autoload :Configurable
+    autoload :Persistable
     autoload :Properties
     autoload :PropertyBuilder
     autoload :Reflection
@@ -17,6 +18,12 @@ module ActiveTriples
     autoload :NodeConfig
     autoload :NestedAttributes
     autoload :Identifiable
+    autoload :PersistenceStrategy,
+             'active_triples/persistence_strategies/persistence_strategy'
+    autoload :ParentStrategy,
+             'active_triples/persistence_strategies/parent_strategy'
+    autoload :RepositoryStrategy,
+             'active_triples/persistence_strategies/repository_strategy'
 
     # deprecated class
     autoload :Term, 'active_triples/relation'

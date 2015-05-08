@@ -3,7 +3,6 @@ require 'nokogiri'
 require 'linkeddata'
 
 describe ActiveTriples::List do
-
   subject { ActiveTriples::List.new }
 
   context 'when empty' do
@@ -258,9 +257,6 @@ END
 
         it "should be a valid list" do
           list << "Val"
-          # TODO this is a workaround for https://github.com/projecthydra/active_fedora/issues/444
-          # remove the following line when #444 is closed.
-          list.resource.persist!
           expect(RDF::List.new(list.rdf_subject, subject)).to be_valid
         end
       end
