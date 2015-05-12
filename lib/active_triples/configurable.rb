@@ -25,7 +25,7 @@ module ActiveTriples
     end
 
     def configuration
-      @configuration ||= {}
+      @configuration ||= Configuration.new
     end
 
     ##
@@ -55,15 +55,11 @@ module ActiveTriples
     #
     # @param options [Hash]
     def configure(options = {})
-      options = Hash[options.slice(:base_uri, :rdf_label, :type, :repository).map do |key, value|
+      options = options.map do |key, value|
         if self.respond_to?("transform_#{key}")
           value = self.__send__("transform_#{key}", value)
         end
         [key, value]
-      end]
-      if options[:type]
-        configuration[:type] ||= []
-        options[:type] = Array(configuration[:type]) | Array(options[:type])
       end
       @configuration = configuration.merge(options)
     end

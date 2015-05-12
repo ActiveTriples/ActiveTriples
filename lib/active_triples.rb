@@ -17,6 +17,7 @@ module ActiveTriples
     autoload :NodeConfig
     autoload :NestedAttributes
     autoload :Identifiable
+    autoload :Configuration
 
     # deprecated class
     autoload :Term, 'active_triples/relation'
