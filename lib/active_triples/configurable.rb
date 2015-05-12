@@ -12,17 +12,20 @@ module ActiveTriples
   # Available properties are base_uri, rdf_label, type, and repository
   module Configurable
     extend Deprecation
-
     def base_uri
-      nil
+      configuration[:base_uri]
     end
 
     def rdf_label
-      nil
+      configuration[:rdf_label]
     end
 
     def type
-      nil
+      configuration[:type]
+    end
+
+    def configuration
+      @configuration ||= {}
     end
 
     ##
@@ -33,7 +36,7 @@ module ActiveTriples
     end
 
     def repository
-      :parent
+      configuration[:repository] || :parent
     end
 
     ##
@@ -52,19 +55,17 @@ module ActiveTriples
     #
     # @param options [Hash]
     def configure(options = {})
-      {
-        base_uri: options[:base_uri],
-        rdf_label: options[:rdf_label],
-        type: options[:type],
-        repository: options[:repository]
-      }.each do |name, value|
-        if value
-          value = self.send("transform_#{name}", value) if self.respond_to?("transform_#{name}")
-          define_singleton_method(name) do
-            value
-          end
+      options = Hash[options.slice(:base_uri, :rdf_label, :type, :repository).map do |key, value|
+        if self.respond_to?("transform_#{key}")
+          value = self.__send__("transform_#{key}", value)
         end
+        [key, value]
+      end]
+      if options[:type]
+        configuration[:type] ||= []
+        options[:type] = Array(configuration[:type]) | Array(options[:type])
       end
+      @configuration = configuration.merge(options)
     end
 
     def transform_type(value)

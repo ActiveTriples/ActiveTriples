@@ -9,6 +9,9 @@ describe ActiveTriples::Configurable do
     Object.send(:remove_const, "DummyConfigurable")
   end
 
+  it "should be okay if not configured" do
+    expect(DummyConfigurable.type).to eq nil
+  end
   describe '#configure' do
     before do
       DummyConfigurable.configure base_uri: "http://example.org/base", type: RDF::RDFS.Class, rdf_label: RDF::DC.title
@@ -23,7 +26,11 @@ describe ActiveTriples::Configurable do
     end
 
     it 'should set a type' do
-      expect(DummyConfigurable.type).to eq RDF::RDFS.Class
+      expect(DummyConfigurable.type).to eq [RDF::RDFS.Class]
+    end
+    it "should be able to set multiple types" do
+      DummyConfigurable.configure type: RDF::RDFS.Container
+      expect(DummyConfigurable.type).to eq [RDF::RDFS.Class, RDF::RDFS.Container]
     end
   end
 
@@ -32,7 +39,7 @@ describe ActiveTriples::Configurable do
       expect(DummyConfigurable).to receive(:configure).with(type: RDF::RDFS.Class).and_call_original
       expect(Deprecation).to receive(:warn)
       DummyConfigurable.rdf_type(RDF::RDFS.Class)
-      expect(DummyConfigurable.type).to eq RDF::RDFS.Class
+      expect(DummyConfigurable.type).to eq [RDF::RDFS.Class]
     end
   end
 end
