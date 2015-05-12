@@ -649,7 +649,7 @@ describe ActiveTriples::Resource do
 
   describe '#type' do
     it 'should return the type configured on the parent class' do
-      expect(subject.type).to eq [DummyResource.type]
+      expect(subject.type).to eq DummyResource.type
     end
 
     it 'should set the type' do

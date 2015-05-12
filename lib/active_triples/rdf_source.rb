@@ -108,7 +108,11 @@ module ActiveTriples
 
       reload
       # Append type to graph if necessary.
-      self.get_values(:type) << self.class.type if self.class.type.kind_of?(RDF::URI) && type.empty?
+      Array(self.class.type).each do |type|
+        unless self.get_values(:type).include?(type)
+          self.get_values(:type) << type
+        end
+      end
     end
 
     def final_parent

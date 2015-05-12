@@ -5,6 +5,7 @@ require 'bundler/setup'
 Bundler.setup
 
 require 'active_triples'
+require 'pry' unless ENV["CI"]
 
 Dir['./spec/support/**/*.rb'].each { |f| require f }
 
