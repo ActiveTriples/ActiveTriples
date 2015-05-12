@@ -32,11 +32,11 @@ RSpec.describe ActiveTriples::Configuration do
     end
   end
 
-  describe "#properties" do
+  describe "#reflections" do
     let(:starting_hash) { {:rdf_label => 1} }
     it "should return a reflection for each config" do
-      expect(subject.properties.keys.length).to eq 1
-      expect(subject.properties[:rdf_label]).to be_kind_of ActiveTriples::Configuration::Reflection
+      expect(subject.reflections.keys.length).to eq 1
+      expect(subject.reflections[:rdf_label]).to be_kind_of ActiveTriples::Configuration::Reflection
     end
   end
 
