@@ -1,5 +1,6 @@
 module ActiveTriples
   class Configuration
+    # Basic reflection which overrides the value for a key on the object.
     class Reflection
       attr_reader :object, :key
       def initialize(object, key)
