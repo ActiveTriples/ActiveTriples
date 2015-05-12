@@ -65,6 +65,7 @@ module ActiveTriples
     end
 
     def transform_type(value)
+      return value if value.nil?
       RDF::URI.new(value).tap do |value|
         Resource.type_registry[value] = self
       end

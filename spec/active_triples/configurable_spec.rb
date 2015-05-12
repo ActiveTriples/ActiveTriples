@@ -12,6 +12,10 @@ describe ActiveTriples::Configurable do
   it "should be okay if not configured" do
     expect(DummyConfigurable.type).to eq nil
   end
+  it "should be okay if configured to nil" do
+    DummyConfigurable.configure :type => nil
+    expect(DummyConfigurable.type).to eq []
+  end
   describe '#configure' do
     before do
       DummyConfigurable.configure base_uri: "http://example.org/base", type: RDF::RDFS.Class, rdf_label: RDF::DC.title
