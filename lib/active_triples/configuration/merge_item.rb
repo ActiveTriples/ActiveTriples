@@ -6,7 +6,6 @@ module ActiveTriples
     # This enables multiple types to be set on an object, for example.
     class MergeItem < Item
       def set(value)
-        value = nil if value.to_s == ""
         object.inner_hash[key] = Array(object.inner_hash[key])
         object.inner_hash[key] |= Array(value)
       end
