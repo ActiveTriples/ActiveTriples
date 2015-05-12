@@ -64,10 +64,11 @@ module ActiveTriples
       @configuration = configuration.merge(options)
     end
 
-    def transform_type(value)
-      return value if value.nil?
-      RDF::URI.new(value).tap do |value|
-        Resource.type_registry[value] = self
+    def transform_type(values)
+      Array(values).map do |value|
+        RDF::URI.new(value).tap do |uri|
+          Resource.type_registry[uri] = self
+        end
       end
     end
   end
