@@ -25,6 +25,11 @@ describe ActiveTriples::Configurable do
       expect(DummyConfigurable.base_uri).to eq "http://example.org/base"
     end
 
+    it "should be able to set multiple types" do
+      DummyConfigurable.configure type: [RDF::RDFS.Container, RDF::RDFS.ContainerMembershipProperty]
+      expect(DummyConfigurable.type).to contain_exactly(RDF::RDFS.Class, RDF::RDFS.Container, RDF::RDFS.ContainerMembershipProperty)
+    end
+
     it 'should set an rdf_label' do
       expect(DummyConfigurable.rdf_label).to eq RDF::DC.title
     end
