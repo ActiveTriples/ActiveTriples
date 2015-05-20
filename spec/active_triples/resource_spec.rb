@@ -791,4 +791,32 @@ END
       end
     end
   end
+
+  describe "sub classing resource" do
+    before do
+      class DummyPrimaryResource < ActiveTriples::Resource
+        configure :type => RDF::URI('http://example.org/vocab/resource'),
+                  :base_uri => 'http://example.org/'
+        property  :title, :predicate => RDF::DC.title
+      end
+      class DummySubResource < DummyPrimaryResource
+        property :contributor, :predicate => RDF::DC.contributor
+      end
+    end
+    after do
+      Object.send(:remove_const, "DummyPrimaryResource") if Object
+      Object.send(:remove_const, "DummySubResource") if Object
+    end
+
+    it "should create a new DummyResource with uri = base_uri + partial_uri" do
+      test_resource = DummyPrimaryResource.new('r1')
+      expect( test_resource.rdf_subject ).to eq('http://example.org/r1')
+    end
+
+    it "should create a new DummySubResource with uri = inherited base_uri + partial_uri" do
+      test_resource = DummySubResource.new('sr1')
+      expect( test_resource.rdf_subject ).to eq('http://example.org/sr1')
+    end
+
+  end
 end
