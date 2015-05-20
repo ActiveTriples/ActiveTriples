@@ -799,23 +799,35 @@ END
                   :base_uri => 'http://example.org/'
         property  :title, :predicate => RDF::DC.title
       end
-      class DummySubResource < DummyPrimaryResource
+      class DummyInheritConfigResource < DummyPrimaryResource
+        property :contributor, :predicate => RDF::DC.contributor
+      end
+      class DummyOverrideConfigResource < DummyPrimaryResource
+        configure :type => RDF::URI('http://example.org/vocab/resource'),
+                  :base_uri => 'http://example.org/'
+
         property :contributor, :predicate => RDF::DC.contributor
       end
     end
     after do
       Object.send(:remove_const, "DummyPrimaryResource") if Object
-      Object.send(:remove_const, "DummySubResource") if Object
+      Object.send(:remove_const, "DummyInheritConfigResource") if Object
+      Object.send(:remove_const, "DummyOverrideConfigResource") if Object
     end
 
-    it "should create a new DummyResource with uri = base_uri + partial_uri" do
+    it "should create a new primary resource inheriting from ActiveTriples:Resource with uri = base_uri + partial_uri" do
       test_resource = DummyPrimaryResource.new('r1')
       expect( test_resource.rdf_subject ).to eq('http://example.org/r1')
     end
 
-    it "should create a new DummySubResource with uri = inherited base_uri + partial_uri" do
-      test_resource = DummySubResource.new('sr1')
-      expect( test_resource.rdf_subject ).to eq('http://example.org/sr1')
+    it "should create a new resource defined in a subclass inheriting configuration with uri = inherited base_uri + partial_uri" do
+      test_resource = DummyInheritConfigResource.new('r2')
+      expect( test_resource.rdf_subject ).to eq('http://example.org/r2')
+    end
+
+    it "should create a new resource defined in a subclass overriding configuration with uri = inherited base_uri + partial_uri" do
+      test_resource = DummyOverrideConfigResource.new('r3')
+      expect( test_resource.rdf_subject ).to eq('http://example.org/r3')
     end
 
   end
