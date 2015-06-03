@@ -43,6 +43,9 @@ module ActiveTriples
     autoload :NestedAttributes
     autoload :Identifiable
     autoload :Configuration
+    autoload :DataModel
+    autoload :Property
+    autoload :ApplicationStrategy
 
     # persistence strategies
     autoload :PersistenceStrategy,

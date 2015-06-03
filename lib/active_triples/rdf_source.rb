@@ -493,6 +493,19 @@ module ActiveTriples
       end
 
       ##
+      # Apply a data model using a given strategy.
+      # 
+      # @param [ActiveTriples::DataModel, #properties] data_model A data model 
+      #   to apply.
+      # @param [#apply!] application_strategy A strategy for applying. Defaults
+      #   to ActiveTriples::ApplicationStrategy
+      def apply_data_model(data_model, application_strategy=ActiveTriples::ApplicationStrategy)
+        data_model.properties.each do |property|
+          application_strategy.apply(self, property)
+        end
+      end
+
+      ##
       # Test if the rdf_subject that would be generated using a
       # specific ID is already in use in the triplestore.
       #

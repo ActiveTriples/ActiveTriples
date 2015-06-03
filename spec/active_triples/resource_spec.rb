@@ -791,4 +791,20 @@ END
       end
     end
   end
+
+  describe ".apply_data_model" do
+    before do
+      class MyDataModel < ActiveTriples::DataModel
+        property :test_title, :predicate => RDF::DC.title
+      end
+    end
+    after do
+      Object.send(:remove_const, "MyDataModel")
+    end
+    it "should apply the data model" do
+      DummyLicense.apply_data_model MyDataModel
+
+      expect{DummyLicense.new.test_title}.not_to raise_error
+    end
+  end
 end
