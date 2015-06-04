@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-RSpec.describe ActiveTriples::PredicateMapping do
+RSpec.describe ActiveTriples::Schema do
   subject { described_class }
 
   describe ".property" do
