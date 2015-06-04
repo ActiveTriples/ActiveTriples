@@ -182,4 +182,21 @@ describe ActiveTriples::RDFSource do
       end
     end
   end
+  let(:dummy_source) { Class.new { include ActiveTriples::RDFSource } }
+
+  describe ".apply_predicate_mapping" do
+    before do
+      class MyDataModel < ActiveTriples::PredicateMapping
+        property :test_title, :predicate => RDF::DC.title
+      end
+    end
+    after do
+      Object.send(:remove_const, "MyDataModel")
+    end
+    it "should apply the data model" do
+      dummy_source.apply_predicate_mapping MyDataModel
+
+      expect{dummy_source.new.test_title}.not_to raise_error
+    end
+  end
 end

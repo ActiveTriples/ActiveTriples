@@ -791,20 +791,4 @@ END
       end
     end
   end
-
-  describe ".apply_predicate_mapping" do
-    before do
-      class MyDataModel < ActiveTriples::PredicateMapping
-        property :test_title, :predicate => RDF::DC.title
-      end
-    end
-    after do
-      Object.send(:remove_const, "MyDataModel")
-    end
-    it "should apply the data model" do
-      DummyLicense.apply_predicate_mapping MyDataModel
-
-      expect{DummyLicense.new.test_title}.not_to raise_error
-    end
-  end
 end
