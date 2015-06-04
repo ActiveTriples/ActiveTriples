@@ -43,7 +43,7 @@ module ActiveTriples
     autoload :NestedAttributes
     autoload :Identifiable
     autoload :Configuration
-    autoload :DataModel
+    autoload :PredicateMapping
     autoload :Property
     autoload :ApplicationStrategy
 

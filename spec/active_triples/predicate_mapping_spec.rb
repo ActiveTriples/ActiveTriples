@@ -1,7 +1,7 @@
 require 'spec_helper'
 
-RSpec.describe ActiveTriples::DataModel do
-  subject { ActiveTriples::DataModel }
+RSpec.describe ActiveTriples::PredicateMapping do
+  subject { described_class }
 
   describe ".property" do
     it "should define a property" do

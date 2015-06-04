@@ -2,7 +2,7 @@ module ActiveTriples
   ##
   # Super class which provides a simple property DSL for defining property ->
   # predicate mappings.
-  class DataModel
+  class PredicateMapping
     class << self
       # @param [Symbol] property The property name on the object.
       # @param [Hash] options Options for the property.

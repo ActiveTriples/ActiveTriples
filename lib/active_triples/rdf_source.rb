@@ -493,14 +493,14 @@ module ActiveTriples
       end
 
       ##
-      # Apply a data model using a given strategy.
+      # Apply a predicate mapping using a given strategy.
       # 
-      # @param [ActiveTriples::DataModel, #properties] data_model A data model 
-      #   to apply.
+      # @param [ActiveTriples::PredicateMapping, #properties] predicate_mapping
+      #   A predicate mapping to apply.
       # @param [#apply!] application_strategy A strategy for applying. Defaults
       #   to ActiveTriples::ApplicationStrategy
-      def apply_data_model(data_model, application_strategy=ActiveTriples::ApplicationStrategy)
-        data_model.properties.each do |property|
+      def apply_predicate_mapping(predicate_mapping, application_strategy=ActiveTriples::ApplicationStrategy)
+        predicate_mapping.properties.each do |property|
           application_strategy.apply(self, property)
         end
       end
