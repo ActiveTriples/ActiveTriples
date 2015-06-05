@@ -3,6 +3,10 @@ require 'rdf/isomorphic'
 
 describe ActiveTriples::Relation do
 
+  subject do
+    described_class.new(double("parent", reflections: []), double("value args"))
+  end
+
   describe "#rdf_subject" do
     let(:parent_resource) { double("parent resource", reflections: {}) }
 
@@ -41,39 +45,51 @@ describe ActiveTriples::Relation do
   end
 
   describe "#valid_datatype?" do
-    subject { described_class.new(double("parent", reflections: []), "value" ) }
-    before { allow(subject.parent).to receive(:rdf_subject) { "parent subject" } }
+    before do
+      allow(subject.parent).to receive(:rdf_subject) { "parent subject" } 
+    end
+
     context "the value is not a Resource" do
       it "should be true if value is a String" do
         expect(subject.send(:valid_datatype?, "foo")).to be true
       end
+
       it "should be true if value is a Symbol" do
         expect(subject.send(:valid_datatype?, :foo)).to be true
       end
+
       it "should be true if the value is a Numeric" do
         expect(subject.send(:valid_datatype?, 1)).to be true
         expect(subject.send(:valid_datatype?, 0.1)).to be true
       end
+
       it "should be true if the value is a Date" do
         expect(subject.send(:valid_datatype?, Date.today)).to be true
       end
+
       it "should be true if the value is a Time" do
         expect(subject.send(:valid_datatype?, Time.now)).to be true
       end
+
       it "should be true if the value is a boolean" do
         expect(subject.send(:valid_datatype?, false)).to be true
         expect(subject.send(:valid_datatype?, true)).to be true
       end
     end
+
     context "the value is a Resource" do
       after { Object.send(:remove_const, :DummyResource) }
+
       let(:resource) { DummyResource.new }
+
       context "and the resource class does not include RDF::Isomorphic" do
         before { class DummyResource; include ActiveTriples::RDFSource; end }
+
         it "should be false" do
           expect(subject.send(:valid_datatype?, resource)).to be false
         end
       end
+
       context "and the resource class includes RDF:Isomorphic" do
         before do
           class DummyResource
@@ -81,10 +97,12 @@ describe ActiveTriples::Relation do
             include RDF::Isomorphic
           end
         end
+
         it "should be false" do
           expect(subject.send(:valid_datatype?, resource)).to be false
         end
       end
+
       context "and the resource class includes RDF::Isomorphic and aliases :== to :isomorphic_with?" do
         before do
           class DummyResource
@@ -93,6 +111,7 @@ describe ActiveTriples::Relation do
             alias_method :==, :isomorphic_with?
           end
         end
+
         it "should be false" do
           expect(subject.send(:valid_datatype?, resource)).to be false
         end
@@ -100,4 +119,32 @@ describe ActiveTriples::Relation do
     end
   end
 
+  describe '#empty_property' do
+
+    before { resource << RDF::Statement(resource, property, 'value') }
+
+    subject { described_class.new(resource, value_args) }
+    let(:resource) { ActiveTriples::Resource.new }
+    let(:property) { RDF::URI.new('http://example.com/moomin') }
+
+    let(:value_args) do
+      double('value args', 
+             length: 1,
+             first: 'first',
+             last: property)
+    end
+
+    it 'deletes values from property' do
+      expect { subject.empty_property }.to change { subject.result }
+                                            .from(['value']).to([])
+    end
+
+    it 'deletes multiple values from property' do
+      values = [Date.today, 'value2', RDF::Node.new, true]
+      resource.set_value(property, values)
+
+      expect { subject.empty_property }.to change { subject.result }
+                                            .from(values).to([])
+    end
+  end
 end

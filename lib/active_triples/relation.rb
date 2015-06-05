@@ -55,11 +55,13 @@ module ActiveTriples
       parent.persist! if parent.persistence_strategy.is_a? ParentStrategy
     end
 
+    ##
+    # Deletes the values for this relation. This removes all triples matching
+    # the basic graph pattern [:rdf_subject :predicate ?object] from the parent
+    # Enumerable.
     def empty_property
       parent.query([rdf_subject, predicate, nil]).each_statement do |statement|
-        if !uri_class(statement.object) || uri_class(statement.object) == class_for_property
-          parent.delete(statement)
-        end
+        parent.delete(statement)
       end
     end
 
