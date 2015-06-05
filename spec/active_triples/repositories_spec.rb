@@ -13,6 +13,7 @@ describe ActiveTriples::Repositories do
       subject.add_repository :name, RDF::Repository.new
       expect(subject.repositories).to include :name
     end
+
     it 'should throw an error if passed something that is not a repository' do
       expect{subject.add_repository :name, :not_a_repo}.to raise_error
     end
@@ -73,19 +74,25 @@ describe ActiveTriples::Repositories do
     context 'when checking only one named repository' do
       context 'and rdf_subject exists in the repository' do
         it 'should return true' do
-          expect(ActiveTriples::Repositories.has_subject?(resource2.rdf_subject,:repo2)).to be_truthy
+          expect(ActiveTriples::Repositories
+                  .has_subject?(resource2.rdf_subject,:repo2))
+            .to be_truthy
         end
       end
 
       context 'and rdf_subject exists in another repository' do
         it 'should return false' do
-          expect(ActiveTriples::Repositories.has_subject?(resource2.rdf_subject,:repo1)).to be_falsey
+          expect(ActiveTriples::Repositories
+                  .has_subject?(resource2.rdf_subject,:repo1))
+            .to be_falsey
         end
       end
 
       context 'and rdf_subject does not exists in any repository' do
         it 'should return false' do
-          expect(ActiveTriples::Repositories.has_subject?("#{resource2.rdf_subject}_NOEXIST",:repo1)).to be_falsey
+          expect(ActiveTriples::Repositories
+                  .has_subject?("#{resource2.rdf_subject}_NOEXIST",:repo1))
+            .to be_falsey
         end
       end
     end
@@ -93,13 +100,17 @@ describe ActiveTriples::Repositories do
     context 'when checking all repositories' do
       context 'and rdf_subject exists in one repository' do
         it 'should return true' do
-          expect(ActiveTriples::Repositories.has_subject?(resource2.rdf_subject)).to be_truthy
+          expect(ActiveTriples::Repositories
+                  .has_subject?(resource2.rdf_subject))
+            .to be_truthy
         end
       end
 
       context 'and rdf_subject does not exists in any repository' do
         it 'should return false' do
-          expect(ActiveTriples::Repositories.has_subject?("#{resource2.rdf_subject}_NOEXIST")).to be_falsey
+          expect(ActiveTriples::Repositories
+                  .has_subject?("#{resource2.rdf_subject}_NOEXIST"))
+            .to be_falsey
         end
       end
     end
