@@ -115,6 +115,17 @@ describe ActiveTriples::RDFSource do
   describe '#id' do
   end
 
+  describe '#humanize' do
+    it 'gives the "" for a node' do
+      expect(subject.humanize).to eq ''
+    end
+
+    it 'gives a URI string for a URI resource' do
+      allow(subject).to receive(:rdf_subject).and_return(uri)
+      expect(subject.humanize).to eq uri.to_s
+    end
+  end
+
   describe '#rdf_subject' do
     its(:rdf_subject) { is_expected.to be_a_node }
 
@@ -124,6 +135,15 @@ describe ActiveTriples::RDFSource do
       its(:rdf_subject) { is_expected.to be_a_uri }
       its(:rdf_subject) { is_expected.to eq uri }
     end
+  end
+
+  describe '#set_value' do
+    it 'raises argument error when given too many arguments' do
+      expect { subject.set_value(double, double, double, double) }
+        .to raise_error ArgumentError
+    end
+
+    it 'sets a value'
   end
 
   describe 'validation' do

@@ -207,7 +207,7 @@ module ActiveTriples
     alias_method :to_term, :rdf_subject
 
     ##
-    # @return [String] A string identifier for the resource; nil if the
+    # @return [String] A string identifier for the resource; '' if the
     #   resource is a node
     def humanize
       node? ? '' : rdf_subject.to_s
@@ -406,10 +406,6 @@ module ActiveTriples
         @graph
       end
 
-      ######
-      ## BEGIN Move these methods to `Properties`
-      ######
-
       ##
       # Lists fields registered as properties on the object.
       #
@@ -444,25 +440,6 @@ module ActiveTriples
         preds << RDF.type
         predicates.select { |p| !preds.include? p }
       end
-
-      ##
-      # Given a predicate which has been registered to a property,
-      # returns the name of the matching property.
-      #
-      # @param predicate [RDF::URI]
-      #
-      # @return [String, nil] the name of the property mapped to the
-      #   predicate provided
-      def property_for_predicate(predicate)
-        properties.each do |property, values|
-          return property if values[:predicate] == predicate
-        end
-        return nil
-      end
-
-      ######
-      ## END Move these methods to `Properties`
-      ######
 
       def default_labels
         [RDF::SKOS.prefLabel,
