@@ -27,10 +27,30 @@ module ActiveTriples
   class RepositoryNotFoundError < StandardError
   end
 
+  ##
+  # Converts a string for a class or module into a a constant. This will find
+  # classes in or above a given container class.
+  #
+  # @example finding a class in Kernal
+  #    ActiveTriples.class_from_string('MyClass') # => MyClass
+  #
+  # @example finding a class in a module
+  #    ActiveTriples.class_from_string('MyClass', MyModule) 
+  #    # => MyModule::MyClass
+  #
+  # @example when a class exists above the module, but not in it
+  #    ActiveTriples.class_from_string('Object', MyModule) 
+  #    # => Object
+  #
+  # @param class_name [String]
+  # @param container_class
+  #
+  # @return [Class]
   def self.class_from_string(class_name, container_class=Kernel)
     container_class = container_class.name if container_class.is_a? Module
     container_parts = container_class.split('::')
-    (container_parts + class_name.split('::')).flatten.inject(Kernel) do |mod, class_name|
+    (container_parts + class_name.split('::'))
+      .flatten.inject(Kernel) do |mod, class_name|
       if mod == Kernel
         Object.const_get(class_name)
       elsif mod.const_defined? class_name.to_sym
