@@ -2,6 +2,29 @@ require 'rdf'
 require 'active_triples/version'
 require 'active_support'
 
+##
+# An ActiveModel compliant ObjectGraphMapper for RDF data. 
+# 
+# Models graphs as `RDFSources` with property/attribute configuration, 
+# accessors, and other methods to support Linked Data in a Ruby enviornment. 
+#
+# @example modeling a simple resource
+#   class Thing
+#     include  ActiveTriples::RDFSource
+#     configure :type => RDF::OWL.Thing, :base_uri => 'http://example.org/things#'
+#     property :title, :predicate => RDF::DC.title
+#     property :description, :predicate => RDF::DC.description
+#   end
+#
+#   obj = Thing.new('123')
+#   obj.title = 'Resource'
+#   obj.description = 'A resource.'
+#   obj.dump :ntriples 
+#    # => "<http://example.org/things#123> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#Thing> .\n<http://example.org/things#123> <http://purl.org/dc/terms/title> \"Resource\" .\n<http://example.org/things#123> <http://purl.org/dc/terms/description> \"A resource.\" .\n"
+#
+# @see http://www.w3.org/TR/2014/REC-rdf11-concepts-20140225/#change-over-time 
+#   RDF Concepts and Abstract Syntax for an informal definition of an RDF 
+#   Source.
 module ActiveTriples
   extend ActiveSupport::Autoload
   eager_autoload do
@@ -62,6 +85,8 @@ module ActiveTriples
     end
   end
 
+  ##
+  # A simplified, belgian version of this software
   def self.ActiveTripels
     puts <<-eos
 
