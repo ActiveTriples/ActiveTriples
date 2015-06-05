@@ -1,9 +1,9 @@
 module ActiveTriples
   ##
-  # Default application strategy which just copies all configured properties
+  # Default property applying strategy which just copies all configured properties
   # from a data property to a new resource, assuming it supports the #property
   # interface.
-  class ApplicationStrategy
+  class ExtensionStrategy
     class << self
       # @param [ActiveTriples::Resource, #property] resource A resource to copy
       #   the property to.

@@ -45,7 +45,7 @@ module ActiveTriples
     autoload :Configuration
     autoload :Schema
     autoload :Property
-    autoload :ApplicationStrategy
+    autoload :ExtensionStrategy
 
     # persistence strategies
     autoload :PersistenceStrategy,

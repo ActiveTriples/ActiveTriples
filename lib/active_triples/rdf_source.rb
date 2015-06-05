@@ -496,11 +496,11 @@ module ActiveTriples
       # Apply a predicate mapping using a given strategy.
       # 
       # @param [ActiveTriples::Schema, #properties] schema A schema to apply.
-      # @param [#apply!] application_strategy A strategy for applying. Defaults
-      #   to ActiveTriples::ApplicationStrategy
-      def apply_schema(schema, application_strategy=ActiveTriples::ApplicationStrategy)
+      # @param [#apply!] strategy A strategy for applying. Defaults
+      #   to ActiveTriples::ExtensionStrategy
+      def apply_schema(schema, strategy=ActiveTriples::ExtensionStrategy)
         schema.properties.each do |property|
-          application_strategy.apply(self, property)
+          strategy.apply(self, property)
         end
       end
 

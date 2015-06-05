@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-RSpec.describe ActiveTriples::ApplicationStrategy do
+RSpec.describe ActiveTriples::ExtensionStrategy do
   subject { described_class }
 
   describe ".apply" do
