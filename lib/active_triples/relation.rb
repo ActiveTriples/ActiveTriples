@@ -33,10 +33,6 @@ module ActiveTriples
       @value_arguments = value_args
     end
 
-    def clear
-      set(nil)
-    end
-
     def result
       parent.query(:subject => rdf_subject, :predicate => predicate)
         .each_with_object([]) do |x, collector|
@@ -59,11 +55,15 @@ module ActiveTriples
     # Deletes the values for this relation. This removes all triples matching
     # the basic graph pattern [:rdf_subject :predicate ?object] from the parent
     # Enumerable.
+    #
+    # @return [Relation] self
     def empty_property
       parent.query([rdf_subject, predicate, nil]).each_statement do |statement|
         parent.delete(statement)
       end
+      self
     end
+    alias_method :clear, :empty_property
 
     def build(attributes={})
       new_subject = attributes.fetch('id') { RDF::Node.new }
@@ -83,10 +83,25 @@ module ActiveTriples
       result.first || build(attributes)
     end
 
+    ##
+    # Deletes values from the parent matching the basic graph pattern
+    # [:rdf_subject :predicate ?value] for each value passed.
+    #
+    # @example deleting a single value
+    #   delete('moomin')
+    #
+    # @example deleting a multiple values
+    #   delete('moomin', 'snorkmaiden', 'the groak')
+    #
+    # @param [Array] values a list of value terms to delete.
+    #
+    # @return [Relation] self
+    #
+    # @see http://rdf.rubyforge.org/RDF/Mutable.html#delete-instance_method 
+    #   RDF::Mutable#delete
     def delete(*values)
-      values.each do |value|
-        parent.delete([rdf_subject, predicate, value])
-      end
+      values.each { |value| parent.delete([rdf_subject, predicate, value]) }
+      self
     end
 
     def << (values)

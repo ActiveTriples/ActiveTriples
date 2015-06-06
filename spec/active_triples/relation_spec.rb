@@ -119,8 +119,7 @@ describe ActiveTriples::Relation do
     end
   end
 
-  describe '#empty_property' do
-
+  shared_context 'with values' do
     before { resource << RDF::Statement(resource, property, 'value') }
 
     subject { described_class.new(resource, value_args) }
@@ -132,6 +131,37 @@ describe ActiveTriples::Relation do
              length: 1,
              first: 'first',
              last: property)
+    end
+  end
+
+
+  describe '#delete' do
+    include_context 'with values'
+
+    it 'returns self' do 
+      expect(subject.delete).to eq subject
+    end
+    
+    it 'deletes values from property' do
+      expect { subject.delete('value') }.to change { subject.result }
+                                            .from(['value']).to([])
+    end
+
+    it 'deletes multiple values from property' do
+      values = [Date.today, 'value2', RDF::Node.new, true]
+      resource.set_value(property, values)
+      
+      expect { subject.delete(*values[0..2]) }.to change { subject.result }
+                                            .from(values)
+                                            .to(contain_exactly(values.last))
+    end
+  end
+
+  describe '#empty_property' do
+    include_context 'with values'
+
+    it 'returns self' do 
+      expect(subject.empty_property).to eq subject
     end
 
     it 'deletes values from property' do
