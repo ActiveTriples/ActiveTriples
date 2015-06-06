@@ -30,13 +30,6 @@ module ActiveTriples
       @configuration ||= Configuration.new
     end
 
-    ##
-    # @deprecated use `configure type:` instead.
-    def rdf_type(value)
-      Deprecation.warn Configurable, "rdf_type is deprecated and will be removed in active-fedora 8.0.0. Use configure type: instead.", caller
-      configure type: value
-    end
-
     def repository
       configuration[:repository]
     end

@@ -242,18 +242,4 @@ module ActiveTriples
         end
       end
   end
-
-  class Term < Relation
-    def self.inherited(*)
-      warn 'ActiveTriples::Term is deprecated! ' \
-           'Use ActiveTriples::Relation instead.'
-      super
-    end
-
-    def initialize(*)
-      warn 'ActiveTriples::Term is deprecated! ' \
-           'Use ActiveTriples::Relation instead.'
-      super
-    end
-  end
 end

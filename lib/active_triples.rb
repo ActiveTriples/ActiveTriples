@@ -29,7 +29,6 @@ module ActiveTriples
   extend ActiveSupport::Autoload
   eager_autoload do
     autoload :RDFSource
-
     autoload :Resource
     autoload :List
     autoload :Relation
@@ -51,11 +50,9 @@ module ActiveTriples
              'active_triples/persistence_strategies/parent_strategy'
     autoload :RepositoryStrategy,
              'active_triples/persistence_strategies/repository_strategy'
-
-    # deprecated class
-    autoload :Term, 'active_triples/relation'
   end
-
+  
+  ##
   # Raised when a declared repository doesn't have a definition
   class RepositoryNotFoundError < StandardError
   end
@@ -96,7 +93,7 @@ module ActiveTriples
   end
 
   ##
-  # A simplified, belgian version of this software
+  # A simplified, Belgian version of this software
   def self.ActiveTripels
     puts <<-eos
 
@@ -113,5 +110,4 @@ module ActiveTriples
 eos
 "Yum"
   end
-
 end
