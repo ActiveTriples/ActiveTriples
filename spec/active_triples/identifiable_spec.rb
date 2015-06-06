@@ -3,24 +3,7 @@ require 'active_model'
 
 describe ActiveTriples::Identifiable do
   before do
-    class ActiveExample
-      include ActiveTriples::Identifiable
-
-      def self.property(*args)
-        prop = args.first
-
-        define_method prop.to_s do
-          resource.get_values(prop)
-        end
-
-        define_method "#{prop.to_s}=" do |*args|
-          resource.set_value(prop, *args)
-        end
-
-        resource_class.property(*args)
-      end
-
-    end
+    class ActiveExample; include ActiveTriples::Identifiable; end
   end
 
   after do
