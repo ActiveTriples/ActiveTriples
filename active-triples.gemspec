@@ -8,13 +8,13 @@ Gem::Specification.new do |s|
   s.platform    = Gem::Platform::RUBY
   s.authors     = ["Tom Johnson", "Trey Terrell"]
   s.homepage    = 'https://github.com/no-reply/ActiveTriples'
-  s.email       = 'thomas.johnson@oregonstate.edu'  
+  s.email       = 'tom@dp.la'
   s.summary     = %q{RDF graphs in ActiveModel wrappers.}
   s.description = %q{ActiveTriples provides tools for modeling RDF as discrete resources.}
   s.license     = "APACHE2"
   s.required_ruby_version     = '>= 1.9.3'
-  
-  s.add_dependency('rdf', '~> 1.1')
+
+  s.add_dependency('rdf', '~> 1.1.13')
   s.add_dependency('linkeddata', '~> 1.1')
   s.add_dependency('activemodel', '>= 3.0.0')
   s.add_dependency('deprecation', '~> 0.1')
@@ -22,6 +22,7 @@ Gem::Specification.new do |s|
 
   s.add_development_dependency('rdoc')
   s.add_development_dependency('rspec')
+  s.add_development_dependency('rdf-spec')
   s.add_development_dependency('coveralls')
   s.add_development_dependency('guard-rspec')
   s.add_development_dependency('webmock')

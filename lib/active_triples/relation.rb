@@ -42,7 +42,7 @@ module ActiveTriples
         .each_with_object([]) do |x, collector|
           converted_object = convert_object(x.object)
           collector << converted_object unless converted_object.nil?
-        end
+      end
     end
 
     def set(values)
@@ -52,7 +52,7 @@ module ActiveTriples
       values.each do |val|
         set_value(val)
       end
-      parent.persist! if parent.class.repository == :parent && parent.send(:repository)
+      parent.persist! if parent.persistence_strategy.is_a? ParentStrategy
     end
 
     def empty_property
@@ -133,8 +133,9 @@ module ActiveTriples
           return
         end
         val = val.to_uri if val.respond_to? :to_uri
-        raise "value must be an RDF URI, Node, Literal, or a valid datatype. See RDF::Literal.\n\tYou provided #{val.inspect}" unless
-          val.kind_of? RDF::Value or val.kind_of? RDF::Literal
+        raise "value must be an RDF URI, Node, Literal, or a valid datatype." \
+              " See RDF::Literal.\n\tYou provided #{val.inspect}" unless
+          val.kind_of? RDF::Term
         parent.insert [rdf_subject, predicate, val]
       end
 
@@ -144,9 +145,12 @@ module ActiveTriples
 
       def add_child_node(resource,object=nil)
         parent.insert [rdf_subject, predicate, resource.rdf_subject]
-        resource.parent = parent unless resource.frozen?
+        unless resource.frozen?
+          resource.set_persistence_strategy(ParentStrategy)
+          resource.parent = parent
+        end
         self.node_cache[resource.rdf_subject] = (object ? object : resource)
-        resource.persist! if resource.class.repository == :parent
+        resource.persist! if resource.persistence_strategy.is_a? ParentStrategy
       end
 
       def predicate
@@ -163,6 +167,8 @@ module ActiveTriples
       # Converts an object to the appropriate class.
       def convert_object(value)
         case value
+        when RDFSource
+          value
         when RDF::Literal
           return_literals? ? value : value.object
         when RDF::Resource

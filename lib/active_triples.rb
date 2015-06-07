@@ -29,10 +29,12 @@ module ActiveTriples
   extend ActiveSupport::Autoload
   eager_autoload do
     autoload :RDFSource
+
     autoload :Resource
     autoload :List
     autoload :Relation
     autoload :Configurable
+    autoload :Persistable
     autoload :Properties
     autoload :PropertyBuilder
     autoload :Reflection
@@ -41,6 +43,14 @@ module ActiveTriples
     autoload :NestedAttributes
     autoload :Identifiable
     autoload :Configuration
+
+    # persistence strategies
+    autoload :PersistenceStrategy,
+             'active_triples/persistence_strategies/persistence_strategy'
+    autoload :ParentStrategy,
+             'active_triples/persistence_strategies/parent_strategy'
+    autoload :RepositoryStrategy,
+             'active_triples/persistence_strategies/repository_strategy'
 
     # deprecated class
     autoload :Term, 'active_triples/relation'

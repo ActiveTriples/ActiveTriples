@@ -11,7 +11,7 @@ module ActiveTriples
     include Properties
     include Reflection
 
-    delegate :rdf_subject, :mark_for_destruction, :marked_for_destruction?, :set_value, :get_values, :parent, :type, :dump, :attributes=, to: :resource
+    delegate :rdf_subject, :mark_for_destruction, :marked_for_destruction?, :set_value, :get_values, :parent, :persist, :persist!, :type, :dump, :attributes=, to: :resource
     alias_method :to_ary, :to_a
 
     class << self
@@ -27,8 +27,8 @@ module ActiveTriples
 
     def initialize(*args)
       super
-      parent = graph.parent if graph.respond_to? :parent
-      @graph = ListResource.new(subject) << graph unless graph.kind_of? RDFSource
+      @graph = ListResource.new(subject) unless
+        graph.kind_of? RDFSource
       graph << parent if parent
       graph.list = self
       graph.reload
@@ -36,13 +36,10 @@ module ActiveTriples
 
     def clear
       graph.send :erase_old_resource
-      parent = graph.parent
       old_subject = subject
       super
       @subject = old_subject
       @graph = ListResource.new(subject)
-      graph << parent if parent
-      graph.parent = parent
       graph.list = self
     end
 
@@ -78,20 +75,17 @@ module ActiveTriples
       node_from_value(super)
     end
 
-    def shift
-      node_from_value(super)
-    end
-
     ##
-    # Find an AF::Rdf::Resource from the value returned by RDF::List
+    # find an AF::Rdf::Resource from the value returned by RDF::List
     def node_from_value(value)
-      if value.kind_of? RDF::Resource
-        type_uri = resource.query([value, RDF.type, nil]).to_a.first.try(:object)
-        klass = ActiveTriples::Resource.type_registry[type_uri]
-        klass ||= Resource
-        return klass.from_uri(value,resource)
-      end
-      value
+      return value unless value.is_a? RDF::Resource
+      return value if value.is_a? RDFSource
+
+      type_uri = resource.query([value, RDF.type, nil]).to_a.first.try(:object)
+      klass = RDFSource.type_registry[type_uri]
+      klass ||= Resource
+
+      klass.from_uri(value, resource)
     end
 
     ##
@@ -125,13 +119,15 @@ module ActiveTriples
       end
 
       protected
+
       # Clear out any old assertions in the repository about this node or statement
       # thus preparing to receive the updated assertions.
       def erase_old_resource
-        RDF::List.new(rdf_subject, repository).clear
+        RDF::List.new(rdf_subject, self).clear
       end
 
       private
+
         def attributes_to_list(value, klass)
           value.each do |entry|
             item = klass.new()
@@ -172,12 +168,17 @@ module ActiveTriples
       if empty?
         @graph.type = RDF.List
         resource.set_value(RDF.first, value)
-        resource.insert([subject, RDF.rest, RDF.nil])
+        resource.insert([subject.to_term, RDF.rest, RDF.nil])
         resource << value if value.kind_of? RDFSource
         return self
       end
       super
-      resource << value if value.kind_of? RDFSource
+      if value.kind_of? RDFSource
+        resource << value
+        value.set_persistence_strategy(ParentStrategy)
+        value.persistence_strategy.parent = resource
+        value.persist!
+      end
     end
   end
 end

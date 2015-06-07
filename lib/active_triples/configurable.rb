@@ -3,12 +3,14 @@ require 'deprecation'
 module ActiveTriples
   ##
   # Module to include configurable class-wide properties common to
-  # Resource and RDFDatastream. It does its work at the class level,
-  # and is meant to be extended.
+  # RDFSources.
   #
   # Define properties at the class level with:
   #
-  #    configure base_uri: "http://oregondigital.org/resource/", repository: :default
+  # @example
+  #   configure base_uri: "http://oregondigital.org/resource/",
+  #     repository: :default
+  #
   # Available properties are base_uri, rdf_label, type, and repository
   module Configurable
     extend Deprecation
@@ -36,21 +38,22 @@ module ActiveTriples
     end
 
     def repository
-      configuration[:repository] || :parent
+      configuration[:repository]
     end
 
     ##
-    # API for configuring class properties on a Resource. This is an 
+    # API for configuring class properties on a RDFSource. This is an
     # alternative to overriding the methods in this module.
     #
     # Can configure the following values:
-    #  - base_uri (allows passing slugs to the Resource initializer 
+    #  - base_uri (allows passing slugs to the RDFSource initializer
     #    in place of fully qualified URIs)
     #  - rdf_label (overrides default label predicates)
     #  - type (a default rdf:type to include when initializing a
-    #    new Resource)
-    #  - repository (the target persist location to for the Resource)
-    # 
+    #    new RDFSource)
+    #  - repository (the target persist location to for the RDFSource)
+    #
+    # @example
     #   configure base_uri: "http://oregondigital.org/resource/", repository: :default
     #
     # @param options [Hash]
@@ -67,7 +70,7 @@ module ActiveTriples
     def transform_type(values)
       Array(values).map do |value|
         RDF::URI.new(value).tap do |uri|
-          Resource.type_registry[uri] = self
+          RDFSource.type_registry[uri] = self
         end
       end
     end

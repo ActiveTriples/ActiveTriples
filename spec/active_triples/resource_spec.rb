@@ -146,7 +146,7 @@ describe ActiveTriples::Resource do
         before do
           @repo = RDF::Repository.new
           allow(subject.class).to receive(:repository).and_return(nil)
-          allow(subject).to receive(:repository).and_return(@repo)
+          allow(subject.persistence_strategy).to receive(:repository).and_return(@repo)
           subject.title = "bla"
           result
         end
