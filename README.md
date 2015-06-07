@@ -1,8 +1,8 @@
 Description
 -----------
 
-[![Build Status](https://travis-ci.org/ActiveTriples/ActiveTriples.png?branch=master)](https://travis-ci.org/ActiveTriples/ActiveTriples)
-[![Coverage Status](https://coveralls.io/repos/ActiveTriples/ActiveTriples/badge.png?branch=master)](https://coveralls.io/r/ActiveTriples/ActiveTriples?branch=master)
+[![Build Status](https://travis-ci.org/ActiveTriples/ActiveTriples.png?branch=develop)](https://travis-ci.org/ActiveTriples/ActiveTriples)
+[![Coverage Status](https://coveralls.io/repos/ActiveTriples/ActiveTriples/badge.png?branch=devlop)](https://coveralls.io/r/ActiveTriples/ActiveTriples?branch=develop)
 [![Gem Version](https://badge.fury.io/rb/active-triples.svg)](http://badge.fury.io/rb/active-triples)
 
 An ActiveModel-like interface for RDF data. Models graphs as RDFSources with property/attribute configuration, accessors, and other methods to support Linked Data in a Ruby/Rails enviornment. See [RDF Concepts and Abstract Syntax](http://www.w3.org/TR/2014/REC-rdf11-concepts-20140225/#change-over-time) for an informal definition of an RDF Source.
