@@ -124,6 +124,14 @@ module ActiveTriples
     end
 
     ##
+    # Resource should not be writable if it's frozen.
+    # @todo: Remove when https://github.com/ruby-rdf/rdf/issues/200 is closed.
+    # @return [Boolean]
+    def writable?
+      !frozen?
+    end
+
+    ##
     # Delegate parent to the persistence strategy if possible
     #
     # @todo establish a better pattern for this. `#parent` has been a public method

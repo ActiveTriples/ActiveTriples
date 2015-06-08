@@ -237,4 +237,13 @@ describe ActiveTriples::RDFSource do
       expect{dummy_source.new.test_title}.not_to raise_error
     end
   end
+
+  describe "#freeze" do
+    it "should stop the resource from being writable" do
+      d = dummy_source.new
+      d.freeze
+
+      expect(d).not_to be_writable
+    end
+  end
 end
