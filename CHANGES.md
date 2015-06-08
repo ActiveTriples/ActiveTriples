@@ -1,3 +1,9 @@
+0.8.1
+-----
+
+  - Reverts changing `Relation`'s delete methods to remove all values until we
+  have a clear path forward for those depending on that functionality.
+
 0.8.0
 -----
   - Adds RDF.rb interfaces to `RDFSource`, improving interoperability 
