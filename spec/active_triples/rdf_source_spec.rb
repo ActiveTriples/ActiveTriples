@@ -146,6 +146,44 @@ describe ActiveTriples::RDFSource do
     it 'sets a value'
   end
 
+  describe "inheritance" do
+    before do
+      class PrincipalResource
+        include ActiveTriples::RDFSource
+
+        configure type: RDF::FOAF.Agent
+        property :name, predicate: RDF::FOAF.name
+      end
+
+      class UserSource < PrincipalResource
+        configure type: RDF::FOAF.Person
+      end
+
+      class DummySource
+        include ActiveTriples::RDFSource
+
+        property :creator, predicate: RDF::DC.creator
+      end
+    end
+
+    after do
+      Object.send(:remove_const, :PrincipalResource)
+      Object.send(:remove_const, :UserSource)
+      Object.send(:remove_const, :DummySource)
+    end
+
+    let(:dummy) { DummySource.new }
+    let(:bob) { UserSource.new.tap {|u| u.name = "bob"} }
+    let(:sally) { UserSource.new.tap {|u| u.name = "sally"} }
+
+    it "should replace values" do
+      dummy.creator = bob
+      expect(dummy.creator).to eq [bob]
+      dummy.creator = sally
+      expect(dummy.creator).to eq [sally]
+    end
+  end
+
   describe 'validation' do
     it { is_expected.to be_valid }
 
