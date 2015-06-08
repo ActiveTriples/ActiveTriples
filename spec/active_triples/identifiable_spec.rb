@@ -145,6 +145,29 @@ describe ActiveTriples::Identifiable do
           parent.relation.node_cache = {}
           expect(parent.relation.first.parent).to eq parent
         end
+        
+        it "persists its triples down" do
+          expect(parent.statements.to_a).to include *parent.relation.first.resource.statements.to_a
+        end
+
+        context "when using a different persistance strategy" do
+          let(:fake_strategy_factory) do 
+            s = class_double(ActiveTriples::ParentStrategy)
+            allow(s).to receive(:new).and_return(fake_strategy)
+            s
+          end
+          let(:fake_strategy) do
+            instance_double(ActiveTriples::ParentStrategy)
+          end
+          subject do
+            s = ActiveExample.new
+            s.resource.set_persistence_strategy(fake_strategy_factory)
+            s
+          end
+          it "should not persist the triples down" do
+            expect(parent.statements.to_a).not_to include *parent.relation.first.resource.statements.to_a
+          end
+        end
       end
     end
 
