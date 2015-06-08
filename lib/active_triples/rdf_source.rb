@@ -493,6 +493,18 @@ module ActiveTriples
       end
 
       ##
+      # Apply a predicate mapping using a given strategy.
+      # 
+      # @param [ActiveTriples::Schema, #properties] schema A schema to apply.
+      # @param [#apply!] strategy A strategy for applying. Defaults
+      #   to ActiveTriples::ExtensionStrategy
+      def apply_schema(schema, strategy=ActiveTriples::ExtensionStrategy)
+        schema.properties.each do |property|
+          strategy.apply(self, property)
+        end
+      end
+
+      ##
       # Test if the rdf_subject that would be generated using a
       # specific ID is already in use in the triplestore.
       #

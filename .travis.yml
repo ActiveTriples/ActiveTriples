@@ -1,4 +1,4 @@
-anguage: ruby
+language: ruby
 bundler_args: --without debug
 script: "bundle exec rspec spec"
 sudo: false
