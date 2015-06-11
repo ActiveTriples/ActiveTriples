@@ -1,3 +1,9 @@
+0.7.1
+----
+
+  - Adds a Schema concept, for defining property definitions that are portable
+    across RDFSource types.
+
 0.7.0
 -----
 
