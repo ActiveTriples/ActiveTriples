@@ -765,9 +765,7 @@ END
     it 'should allow access to deep nodes' do
       document1.creator = [person1, person2]
       document2.creator = person1
-puts 'before setting the reciprocal relationship'
       person1.publications = [document1,document2]
-puts 'after setting the reciprocal relationship'
       person1.knows = person2
       subject.item = [document1]
       expect(subject.item.first.creator.first.knows.first.foaf_name).to eq ['Bob']
