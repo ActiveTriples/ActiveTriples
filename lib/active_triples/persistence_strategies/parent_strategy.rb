@@ -19,6 +19,10 @@ module ActiveTriples
       @obj = obj
     end
 
+    def persisted?
+      super && parent.persisted?
+    end
+
     def destroy
       super { parent.destroy_child(obj) }
     end

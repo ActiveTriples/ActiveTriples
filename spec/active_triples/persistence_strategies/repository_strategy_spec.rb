@@ -10,6 +10,22 @@ describe ActiveTriples::RepositoryStrategy do
 
   it_behaves_like 'a persistence strategy'
 
+
+  describe '#persisted?' do
+    context 'before persist!' do
+      it 'returns false' do
+        expect(subject).not_to be_persisted
+      end
+    end
+
+    context 'after persist!' do
+      it 'returns true' do
+        subject.persist!
+        expect(subject).to be_persisted
+      end
+    end
+  end
+
   shared_context 'with repository' do
     before do
       allow(subject.obj.singleton_class).to receive(:repository)

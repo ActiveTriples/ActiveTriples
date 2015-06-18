@@ -15,6 +15,29 @@ describe ActiveTriples::ParentStrategy do
   context 'with a parent' do
     include_context 'with a parent'
     it_behaves_like 'a persistence strategy'
+
+    describe '#persisted?' do
+      context 'before persist!' do
+        it 'returns false' do
+          expect(subject).not_to be_persisted
+        end
+      end
+
+      context 'after persist!' do
+        context "when the parent is not persisted" do
+          before { subject.persist! }
+          it { is_expected.not_to be_persisted }
+        end
+
+        context "when the parent is persisted" do
+          before do
+            allow(parent).to receive(:persisted?).and_return(true)
+            subject.persist!
+          end
+          it { is_expected.to be_persisted }
+        end
+      end
+    end
   end
 
   describe '#final_parent' do
