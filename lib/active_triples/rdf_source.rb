@@ -38,15 +38,27 @@ module ActiveTriples
   module RDFSource
     extend ActiveSupport::Concern
 
+    # None of the RDF modules extend ActiveSupport::Concern, so wrap them, allowing
+    # us to control the order of ancestry.  It's important that the RDFStuff is a deeper
+    # ancestor than the ActiveModel stuff so that we can disambiguate #valid?
+    module RDFStuff
+      extend ActiveSupport::Concern
+      included do
+        include RDF::Value
+        include RDF::Countable
+        include RDF::Durable
+        include RDF::Enumerable
+        include RDF::Queryable
+        include RDF::Mutable
+        # Disambiguate the valid? method defined in RDF::Enumerable from ActiveModel::Validations#valid?
+        alias_method :rdf_valid?, :valid?
+      end
+    end
+
     include NestedAttributes
     include Properties
     include Reflection
-    include RDF::Value
-    include RDF::Countable
-    include RDF::Durable
-    include RDF::Enumerable
-    include RDF::Queryable
-    include RDF::Mutable
+    include RDFStuff
     include ActiveModel::Validations
     include ActiveModel::Conversion
     include ActiveModel::Serialization
@@ -79,6 +91,11 @@ module ActiveTriples
       def delete_statement(*args)
         @graph.send(:delete_statement, *args)
       end
+    end
+
+    # Calls the valid? methods in RDF::Enumerable and ActiveModel::Validations
+    def valid?
+      rdf_valid? && super
     end
 
     ##
