@@ -146,6 +146,34 @@ describe ActiveTriples::RDFSource do
     it 'sets a value'
   end
 
+  describe '#get_value' do
+    context 'with no matching property' do
+      it 'returns a Relation' do
+        expect(subject.get_values(:not_a_predicate))
+          .to be_a ActiveTriples::Relation
+      end
+
+      it 'is empty' do
+        expect(subject.get_values(:not_a_predicate))
+          .to be_empty
+      end
+    end
+
+    context 'with an empty predicate' do
+      let(:predicate) { RDF::URI('http://example.org/empty') }
+
+      it 'returns a Relation' do
+        expect(subject.get_values(predicate)).to be_a ActiveTriples::Relation
+      end
+
+      it 'is empty' do
+        expect(subject.get_values(predicate)).to be_empty
+      end
+    end
+
+    it 'gets a value'
+  end
+
   describe 'validation' do
     it { is_expected.to be_valid }
 
