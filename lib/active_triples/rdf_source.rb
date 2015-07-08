@@ -216,6 +216,20 @@ module ActiveTriples
     end
 
     ##
+    # Compares self to other for {RDF::Term} equality.
+    #
+    # Delegates the check to `other#==` passing it the term version of `self`.
+    #
+    # @param other [Object]
+    #
+    # @see RDF::Term#==
+    # @see RDF::Node#==
+    # @see RDF::URI#==
+    def ==(other)
+      other == to_term
+    end
+
+    ##
     # Looks for labels in various default fields, prioritizing
     # configured label fields.
     def rdf_label
