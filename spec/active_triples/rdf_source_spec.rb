@@ -181,15 +181,63 @@ describe ActiveTriples::RDFSource do
                .to({ base: ["The underlying graph must be valid"] })
       end
     end
+
+    context 'with ActiveModel validation' do
+      let(:source_class) do
+        class Validation  
+          include ActiveTriples::RDFSource
+
+          validates_presence_of :title
+
+          property :title, predicate: RDF::DC.title
+        end
+
+        Validation
+      end
+
+      after { Object.send(:remove_const, :Validation) }
+
+      context 'with invalid property' do
+        it { is_expected.to be_invalid }
+
+        it 'has errors' do
+          expect { subject.valid? }
+            .to change { subject.errors.messages }
+                 .from({})
+                 .to({ title: ["can't be blank"] })
+        end
+      end
+
+      context 'when properties are valid' do
+        before { subject.title = 'moomin' }
+
+        it { is_expected.to be_valid }
+
+        context 'and has invaild statements' do
+          before { subject << RDF::Statement.from([nil, nil, nil]) }
+
+          it { is_expected.to be_invalid }
+
+          it 'has errors' do
+            expect { subject.valid? }
+              .to change { subject.errors.messages }
+                   .from({})
+                   .to(include({ title: ["can't be blank"] }))
+          end
+        end
+      end
+    end
   end
-  let(:dummy_source) { Class.new { include ActiveTriples::RDFSource } }
 
   describe ".apply_schema" do
+    let(:dummy_source) { Class.new { include ActiveTriples::RDFSource } }
+
     before do
       class MyDataModel < ActiveTriples::Schema
         property :test_title, :predicate => RDF::DC.title
       end
     end
+
     after do
       Object.send(:remove_const, "MyDataModel")
     end
