@@ -13,7 +13,7 @@ describe ActiveTriples::Relation do
       let(:predicate) { RDF::URI('http://example.org/moomin') }
       
       it 'returns the specified RDF::Term' do
-        expect(subject.send(:predicate)).to eq predicate
+        expect(subject.predicate).to eq predicate
       end
     end
 

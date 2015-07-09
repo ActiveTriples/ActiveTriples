@@ -132,6 +132,16 @@ module ActiveTriples
       value_arguments.last
     end
 
+    ##
+    # Gives the predicate used by the Relation. Values of this object are 
+    # those that match the pattern `<rdf_subject> <predicate> [value] .`
+    #
+    # @return [RDF::Term] the predicate for this relation
+    def predicate
+      return property if property.is_a?(RDF::Term)
+      property_config[:predicate] unless property_config.nil?
+    end
+
     protected
 
       def node_cache
@@ -166,16 +176,6 @@ module ActiveTriples
         end
         self.node_cache[resource.rdf_subject] = (object ? object : resource)
         resource.persist! if resource.persistence_strategy.is_a? ParentStrategy
-      end
-
-      ##
-      # Gives the predicate used by the Relation. Values of this object are 
-      # those that match the pattern `<rdf_subject> <predicate> [value] .`
-      #
-      # @return [RDF::Term] the predicate for this relation
-      def predicate
-        return property if property.is_a?(RDF::Term)
-        property_config[:predicate] unless property_config.nil?
       end
 
       def valid_datatype?(val)
