@@ -210,7 +210,41 @@ describe ActiveTriples::RDFSource do
         .to raise_error ArgumentError
     end
 
-    it 'sets a value'
+    shared_examples 'value setting' do |value|
+      let(:predicate) { RDF::DC.creator } 
+      let(:statement) { RDF::Statement(subject, predicate, value) } 
+
+      it 'sets a value' do
+        expect { subject.set_value(predicate, value) }
+          .to change { subject.statements }
+               .to(a_collection_containing_exactly(statement))
+      end
+
+      it 'overwrites existing values' do
+        old_vals = ['old value', RDF::Node.new, RDF::DC.type, RDF::URI('----')]
+        subject.set_value(predicate, old_vals)
+
+        expect { subject.set_value(predicate, value) }
+          .to change { subject.statements }
+               .to(a_collection_containing_exactly(statement))
+      end
+    end
+    
+    context 'with string literal' do
+      include_examples 'value setting', 'blah'
+    end
+
+    context 'with typed literal' do
+      include_examples 'value setting', Date.today
+    end
+
+    context 'with RDF Term' do
+      include_examples 'value setting', RDF::Node.new
+    end
+
+    context 'with URI' do
+      include_examples 'value setting', RDF::URI('http://example.org/snork')
+    end
   end
 
   describe '#get_value' do
