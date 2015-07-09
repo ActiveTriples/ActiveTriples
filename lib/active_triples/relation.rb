@@ -233,10 +233,15 @@ module ActiveTriples
 
       def add_child_node(resource, object = nil)
         parent.insert [rdf_subject, predicate, resource.rdf_subject]
-        unless resource.frozen? || resource == parent
+
+        unless resource.frozen? || 
+               resource == parent || 
+               (parent.persistence_strategy.is_a?(ParentStrategy) && 
+                resource == parent.persistence_strategy.final_parent)
           resource.set_persistence_strategy(ParentStrategy)
-          resource.parent = parent
+          resource.parent = parent 
         end
+
         self.node_cache[resource.rdf_subject] = (object ? object : resource)
         resource.persist! if resource.persistence_strategy.is_a? ParentStrategy
       end

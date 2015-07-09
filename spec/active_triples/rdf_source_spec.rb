@@ -274,7 +274,7 @@ describe ActiveTriples::RDFSource do
       end
       
       it 'is a no-op' do
-        subject << RDF::Statement(subject, RDF::DC.title, 'Moomin')
+        subject << RDF::Statement(subject, RDF::Vocab::DC.title, 'Moomin')
         # this is a bit naive
         expect { subject.set_value(:not_a_property, '') rescue nil }
           .not_to change { subject.triples.count }
@@ -384,6 +384,45 @@ describe ActiveTriples::RDFSource do
            source_class.new(uri), 
            subject]
         end
+      end
+    end
+
+    context 'with reciprocal relations' do
+      let(:document) { source_class.new }
+      let(:person) { source_class.new }
+
+      it 'should handle setting reciprocally' do
+        document.set_value(RDF::Vocab::DC.creator, person)
+        person.set_value(RDF::Vocab::FOAF.publications, document)
+
+        expect(person.get_values(RDF::Vocab::FOAF.publications))
+          .to contain_exactly(document)
+        expect(document.get_values(RDF::Vocab::DC.creator))
+          .to contain_exactly(person)
+      end
+
+      it 'should handle setting' do
+        document.set_value(RDF::Vocab::DC.creator, person) 
+        person.set_value(RDF::Vocab::FOAF.knows, subject) 
+        subject.set_value(RDF::Vocab::FOAF.publications, document) 
+        subject.set_value(RDF::Vocab::OWL.sameAs, subject)         
+
+        expect(subject.get_values(RDF::Vocab::FOAF.publications))
+          .to contain_exactly(document)
+        expect(subject.get_values(RDF::Vocab::OWL.sameAs))
+          .to contain_exactly(subject)
+        expect(document.get_values(RDF::Vocab::DC.creator))
+          .to contain_exactly(person)
+      end
+
+      it 'should handle setting circularly' do
+        document.set_value(RDF::Vocab::DC.creator, [person, subject])
+        person.set_value(RDF::Vocab::FOAF.knows, subject)
+
+        expect(document.get_values(RDF::Vocab::DC.creator))
+          .to contain_exactly(person, subject)
+        expect(person.get_values(RDF::Vocab::FOAF.knows))
+          .to contain_exactly subject
       end
     end
   end
