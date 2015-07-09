@@ -26,6 +26,26 @@ describe ActiveTriples::Resource do
     end
   end
 
+  describe 'setting properties' do
+    before do
+      class DummyWithClass < ActiveTriples::Resource
+        configure :type => RDF::URI('http://example.org/DummyClass')
+      end
+    end
+
+    after { Object.send(:remove_const, "DummyWithClass") }
+
+    it 'should replace property value when Resource class has a rdf type' do
+      dl1 = DummyWithClass.new('http://example.org/dl1')
+      dl2 = DummyWithClass.new('http://example.org/dl2')
+
+      subject.title = dl1
+      expect( subject.title ).to eq [dl1]
+      subject.title = dl2
+      expect( subject.title ).to eq [dl2]
+    end
+  end
+
   describe 'rdf_subject' do
     it "should be a blank node if we haven't set it" do
       expect(subject.rdf_subject.node?).to be true
@@ -624,7 +644,6 @@ describe ActiveTriples::Resource do
         end
       end
     end
-
   end
 
   describe '#[]' do

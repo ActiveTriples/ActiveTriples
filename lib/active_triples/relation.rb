@@ -53,18 +53,16 @@ module ActiveTriples
     def set(values)
       values = values.to_a if values.is_a? Relation
       values = [values].compact unless values.kind_of?(Array)
+
       empty_property
-      values.each do |val|
-        set_value(val)
-      end
+      values.each { |val| set_value(val) }
+
       parent.persist! if parent.persistence_strategy.is_a? ParentStrategy
     end
 
     def empty_property
       parent.query([rdf_subject, predicate, nil]).each_statement do |statement|
-        if !uri_class(statement.object) || uri_class(statement.object) == class_for_property
-          parent.delete(statement)
-        end
+        parent.delete(statement)
       end
     end
 
