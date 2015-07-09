@@ -315,6 +315,31 @@ describe ActiveTriples::RDFSource do
         end
       end
     end
+
+    context 'with reciprocal relations' do
+      let(:document) { source_class.new }
+      let(:person) { source_class.new }
+
+      it 'should handle setting reciprocally' do
+        document.set_value(RDF::DC.creator, person)
+        person.set_value(RDF::FOAF.publications, document)
+
+        expect(person.get_values(RDF::FOAF.publications))
+          .to contain_exactly(document)
+        expect(document.get_values(RDF::DC.creator))
+          .to contain_exactly(person)
+      end
+
+      it 'should handle setting circularly' do 
+        document.set_value(RDF::DC.creator, [person, subject])
+        person.set_value(RDF::FOAF.knows, subject)
+
+        expect(document.get_values(RDF::DC.creator))
+          .to contain_exactly(person, subject)
+        expect(person.get_values(RDF::FOAF.knows))
+          .to contain_exactly subject
+      end
+    end
   end
 
   describe 'validation' do
