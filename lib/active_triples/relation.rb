@@ -58,6 +58,7 @@ module ActiveTriples
       values.each { |val| set_value(val) }
 
       parent.persist! if parent.persistence_strategy.is_a? ParentStrategy
+      self
     end
 
     def empty_property
