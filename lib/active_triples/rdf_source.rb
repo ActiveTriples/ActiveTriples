@@ -322,12 +322,25 @@ module ActiveTriples
     # requested. Elements in the array may RdfResource objects or a
     # valid datatype.
     #
-    # Handles two argument patterns. The recommended pattern is:
+    # Handles two argument patterns. The recommended pattern, which accesses
+    # properties directly on this RDFSource, is:
     #    get_values(property)
     #
-    # For backwards compatibility, there is support for explicitly
-    # passing the rdf_subject to be used in th statement:
-    #    get_values(uri, property)
+    # @overload get_values(property) 
+    #   Gets values on the RDFSource for the given property
+    #   @param [String, #to_term] property  the property for the values
+    #
+    # @overload get_values(uri, property)
+    #   For backwards compatibility, explicitly passing the term used as the
+    #   subject {ActiveTriples::Relation#rdf_subject} of the returned relation.
+    #   @param [RDF::Term] uri  the term to use as the subject
+    #   @param [String, #to_term] property  the property for the values
+    #
+    # @return [ActiveTriples::Relation] an array {Relation} containing the 
+    #   values of the property
+    #
+    # @todo should this raise an error when the property argument is not an 
+    #   {RDF::Term} or a registered property key?
     def get_values(*args)
       get_relation(args)
     end
@@ -340,6 +353,9 @@ module ActiveTriples
       get_relation([uri_or_term_property])
     end
 
+    ##
+    # @see #get_values
+    # @todo deprecate and remove? this is an alias to `#get_values`
     def get_relation(args)
       @relation_cache ||= {}
       rel = Relation.new(self, args)

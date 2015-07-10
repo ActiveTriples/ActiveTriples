@@ -11,13 +11,18 @@ module ActiveTriples
   # Relations, then, express n binary relationships between the parent node and
   # a term.
   #
+  # 
+  #
   # @see RDF::Term
   class Relation
-
+    include Enumerable
+    
     attr_accessor :parent, :value_arguments, :node_cache, :rel_args
     attr_reader :reflections
 
-    delegate *(Array.public_instance_methods - [:send, :__send__, :__id__, :class, :object_id] + [:as_json]), :to => :result
+    # delegate *(Array.public_instance_methods - [:send, :__send__, :__id__, :class, :object_id] + [:as_json]), :to => :result
+    delegate :[], :each, :empty?, :to_a, :to_ary, :<=>, :==, :equal, :===, :last, 
+       :to => :result
 
     def initialize(parent_source, value_arguments)
       self.parent = parent_source
@@ -38,16 +43,16 @@ module ActiveTriples
     end
 
     def result
-      parent.query(:subject => rdf_subject, :predicate => predicate)
-        .each_with_object([]) do |x, collector|
-          converted_object = convert_object(x.object)
-          collector << converted_object unless converted_object.nil?
+      statements = parent.query(:subject => rdf_subject, :predicate => predicate)
+      statements.each_with_object([]) do |x, collector|
+        converted_object = convert_object(x.object)
+        collector << converted_object unless converted_object.nil?
       end
     end
 
     def set(values)
+      values = values.to_a if values.is_a? Relation
       values = [values].compact unless values.kind_of?(Array)
-      values = values.to_a if values.class == Relation
       empty_property
       values.each do |val|
         set_value(val)
@@ -101,8 +106,13 @@ module ActiveTriples
       self.set(values)
     end
 
+    # @todo find a way to simplify this?
     def property_config
-      return type_property if (property == RDF.type || property.to_s == "type") && (!reflections.kind_of?(RDFSource) || !reflections.reflect_on_property(property))
+      return type_property if 
+        (property == RDF.type || property.to_s == "type") && 
+        (!reflections.kind_of?(RDFSource) || 
+         !reflections.reflect_on_property(property))
+      
       reflections.reflect_on_property(property)
     end
 
@@ -113,8 +123,23 @@ module ActiveTriples
     def reset!
     end
 
+    ##
+    # Returns the property for the Relation. This may be a registered property key
+    #
+    # @return the property for this Relation.
+    # @see predicate
     def property
       value_arguments.last
+    end
+
+    ##
+    # Gives the predicate used by the Relation. Values of this object are 
+    # those that match the pattern `<rdf_subject> <predicate> [value] .`
+    #
+    # @return [RDF::Term] the predicate for this relation
+    def predicate
+      return property if property.is_a?(RDF::Term)
+      property_config[:predicate] unless property_config.nil?
     end
 
     protected
@@ -151,10 +176,6 @@ module ActiveTriples
         end
         self.node_cache[resource.rdf_subject] = (object ? object : resource)
         resource.persist! if resource.persistence_strategy.is_a? ParentStrategy
-      end
-
-      def predicate
-        property.kind_of?(RDF::URI) ? property : property_config[:predicate]
       end
 
       def valid_datatype?(val)
@@ -233,13 +254,15 @@ module ActiveTriples
         klass
       end
 
+      ##
+      # @return [RDF::Term] the subject of the relation
       def rdf_subject
-        raise ArgumentError, "wrong number of arguments (#{value_arguments.length} for 1-2)" if value_arguments.length < 1 || value_arguments.length > 2
-        if value_arguments.length > 1
-          value_arguments.first
-        else
-          parent.rdf_subject
+        if value_arguments.length < 1 || value_arguments.length > 2
+          raise(ArgumentError, 
+                "wrong number of arguments (#{value_arguments.length} for 1-2)")
         end
+
+        value_arguments.length > 1 ? value_arguments.first : parent.rdf_subject
       end
   end
 end

@@ -2,6 +2,27 @@ require 'spec_helper'
 require 'rdf/isomorphic'
 
 describe ActiveTriples::Relation do
+  let(:parent_resource) { double("parent resource", reflections: {}) }
+
+  subject { described_class.new(parent_resource, double("value args") ) }
+
+  describe "#predicate" do
+    subject { described_class.new(parent_resource, [predicate] ) }
+
+    context 'when the property is an RDF::Term' do
+      let(:predicate) { RDF::URI('http://example.org/moomin') }
+      
+      it 'returns the specified RDF::Term' do
+        expect(subject.predicate).to eq predicate
+      end
+    end
+
+    context 'when the property is a symbol' do
+      # unit tests here are hard. There are too many moving parts for something
+      # so simple 
+      it 'returns the reflected property'
+    end
+  end
 
   describe "#rdf_subject" do
     let(:parent_resource) { double("parent resource", reflections: {}) }
@@ -10,30 +31,38 @@ describe ActiveTriples::Relation do
 
     context "when relation has 0 value arguments" do
       before { subject.value_arguments = double(length: 0) }
+
       it "should raise an error" do
         expect { subject.send(:rdf_subject) }.to raise_error
       end
     end
+
     context "when term has 1 value argument" do
       before do
         allow(subject.parent).to receive(:rdf_subject) { "parent subject" }
         subject.value_arguments = double(length: 1)
       end
+
       it "should call `rdf_subject' on the parent" do
         expect(subject.send(:rdf_subject) ).to eq "parent subject"
       end
+
       it " is a private method" do
         expect { subject.rdf_subject }.to raise_error NoMethodError
       end
     end
+
     context "when relation has 2 value arguments" do
       before { subject.value_arguments = double(length: 2, first: "first") }
+
       it "should return the first value argument" do
         expect(subject.send(:rdf_subject) ).to eq "first"
       end
     end
+
     context "when relation has 3 value arguments" do
       before { subject.value_arguments = double(length: 3) }
+
       it "should raise an error" do
         expect { subject.send(:rdf_subject)  }.to raise_error
       end
@@ -65,6 +94,7 @@ describe ActiveTriples::Relation do
         expect(subject.send(:valid_datatype?, true)).to be true
       end
     end
+
     context "the value is a Resource" do
       after { Object.send(:remove_const, :DummyResource) }
       let(:resource) { DummyResource.new }
