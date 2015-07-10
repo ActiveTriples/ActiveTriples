@@ -164,9 +164,9 @@ module ActiveTriples
         valid_datatype?(val) ? RDF::Literal(val) : val
       end
 
-      def add_child_node(resource,object=nil)
+      def add_child_node(resource, object = nil)
         parent.insert [rdf_subject, predicate, resource.rdf_subject]
-        unless resource.frozen?
+        unless resource.frozen? || resource == parent
           resource.set_persistence_strategy(ParentStrategy)
           resource.parent = parent
         end

@@ -232,7 +232,7 @@ module ActiveTriples
     ##
     # @return [RDF::URI] the uri
     def to_uri
-      uri? ? rdf_subject : NullURI.new
+      rdf_subject if uri?
     end
 
     ##
@@ -334,7 +334,8 @@ module ActiveTriples
     # passing the rdf_subject to be used in the statement:
     #    set_value(uri, property, values)
     #
-    # @note This method will delete existing statements with the correct subject and predicate from the graph
+    # @note This method will delete existing statements with the correct 
+    #   subject and predicate from the graph
     def set_value(*args)
       # Add support for legacy 3-parameter syntax
       if args.length > 3 || args.length < 2

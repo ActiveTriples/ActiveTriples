@@ -210,7 +210,7 @@ describe ActiveTriples::RDFSource do
         .to raise_error ArgumentError
     end
 
-    shared_examples 'value setting' do |value|
+    shared_examples 'value setting' do
       let(:predicate) { RDF::DC.creator } 
       let(:statement) { RDF::Statement(subject, predicate, value) } 
 
@@ -231,19 +231,39 @@ describe ActiveTriples::RDFSource do
     end
     
     context 'with string literal' do
-      include_examples 'value setting', 'blah'
+      include_examples 'value setting' do
+        let(:value) { 'blah' }
+      end
     end
 
     context 'with typed literal' do
-      include_examples 'value setting', Date.today
+      include_examples 'value setting' do
+        let(:value) { Date.today }
+      end
     end
 
     context 'with RDF Term' do
-      include_examples 'value setting', RDF::Node.new
+      include_examples 'value setting' do
+        let(:value) { RDF::Node.new }
+      end
     end
 
-    context 'with URI' do
-      include_examples 'value setting', RDF::URI('http://example.org/snork')
+    context 'with RDFSource URI' do
+      include_examples 'value setting' do
+        let(:value) { source_class.new }
+      end
+    end
+
+    context 'with RDFSource node' do
+      include_examples 'value setting' do
+        let(:value) { source_class.new(uri) }
+      end
+    end
+
+    context 'with self' do
+      include_examples 'value setting' do
+        let(:value) { subject }
+      end
     end
   end
 
