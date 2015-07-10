@@ -204,6 +204,46 @@ describe ActiveTriples::RDFSource do
     end
   end
 
+  describe '#get_values' do
+    before { statements.each { |statement| subject << statement } }
+
+    let(:predicate) { RDF::Vocab::DC.creator } 
+    let(:property_name) { :creator }
+    let(:values) { ['Tove Jansson', subject] }
+
+    let(:source_class) do
+      class SourceWithCreator
+        include ActiveTriples::RDFSource
+
+        property :creator, predicate: RDF::Vocab::DC.creator 
+      end
+      SourceWithCreator
+    end
+
+    let(:statements) do
+      values.map { |value| RDF::Statement(subject, predicate, value) }
+    end
+
+    it 'gets values for a property name' do
+      expect(subject.get_values(property_name))
+        .to be_a_relation_containing(*values)
+    end
+
+    it 'gets values for a predicate' do
+      expect(subject.get_values(predicate))
+        .to be_a_relation_containing(*values)
+    end
+
+    it 'gets values with two args' do
+      val = 'momma'
+      other_uri = uri / val
+      subject << RDF::Statement(other_uri, predicate, val)
+
+      expect(subject.get_values(other_uri, predicate))
+        .to be_a_relation_containing(val)
+    end
+  end
+
   describe '#set_value' do
     it 'raises argument error when given too many arguments' do
       expect { subject.set_value(double, double, double, double) }
@@ -214,8 +254,7 @@ describe ActiveTriples::RDFSource do
       expect { subject.set_value(:not_a_property, 'moomin') }.to raise_error
     end
 
-    shared_examples 'value setting' do
-
+    shared_examples 'setting values' do
       after do
         Object.send(:remove_const, 'SourceWithCreator') if 
           defined? SourceWithCreator
@@ -260,61 +299,56 @@ describe ActiveTriples::RDFSource do
                .to(a_collection_containing_exactly(*statements))
       end
 
-      it 'returns the set values' do
+      it 'returns the set values in a Relation' do
         expect(subject.set_value(predicate, value))
-          .to contain_exactly(*Array.wrap(value))
-      end
-
-      it 'returns a Relation' do
-        expect(subject.set_value(predicate, value).class)
-          .to eq ActiveTriples::Relation
+          .to be_a_relation_containing(*Array.wrap(value))
       end
     end
     
     context 'with string literal' do
-      include_examples 'value setting' do
+      include_examples 'setting values' do
         let(:value) { 'moomin' }
       end
     end
 
     context 'with multiple values' do
-      include_examples 'value setting' do
+      include_examples 'setting values' do
         let(:value) { ['moominpapa', 'moominmama'] }
       end
     end
 
     context 'with typed literal' do
-      include_examples 'value setting' do
+      include_examples 'setting values' do
         let(:value) { Date.today }
       end
     end
 
     context 'with RDF Term' do
-      include_examples 'value setting' do
+      include_examples 'setting values' do
         let(:value) { RDF::Node.new }
       end
     end
 
     context 'with RDFSource node' do
-      include_examples 'value setting' do
+      include_examples 'setting values' do
         let(:value) { source_class.new }
       end
     end
 
     context 'with RDFSource uri' do
-      include_examples 'value setting' do
+      include_examples 'setting values' do
         let(:value) { source_class.new(uri) }
       end
     end
 
     context 'with self' do
-      include_examples 'value setting' do
+      include_examples 'setting values' do
         let(:value) { subject }
       end
     end
 
     context 'with mixed values' do
-      include_examples 'value setting' do
+      include_examples 'setting values' do
         let(:value) do
           ['moomin', 
            Date.today, 
