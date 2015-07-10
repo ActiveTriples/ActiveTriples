@@ -325,17 +325,58 @@ module ActiveTriples
     end
 
     ##
-    # Adds or updates a property with supplied values.
+    # Adds or updates a property by creating triples for each of the supplied
+    # values.
     #
-    # Handles two argument patterns. The recommended pattern is:
-    #    set_value(property, values)
+    # The `property` argument may be either a symbol representing a registered
+    # property name, or an RDF::Term to use as the predicate.
     #
-    # For backwards compatibility, there is support for explicitly
-    # passing the rdf_subject to be used in the statement:
-    #    set_value(uri, property, values)
+    # @example setting with a property name
+    #   class Thing
+    #     include ActiveTriples::RDFSource
+    #     property :creator, predicate: RDF::DC.creator
+    #   end
+    # 
+    #   t = Thing.new
+    #   t.set_value(:creator, 'Tove Jansson')  # => ['Tove Jansson']
     #
-    # @note This method will delete existing statements with the correct 
+    #
+    # @example setting with a predicate
+    #   t = Thing.new
+    #   t.set_value(RDF::DC.creator, 'Tove Jansson')  # => ['Tove Jansson']
+    #   
+    #
+    # The recommended pattern, which sets properties directly on this 
+    # RDFSource, is: `set_value(property, values)`
+    #
+    # @overload set_value(property, values)
+    #   Updates the values for the property, using this RDFSource as the subject
+    #
+    #   @param [RDF::Term, #to_sym] property  a symbol with the property name
+    #     or an RDF::Term to use as a predicate.
+    #   @param [Array<RDF::Resource>, RDF::Resource] values  an array of values
+    #     or a single value. If not an {RDF::Resource}, the values will be 
+    #     coerced to an {RDF::Literal} or {RDF::Node} by {RDF::Statement}
+    #
+    # @overload set_value(subject, property, values)
+    #   Updates the values for the property, using the given term as the subject
+    # 
+    #   @param [RDF::Term] subject  the term representing the 
+    #   @param [RDF::Term, #to_sym] property  a symbol with the property name
+    #     or an RDF::Term to use as a predicate.
+    #   @param [Array<RDF::Resource>, RDF::Resource] values  an array of values
+    #     or a single value. If not an {RDF::Resource}, the values will be 
+    #     coerced to an {RDF::Literal} or {RDF::Node} by {RDF::Statement}
+    #
+    # @return [ActiveTriples::Relation] an array {Relation} containing the
+    #   values of the property
+    #
+    # @note This method will delete existing statements with the given
     #   subject and predicate from the graph
+    #
+    # @see http://www.rubydoc.info/github/ruby-rdf/rdf/RDF/Statement For 
+    #   documentation on {RDF::Statement} and the handling of 
+    #   non-{RDF::Resource} values.
     def set_value(*args)
       # Add support for legacy 3-parameter syntax
       if args.length > 3 || args.length < 2

@@ -210,29 +210,76 @@ describe ActiveTriples::RDFSource do
         .to raise_error ArgumentError
     end
 
+    it 'raises an error when given an unregistered property name' do
+      expect { subject.set_value(:not_a_property, 'moomin') }.to raise_error
+    end
+
     shared_examples 'value setting' do
-      let(:predicate) { RDF::DC.creator } 
-      let(:statement) { RDF::Statement(subject, predicate, value) } 
+
+      after do
+        Object.send(:remove_const, 'SourceWithCreator') if 
+          defined? SourceWithCreator
+      end
+
+      let(:source_class) do
+        class SourceWithCreator
+          include ActiveTriples::RDFSource
+          property :creator, predicate: RDF::Vocab::DC.creator 
+        end
+        SourceWithCreator
+      end
+
+      let(:predicate) { RDF::Vocab::DC.creator } 
+      let(:property_name) { :creator }
+      let(:statements) do
+        Array.wrap(value).map { |val| RDF::Statement(subject, predicate, val) }
+      end
 
       it 'sets a value' do
         expect { subject.set_value(predicate, value) }
           .to change { subject.statements }
-               .to(a_collection_containing_exactly(statement))
+               .to(a_collection_containing_exactly(*statements))
+      end
+
+      it 'sets a value with a property name' do
+        expect { subject.set_value(property_name, value) }
+          .to change { subject.statements }
+               .to(a_collection_containing_exactly(*statements))
       end
 
       it 'overwrites existing values' do
-        old_vals = ['old value', RDF::Node.new, RDF::DC.type, RDF::URI('----')]
+        old_vals = ['old value', 
+                    RDF::Node.new, 
+                    RDF::Vocab::DC.type, 
+                    RDF::URI('----')]
+
         subject.set_value(predicate, old_vals)
 
         expect { subject.set_value(predicate, value) }
           .to change { subject.statements }
-               .to(a_collection_containing_exactly(statement))
+               .to(a_collection_containing_exactly(*statements))
+      end
+
+      it 'returns the set values' do
+        expect(subject.set_value(predicate, value))
+          .to contain_exactly(*Array.wrap(value))
+      end
+
+      it 'returns a Relation' do
+        expect(subject.set_value(predicate, value).class)
+          .to eq ActiveTriples::Relation
       end
     end
     
     context 'with string literal' do
       include_examples 'value setting' do
-        let(:value) { 'blah' }
+        let(:value) { 'moomin' }
+      end
+    end
+
+    context 'with multiple values' do
+      include_examples 'value setting' do
+        let(:value) { ['moominpapa', 'moominmama'] }
       end
     end
 
@@ -248,13 +295,13 @@ describe ActiveTriples::RDFSource do
       end
     end
 
-    context 'with RDFSource URI' do
+    context 'with RDFSource node' do
       include_examples 'value setting' do
         let(:value) { source_class.new }
       end
     end
 
-    context 'with RDFSource node' do
+    context 'with RDFSource uri' do
       include_examples 'value setting' do
         let(:value) { source_class.new(uri) }
       end
@@ -263,6 +310,19 @@ describe ActiveTriples::RDFSource do
     context 'with self' do
       include_examples 'value setting' do
         let(:value) { subject }
+      end
+    end
+
+    context 'with mixed values' do
+      include_examples 'value setting' do
+        let(:value) do
+          ['moomin', 
+           Date.today, 
+           RDF::Node.new, 
+           source_class.new, 
+           source_class.new(uri), 
+           subject]
+        end
       end
     end
   end
