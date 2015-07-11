@@ -46,7 +46,6 @@ module ActiveTriples
     include NestedAttributes
     include Persistable
     include Properties
-    include Reflection
     include RDF::Value
     include RDF::Queryable
     include ActiveModel::Validations
@@ -176,8 +175,8 @@ module ActiveTriples
     ##
     # Delegate parent to the persistence strategy if possible
     #
-    # @todo establish a better pattern for this. `#parent` has been a public method
-    #   in the past, but it's probably time to deprecate it.
+    # @todo establish a better pattern for this. `#parent` has been a public 
+    #   method in the past, but it's probably time to deprecate it.
     def parent
       persistence_strategy.respond_to?(:parent) ? persistence_strategy.parent : nil
     end
@@ -517,6 +516,7 @@ module ActiveTriples
       end
 
       ##
+
       # Lists fields registered as properties on the object.
       #
       # @return [Array<Symbol>] the list of registered properties.
