@@ -166,7 +166,7 @@ module ActiveTriples
       id = values.delete(:id)
       set_subject!(id) if id && node?
       values.each do |key, value|
-        if reflections.reflect_on_property(key)
+        if reflections.has_property?(key)
           set_value(rdf_subject, key, value)
         elsif nested_attributes_options.keys.map { |k| "#{k}_attributes" }.include?(key)
           send("#{key}=".to_sym, value)

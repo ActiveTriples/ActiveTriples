@@ -157,6 +157,20 @@ describe ActiveTriples::RDFSource do
       values.map { |value| RDF::Statement(subject, predicate, value) }
     end
 
+    context 'with no matching property' do
+      it 'is empty' do
+        expect(subject.get_values(:not_a_predicate))
+          .to be_a_relation_containing()
+      end
+    end
+
+    context 'with an empty predicate' do
+      it 'is empty' do
+        expect(subject.get_values(RDF::URI('http://example.org/empty')))
+          .to be_a_relation_containing()
+      end
+    end
+
     it 'gets values for a property name' do
       expect(subject.get_values(property_name))
         .to be_a_relation_containing(*values)
@@ -183,10 +197,23 @@ describe ActiveTriples::RDFSource do
         .to raise_error ArgumentError
     end
 
-    it 'raises an error when given an unregistered property name' do
-      expect { subject.set_value(:not_a_property, 'moomin') }.to raise_error
+    context 'when given an unregistered property name' do
+      it 'raises an error' do
+        expect { subject.set_value(:not_a_property, '') }.to raise_error do |err|
+          expect(err).to be_a ActiveTriples::UndefinedPropertyError
+          expect(err.klass).to eq subject.class
+          expect(err.property).to eq :not_a_property
+        end
+      end
+      
+      it 'is a no-op' do
+        subject << RDF::Statement(subject, RDF::DC.title, 'Moomin')
+        # this is a bit naive
+        expect { subject.set_value(:not_a_property, '') rescue nil }
+          .not_to change { subject.triples.count }
+      end
     end
-
+    
     shared_examples 'setting values' do
       after do
         Object.send(:remove_const, 'SourceWithCreator') if 
@@ -288,34 +315,6 @@ describe ActiveTriples::RDFSource do
         end
       end
     end
-  end
-
-  describe '#get_value' do
-    context 'with no matching property' do
-      it 'returns a Relation' do
-        expect(subject.get_values(:not_a_predicate))
-          .to be_a ActiveTriples::Relation
-      end
-
-      it 'is empty' do
-        expect(subject.get_values(:not_a_predicate))
-          .to be_empty
-      end
-    end
-
-    context 'with an empty predicate' do
-      let(:predicate) { RDF::URI('http://example.org/empty') }
-
-      it 'returns a Relation' do
-        expect(subject.get_values(predicate)).to be_a ActiveTriples::Relation
-      end
-
-      it 'is empty' do
-        expect(subject.get_values(predicate)).to be_empty
-      end
-    end
-
-    it 'gets a value'
   end
 
   describe 'validation' do

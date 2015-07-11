@@ -14,16 +14,36 @@ module ActiveTriples
     end
 
     module ClassMethods
-      def reflect_on_property(term)
-        _active_triples_config[term.to_s]
+      ##
+      # @param [#to_s] property
+      #
+      # @return [ActiveTriples::NodeConfig] the configuration for the property
+      #
+      # @raise [ActiveTriples::UndefinedPropertyError] when the property does 
+      #   not exist
+      def reflect_on_property(property)
+        _active_triples_config.fetch(property.to_s) do
+          raise ActiveTriples::UndefinedPropertyError.new(property.to_s, self)
+        end
       end
 
+      ##
+      # @return [Hash{String=>ActiveTriples::NodeConfig}] a hash of property 
+      #   names and their configurations
       def properties
         _active_triples_config
       end
 
       def properties=(val)
         self._active_triples_config = val
+      end
+
+      ##
+      # @param [#to_s] property
+      #
+      # @return [Boolean] true if the property exsits; false otherwise
+      def has_property?(property)
+        _active_triples_config.keys.include? property.to_s
       end
     end
   end

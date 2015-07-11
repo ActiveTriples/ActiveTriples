@@ -53,6 +53,9 @@ module ActiveTriples
              'active_triples/persistence_strategies/parent_strategy'
     autoload :RepositoryStrategy,
              'active_triples/persistence_strategies/repository_strategy'
+
+    # error classes
+    autoload :UndefinedPropertyError
   end
   
   ##
