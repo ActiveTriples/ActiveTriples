@@ -12,46 +12,60 @@ describe ActiveTriples::Properties do
   end
 
   describe '#property' do
-    it 'should set a property as a NodeConfig' do
+    it 'sets a property as a NodeConfig' do
       DummyProperties.property :title, :predicate => RDF::DC.title
-      expect(DummyProperties.reflect_on_property(:title)).to be_kind_of ActiveTriples::NodeConfig
+      expect(DummyProperties.reflect_on_property(:title))
+        .to be_kind_of ActiveTriples::NodeConfig
     end
 
-    it 'should set the correct property' do
+    it 'sets the correct property' do
       DummyProperties.property :title, :predicate => RDF::DC.title
-      expect(DummyProperties.reflect_on_property(:title).predicate).to eql RDF::DC.title
+      expect(DummyProperties.reflect_on_property(:title).predicate)
+        .to eql RDF::DC.title
     end
 
-    it 'should set the correct property from string' do
+    it 'sets the correct property from string' do
       DummyProperties.property :title, :predicate => RDF::DC.title.to_s
-      expect(DummyProperties.reflect_on_property(:title).predicate).to eql RDF::DC.title
+      expect(DummyProperties.reflect_on_property(:title).predicate)
+        .to eql RDF::DC.title
     end
 
-    it 'should set index behaviors' do
+    it 'sets index behaviors' do
       DummyProperties.property :title, :predicate => RDF::DC.title do |index|
         index.as :facetable, :searchable
       end
-      expect(DummyProperties.reflect_on_property(:title)[:behaviors]).to eq [:facetable, :searchable]
+      expect(DummyProperties.reflect_on_property(:title)[:behaviors])
+        .to eq [:facetable, :searchable]
     end
 
-    it 'should set class name' do
-      DummyProperties.property :title, :predicate => RDF::DC.title, :class_name => RDF::Literal
-      expect(DummyProperties.reflect_on_property(:title)[:class_name]).to eq RDF::Literal
+    it 'sets class name' do
+      DummyProperties.property :title, 
+                               :predicate => RDF::DC.title, 
+                               :class_name => RDF::Literal
+      expect(DummyProperties.reflect_on_property(:title)[:class_name])
+        .to eq RDF::Literal
     end
 
-    it "should constantize string class names" do
-      DummyProperties.property :title, :predicate => RDF::DC.title, :class_name => "RDF::Literal"
-      expect(DummyProperties.reflect_on_property(:title)[:class_name]).to eq RDF::Literal
+    it "constantizes string class names" do
+      DummyProperties.property :title, 
+                               :predicate => RDF::DC.title, 
+                               :class_name => "RDF::Literal"
+      expect(DummyProperties.reflect_on_property(:title)[:class_name])
+        .to eq RDF::Literal
     end
 
-    it "should keep strings which it can't constantize as strings" do
-      DummyProperties.property :title, :predicate => RDF::DC.title, :class_name => "FakeClassName"
-      expect(DummyProperties.reflect_on_property(:title)[:class_name]).to eq "FakeClassName"
+    it "keeps strings which it can't constantize as strings" do
+      DummyProperties.property :title, 
+                               :predicate => RDF::DC.title, 
+                               :class_name => "FakeClassName"
+      expect(DummyProperties.reflect_on_property(:title)[:class_name])
+        .to eq "FakeClassName"
     end
 
     it 'raises error when defining properties that are already methods' do
       DummyProperties.send :define_method, :type, lambda { }
-      expect { DummyProperties.property :type, :predicate => RDF::DC.type }.to raise_error ArgumentError
+      expect { DummyProperties.property :type, :predicate => RDF::DC.type }
+        .to raise_error ArgumentError
     end
 
     it 'raises error when defining properties with no predicate' do
@@ -70,7 +84,8 @@ describe ActiveTriples::Properties do
     it 'allows resetting of properties' do
       DummyProperties.property :title, :predicate => RDF::DC.alternative
       DummyProperties.property :title, :predicate => RDF::DC.title
-      expect(DummyProperties.reflect_on_property(:title).predicate).to eq RDF::DC.title
+      expect(DummyProperties.reflect_on_property(:title).predicate)
+        .to eq RDF::DC.title
     end
   end
 
@@ -80,15 +95,18 @@ describe ActiveTriples::Properties do
     end
 
     it 'finds property configuration by term symbol' do
-      expect(DummyProperties.config_for_term_or_uri(:title)).to eq DummyProperties.properties['title']
+      expect(DummyProperties.config_for_term_or_uri(:title))
+        .to eq DummyProperties.properties['title']
     end
 
     it 'finds property configuration by term string' do
-      expect(DummyProperties.config_for_term_or_uri('title')).to eq DummyProperties.properties['title']
+      expect(DummyProperties.config_for_term_or_uri('title'))
+        .to eq DummyProperties.properties['title']
     end
 
     it 'finds property configuration by term URI' do
-      expect(DummyProperties.config_for_term_or_uri(RDF::DC.title)).to eq DummyProperties.properties['title']
+      expect(DummyProperties.config_for_term_or_uri(RDF::DC.title))
+        .to eq DummyProperties.properties['title']
     end
   end
 
@@ -99,7 +117,7 @@ describe ActiveTriples::Properties do
     end
 
     it 'lists its terms' do
-      expect(DummyProperties.fields).to eq [:title, :name]
+      expect(DummyProperties.fields).to contain_exactly(:title, :name)
     end
   end
 
@@ -116,8 +134,23 @@ describe ActiveTriples::Properties do
     end
 
     it 'should carry properties from superclass' do
-      expect(DummySubClass.reflect_on_property(:title)).to be_kind_of ActiveTriples::NodeConfig
-      expect(DummySubClass.reflect_on_property(:source)).to be_kind_of ActiveTriples::NodeConfig
+      expect(DummySubClass.reflect_on_property(:title))
+        .to be_kind_of ActiveTriples::NodeConfig
+      expect(DummySubClass.reflect_on_property(:source))
+        .to be_kind_of ActiveTriples::NodeConfig
+    end
+  end
+
+  describe '#generated_property_methods' do
+    it 'returns a GeneratedPropertyMethods module' do 
+      expect(DummyProperties.generated_property_methods)
+        .to eq DummyProperties::GeneratedPropertyMethods
+    end
+
+    it 'has setter and getter instance methods for set properties' do 
+      DummyProperties.property :title, :predicate => RDF::DC.title
+      expect(DummyProperties.generated_property_methods.instance_methods)
+        .to contain_exactly(:title, :title=)
     end
   end
 end
