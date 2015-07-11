@@ -20,9 +20,8 @@ module ActiveTriples
     attr_accessor :parent, :value_arguments, :node_cache, :rel_args
     attr_reader :reflections
 
-    # delegate *(Array.public_instance_methods - [:send, :__send__, :__id__, :class, :object_id] + [:as_json]), :to => :result
-    delegate :[], :each, :empty?, :to_a, :to_ary, :<=>, :==, :equal, :===, :last, 
-       :to => :result
+    delegate :<=>, :==, :===, :[], :each, :empty?, :equal, :inspect, :last, 
+       :to_a, :to_ary, :to => :result
 
     def initialize(parent_source, value_arguments)
       self.parent = parent_source
@@ -39,10 +38,14 @@ module ActiveTriples
     end
 
     def clear
-      set(nil)
+      return [] if predicate.nil?
+      parent.query([rdf_subject, predicate, nil]).each_statement do |statement|
+        parent.delete(statement)
+      end
     end
 
     def result
+      return [] if predicate.nil?
       statements = parent.query(:subject => rdf_subject, :predicate => predicate)
       statements.each_with_object([]) do |x, collector|
         converted_object = convert_object(x.object)
@@ -50,21 +53,31 @@ module ActiveTriples
       end
     end
 
+    ##
+    # Adds values to the relation
+    #
+    # @param [Array<RDF::Resource>, RDF::Resource] values  an array of values
+    #   or a single value. If not an {RDF::Resource}, the values will be 
+    #   coerced to an {RDF::Literal} or {RDF::Node} by {RDF::Statement}
+    #
+    # @return [Relation] a relation containing the set values; i.e. `self`
+    #
+    # @raise [ActiveTriples::UndefinedPropertyError] if the property is not
+    #   already an {RDF::Term} and is not defined in `#property_config`
+    # 
+    # @see http://www.rubydoc.info/github/ruby-rdf/rdf/RDF/Statement For 
+    #   documentation on {RDF::Statement} and the handling of 
+    #   non-{RDF::Resource} values.
     def set(values)
+      raise UndefinedPropertyError.new(property, reflections) if predicate.nil?
       values = values.to_a if values.is_a? Relation
       values = [values].compact unless values.kind_of?(Array)
 
-      empty_property
+      clear
       values.each { |val| set_value(val) }
 
       parent.persist! if parent.persistence_strategy.is_a? ParentStrategy
       self
-    end
-
-    def empty_property
-      parent.query([rdf_subject, predicate, nil]).each_statement do |statement|
-        parent.delete(statement)
-      end
     end
 
     def build(attributes={})
@@ -86,9 +99,7 @@ module ActiveTriples
     end
 
     def delete(*values)
-      values.each do |value|
-        parent.delete([rdf_subject, predicate, value])
-      end
+      values.each { |value| parent.delete([rdf_subject, predicate, value]) }
     end
 
     def << (values)
@@ -107,16 +118,9 @@ module ActiveTriples
 
     # @todo find a way to simplify this?
     def property_config
-      return type_property if 
-        (property == RDF.type || property.to_s == "type") && 
-        (!reflections.kind_of?(RDFSource) || 
-         !reflections.reflect_on_property(property))
+      return type_property if is_type?
       
       reflections.reflect_on_property(property)
-    end
-
-    def type_property
-      { :predicate => RDF.type, :cast => false }
     end
 
     def reset!
@@ -126,7 +130,7 @@ module ActiveTriples
     # Returns the property for the Relation. This may be a registered property key
     #
     # @return the property for this Relation.
-    # @see predicate
+    # @see #predicate
     def property
       value_arguments.last
     end
@@ -135,16 +139,28 @@ module ActiveTriples
     # Gives the predicate used by the Relation. Values of this object are 
     # those that match the pattern `<rdf_subject> <predicate> [value] .`
     #
-    # @return [RDF::Term] the predicate for this relation
+    # @return [RDF::Term, nil] the predicate for this relation; nil if 
+    #   no predicate can be found
+    #
+    # @see #property
     def predicate
       return property if property.is_a?(RDF::Term)
-      property_config[:predicate] unless property_config.nil?
+      property_config[:predicate] if is_property?
     end
 
     protected
 
       def node_cache
         @node_cache ||= {}
+      end
+
+      def is_property?
+        reflections.has_property?(property) || is_type?
+      end
+
+      def is_type?
+        (property == RDF.type || property.to_s == "type") && 
+        (!reflections.kind_of?(RDFSource) || !is_property?)
       end
 
       def set_value(val)
@@ -159,6 +175,10 @@ module ActiveTriples
         val = val.to_uri if val.respond_to? :to_uri
         raise ValueError, val unless val.kind_of? RDF::Term
         parent.insert [rdf_subject, predicate, val]
+      end
+
+      def type_property
+        { :predicate => RDF.type, :cast => false }
       end
 
       def value_to_node(val)
@@ -207,13 +227,13 @@ module ActiveTriples
         value = RDF::Node.new if value.nil?
         node = node_cache[value] if node_cache[value]
         node ||= klass.from_uri(value,parent)
-        return nil if (property_config && property_config[:class_name]) && (class_for_value(value) != class_for_property)
+        return nil if (is_property? && property_config[:class_name]) && (class_for_value(value) != class_for_property)
         self.node_cache[value] ||= node
         node
       end
 
       def cast?
-        return true unless property_config || (rel_args && rel_args[:cast])
+        return true unless is_property? || (rel_args && rel_args[:cast])
         return rel_args[:cast] if rel_args.has_key?(:cast)
         !!property_config[:cast]
       end
@@ -244,7 +264,7 @@ module ActiveTriples
       end
 
       def class_for_property
-        klass = property_config[:class_name] if property_config
+        klass = property_config[:class_name] if is_property?
         klass ||= Resource
         klass = ActiveTriples.class_from_string(klass, final_parent.class) if
           klass.kind_of? String

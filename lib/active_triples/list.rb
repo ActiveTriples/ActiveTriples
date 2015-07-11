@@ -162,6 +162,7 @@ module ActiveTriples
       if subject == RDF.nil
         @subject = RDF::Node.new
         @graph = ListResource.new(subject)
+        @graph.list = self
         @graph.type = RDF.List
       end
 
