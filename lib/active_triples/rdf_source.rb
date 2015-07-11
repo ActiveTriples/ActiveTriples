@@ -123,41 +123,12 @@ module ActiveTriples
       other == to_term
     end
 
-    ##
-    # Delegate parent to the persistence strategy if possible
-    #
-    # @todo establish a better pattern for this. `#parent` has been a public method
-    #   in the past, but it's probably time to deprecate it.
-    def parent
-      persistence_strategy.respond_to?(:parent) ? persistence_strategy.parent : nil
-    end
-
-    ##
-    # @todo deprecate/remove
-    # @see #parent
-    def parent=(parent)
-      persistence_strategy.respond_to?(:parent=) ? (persistence_strategy.parent = parent) : nil
-    end
-
     def attributes
       attrs = {}
       attrs['id'] = id if id
       fields.map { |f| attrs[f.to_s] = get_values(f) }
       unregistered_predicates.map { |uri| attrs[uri.to_s] = get_values(uri) }
       attrs
-    end
-
-    def serializable_hash(options = nil)
-      attrs = (fields.map { |f| f.to_s }) << 'id'
-      hash = super(:only => attrs)
-      unregistered_predicates.map { |uri| hash[uri.to_s] = get_values(uri) }
-      hash
-    end
-
-    ##
-    # @return [Class] gives `self#class`
-    def reflections
-      self.class
     end
 
     def attributes=(values)
@@ -174,6 +145,13 @@ module ActiveTriples
           raise ArgumentError, "No association found for name `#{key}'. Has it been defined yet?"
         end
       end
+    end
+
+    def serializable_hash(options = nil)
+      attrs = (fields.map { |f| f.to_s }) << 'id'
+      hash = super(:only => attrs)
+      unregistered_predicates.map { |uri| hash[uri.to_s] = get_values(uri) }
+      hash
     end
 
     ##
@@ -195,7 +173,23 @@ module ActiveTriples
     end
 
     ##
-    # Gives the representation of this
+    # Delegate parent to the persistence strategy if possible
+    #
+    # @todo establish a better pattern for this. `#parent` has been a public method
+    #   in the past, but it's probably time to deprecate it.
+    def parent
+      persistence_strategy.respond_to?(:parent) ? persistence_strategy.parent : nil
+    end
+
+    ##
+    # @todo deprecate/remove
+    # @see #parent
+    def parent=(parent)
+      persistence_strategy.respond_to?(:parent=) ? (persistence_strategy.parent = parent) : nil
+    end
+
+    ##
+    # Gives the representation of this RDFSource as an RDF::Term
     #
     # @return [RDF::URI, RDF::Node] the URI that identifies this `RDFSource`;
     #   or a bnode identifier
@@ -251,7 +245,7 @@ module ActiveTriples
     end
 
     def type
-      self.get_values(:type).to_a
+      self.get_values(:type)
     end
 
     def type=(type)
@@ -270,6 +264,14 @@ module ActiveTriples
         return values unless values.empty?
       end
       node? ? [] : [rdf_subject.to_s]
+    end
+
+    def default_labels
+      [RDF::SKOS.prefLabel,
+       RDF::DC.title,
+       RDF::RDFS.label,
+       RDF::SKOS.altLabel,
+       RDF::SKOS.hiddenLabel]
     end
 
     ##
@@ -352,14 +354,6 @@ module ActiveTriples
     end
 
     ##
-    # Adds or updates a property with supplied values.
-    #
-    # @note This method will delete existing statements with the correct subject and predicate from the graph
-    def []=(uri_or_term_property, value)
-      self[uri_or_term_property].set(value)
-    end
-
-    ##
     # Returns an array of values belonging to the property
     # requested. Elements in the array may RdfResource objects or a
     # valid datatype.
@@ -388,11 +382,25 @@ module ActiveTriples
     end
 
     ##
-    # Returns an array of values belonging to the property
-    # requested. Elements in the array may RdfResource objects or a
-    # valid datatype.
-    def [](uri_or_term_property)
-      get_relation([uri_or_term_property])
+    # Returns an array of values belonging to the property requested. Elements
+    # in the array may RdfResource objects or a valid datatype.
+    # 
+    # @param [RDF::Term, :to_s] term_or_property
+    def [](term_or_property)
+      get_relation([term_or_property])
+    end
+
+    ##
+    # Adds or updates a property with supplied values.
+    #
+    # @param [RDF::Term, :to_s] term_or_property
+    # @param [Array<RDF::Resource>, RDF::Resource] values  an array of values
+    #   or a single value to set the property to.   
+    #
+    # @note This method will delete existing statements with the correct 
+    #   subject and predicate from the graph
+    def []=(term_or_property, value)
+      self[term_or_property].set(value)
     end
 
     ##
@@ -460,6 +468,15 @@ module ActiveTriples
 
     private
 
+      ##
+      # This gives the {RDF::Graph} which represents the current state of this
+      # resource.
+      #  
+      # @return [RDF::Graph] the underlying graph representation of the
+      #   `RDFSource`.
+      #
+      # @see http://www.w3.org/TR/2014/REC-rdf11-concepts-20140225/#change-over-time
+      #   RDF Concepts and Abstract Syntax comment on "RDF source"
       def graph
         @graph
       end
@@ -497,14 +514,6 @@ module ActiveTriples
         preds = registered_predicates
         preds << RDF.type
         predicates.select { |p| !preds.include? p }
-      end
-
-      def default_labels
-        [RDF::SKOS.prefLabel,
-         RDF::DC.title,
-         RDF::RDFS.label,
-         RDF::SKOS.altLabel,
-         RDF::SKOS.hiddenLabel]
       end
 
       ##

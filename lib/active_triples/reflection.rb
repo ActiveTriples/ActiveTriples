@@ -9,6 +9,18 @@ module ActiveTriples
       self._active_triples_config = {}
     end
 
+    ##
+    # Gives access to a `Reflection` of the properties configured on this class
+    #
+    # @example
+    #   my_source.reflections.has_property?(:title)
+    #   my_source.reflections.reflect_on_property(:title)
+    # @return [Class] gives `self#class`
+    #
+    def reflections
+      self.class
+    end
+
     def self.add_reflection(model, name, reflection)
       model._active_triples_config = 
         model._active_triples_config.merge(name.to_s => reflection)

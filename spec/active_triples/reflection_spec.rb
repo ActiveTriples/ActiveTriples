@@ -10,6 +10,12 @@ describe ActiveTriples::Reflection do
       'snorkmaiden' => double('snorkmaiden config') }
   end
 
+  describe '#reflections' do
+    it 'gives reflections for the instance' do
+      expect(subject.reflections).to eq klass
+    end
+  end
+
   describe '.properties=' do
     it 'sets properties' do
       expect { klass.properties = config_hash }
