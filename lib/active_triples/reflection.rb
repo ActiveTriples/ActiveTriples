@@ -10,7 +10,8 @@ module ActiveTriples
     end
 
     def self.add_reflection(model, name, reflection)
-      model._active_triples_config = model._active_triples_config.merge(name.to_s => reflection)
+      model._active_triples_config = 
+        model._active_triples_config.merge(name.to_s => reflection)
     end
 
     module ClassMethods
@@ -34,6 +35,11 @@ module ActiveTriples
         _active_triples_config
       end
 
+      ##
+      # @param [Hash{String=>ActiveTriples::NodeConfig}] a complete config hash
+      #   to set the properties to.
+      # @return [Hash{String=>ActiveTriples::NodeConfig}] a hash of property 
+      #   names and their configurations
       def properties=(val)
         self._active_triples_config = val
       end
