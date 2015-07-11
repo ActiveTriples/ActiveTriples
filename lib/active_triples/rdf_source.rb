@@ -45,7 +45,6 @@ module ActiveTriples
     include NestedAttributes
     include Persistable
     include Properties
-    include Reflection
     include RDF::Value
     include RDF::Queryable
     include ActiveModel::Validations
@@ -175,8 +174,8 @@ module ActiveTriples
     ##
     # Delegate parent to the persistence strategy if possible
     #
-    # @todo establish a better pattern for this. `#parent` has been a public method
-    #   in the past, but it's probably time to deprecate it.
+    # @todo establish a better pattern for this. `#parent` has been a public 
+    #   method in the past, but it's probably time to deprecate it.
     def parent
       persistence_strategy.respond_to?(:parent) ? persistence_strategy.parent : nil
     end
@@ -479,41 +478,6 @@ module ActiveTriples
       #   RDF Concepts and Abstract Syntax comment on "RDF source"
       def graph
         @graph
-      end
-
-      ##
-      # Lists fields registered as properties on the object.
-      #
-      # @return [Array<Symbol>] the list of registered properties.
-      def fields
-        properties.keys.map(&:to_sym).reject{ |x| x == :type }
-      end
-
-      ##
-      # Returns the properties registered and their configurations.
-      #
-      # @return [ActiveSupport::HashWithIndifferentAccess{String => ActiveTriples::NodeConfig}]
-      def properties
-        _active_triples_config
-      end
-
-      ##
-      # List of RDF predicates registered as properties on the object.
-      #
-      # @return [Array<RDF::URI>]
-      def registered_predicates
-        properties.values.map { |config| config.predicate }
-      end
-
-      ##
-      # List of RDF predicates used in the Resource's triples, but not
-      # mapped to any property or accessor methods.
-      #
-      # @return [Array<RDF::URI>]
-      def unregistered_predicates
-        preds = registered_predicates
-        preds << RDF.type
-        predicates.select { |p| !preds.include? p }
       end
 
       ##

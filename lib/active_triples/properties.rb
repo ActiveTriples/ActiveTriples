@@ -4,17 +4,61 @@ module ActiveTriples
   ##
   # Implements property configuration in the style of RDFSource. It does its 
   # work at the class level, and is meant to be extended.
+  # 
+  # Collaborates closely with ActiveTriples::Reflection
   #
   # Define properties at the class level with:
   #
   #    property :title, predicate: RDF::DC.title, class_name: ResourceClass
   #
+  # @see {ActiveTriples::Reflection}
+  # @see {ActiveTriples::PropertyBuilder}
   module Properties
     extend ActiveSupport::Concern
 
     included do
+      include Reflection
       initialize_generated_modules
     end
+
+    private
+
+      ##
+      # Returns the properties registered and their configurations.
+      #
+      # @return [ActiveSupport::HashWithIndifferentAccess{String => ActiveTriples::NodeConfig}]
+      def properties
+        _active_triples_config
+      end
+
+      ##
+      # Lists fields registered as properties on the object.
+      #
+      # @return [Array<Symbol>] the list of registered properties.
+      def fields
+        properties.keys.map(&:to_sym).reject{ |x| x == :type }
+      end
+
+      ##
+      # List of RDF predicates registered as properties on the object.
+      #
+      # @return [Array<RDF::URI>]
+      def registered_predicates
+        properties.values.map { |config| config.predicate }
+      end
+
+      ##
+      # List of RDF predicates used in the Resource's triples, but not
+      # mapped to any property or accessor methods.
+      #
+      # @return [Array<RDF::URI>]
+      def unregistered_predicates
+        preds = registered_predicates
+        preds << RDF.type
+        predicates.select { |p| !preds.include? p }
+      end
+
+    public
     
     ##
     # Class methods for classes with `Properties`
