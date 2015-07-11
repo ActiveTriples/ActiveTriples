@@ -46,7 +46,7 @@ module ActiveTriples
     include Persistable
     include Properties
     include Reflection
-    include RDF::Value
+    include RDF::Resource
     include RDF::Queryable
     include ActiveModel::Validations
     include ActiveModel::Conversion
