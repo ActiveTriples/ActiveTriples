@@ -1,5 +1,5 @@
 shared_examples_for "an ActiveModel" do
-  subject { described_class.new }
+  subject { am_lint_class.new }
 
   describe '#to_key' do
     it 'should respond' do

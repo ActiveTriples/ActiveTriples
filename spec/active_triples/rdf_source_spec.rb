@@ -5,6 +5,16 @@ require 'rdf/spec/countable'
 require 'rdf/spec/mutable'
 
 describe ActiveTriples::RDFSource do
+  it_behaves_like 'an ActiveModel' do
+    let(:am_lint_class) do
+      class AMLintClass
+        include ActiveTriples::RDFSource
+      end
+    end
+    
+    after { Object.send(:remove_const, :AMLintClass) if defined?(AMLintClass) }
+  end
+
   before { @enumerable = subject }
   let(:source_class) { Class.new { include ActiveTriples::RDFSource } }
   let(:uri) { RDF::URI('http://example.org/moomin') }
