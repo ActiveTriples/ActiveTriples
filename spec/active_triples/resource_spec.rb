@@ -345,6 +345,7 @@ describe ActiveTriples::Resource do
 
       it 'should empty the graph and remove it from the parent' do
         subject.destroy
+        binding.pry
         expect(parent.license).to be_empty
       end
 

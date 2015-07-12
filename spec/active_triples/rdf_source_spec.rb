@@ -330,7 +330,22 @@ describe ActiveTriples::RDFSource do
           .to contain_exactly(person)
       end
 
-      it 'should handle setting circularly' do 
+      it 'should handle setting' do
+        document.set_value(RDF::DC.creator, person) # doc -> person
+        person.set_value(RDF::FOAF.knows, subject) # person -> subject
+        subject.set_value(RDF::FOAF.publications, document) # subject -> doc
+        subject.set_value(RDF::OWL.sameAs, subject) # subject -> doc
+        
+
+        expect(subject.get_values(RDF::FOAF.publications))
+          .to contain_exactly(document)
+        expect(subject.get_values(RDF::OWL.sameAs))
+          .to contain_exactly(subject)
+        expect(document.get_values(RDF::DC.creator))
+          .to contain_exactly(person)
+      end
+
+      it 'should handle setting circularly' do
         document.set_value(RDF::DC.creator, [person, subject])
         person.set_value(RDF::FOAF.knows, subject)
 
