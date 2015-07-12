@@ -64,13 +64,11 @@ describe ActiveTriples::ParentStrategy do
 
       it 'gives last parent terminating parent is nil' do
         allow(parent).to receive(:parent).and_return(last)
-        allow(last).to receive(:parentt).and_return(nil)
         expect(subject.final_parent).to eq last
       end
 
       it 'gives last parent terminating parent is same as current' do
         allow(parent).to receive(:parent).and_return(last)
-        allow(last).to receive(:parentt).and_return(last)
         expect(subject.final_parent).to eq last
       end
     end
