@@ -6,12 +6,9 @@ shared_examples_for "an ActiveModel" do
       expect(subject).to respond_to :to_key
     end
 
-    ##
-    # @todo FIXME: this is wrong according to
-    #   http://api.rubyonrails.org/classes/ActiveModel/Conversion.html#method-i-to_key
-    xit 'should return nil when #persisted? is false ' do
+    it 'should return an array of keys ' do
       def subject.persisted?() false end
-      expect(subject.to_key).to eq nil
+      expect(subject.to_key).to contain_exactly(subject.id)
     end
   end
 
