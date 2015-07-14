@@ -1,7 +1,10 @@
 require 'spec_helper'
 
 describe ActiveTriples::Resource do
-  it_behaves_like 'an ActiveModel'
+  it_behaves_like 'an ActiveModel' do
+    let(:am_lint_class) { described_class }
+  end
+
   before do
     class DummyLicense < ActiveTriples::Resource
       property :title, :predicate => RDF::DC.title
