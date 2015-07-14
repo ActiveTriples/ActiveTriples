@@ -122,9 +122,57 @@ describe ActiveTriples::RDFSource do
     end
   end
 
-  describe '#id' do
-  end
+  describe '#fetch' do
+    it 'raises an error when it is a node' do
+      expect { subject.fetch }
+        .to raise_error "#{subject} is a blank node; Cannot fetch a resource " \
+                        'without a URI'
+    end
 
+    context 'with a valid URI' do
+      subject { source_class.new(uri) }
+
+      context 'with a bad link' do
+        before { stub_request(:get, uri).to_return(:status => 404) }
+
+        it 'raises an error if no block is given' do
+          expect { subject.fetch }.to raise_error IOError
+        end
+
+        it 'yields self to block' do
+          expect { |block| subject.fetch(&block) }.to yield_with_args(subject)
+        end
+      end
+
+      context 'with a working link' do
+        before do
+          stub_request(:get, uri).to_return(:status => 200, 
+                                            :body => graph.dump(:ttl))
+        end
+
+        let(:graph) { RDF::Graph.new << statement }
+        let(:statement) { RDF::Statement(subject, RDF::DC.title, 'moomin') }
+
+        it 'loads retrieved graph into its own' do
+          expect { subject.fetch }
+            .to change { subject.statements.to_a }
+                 .from(a_collection_containing_exactly())
+                 .to(a_collection_containing_exactly(statement))
+        end
+        
+        it 'merges retrieved graph into its own' do
+          existing = RDF::Statement(subject, RDF::DC.creator, 'Tove Jansson')
+          subject << existing
+
+          expect { subject.fetch }
+            .to change { subject.statements.to_a }
+                 .from(a_collection_containing_exactly(existing))
+                 .to(a_collection_containing_exactly(statement, existing))
+        end
+      end
+    end
+  end
+  
   describe '#humanize' do
     it 'gives the "" for a node' do
       expect(subject.humanize).to eq ''

@@ -5,11 +5,14 @@ require 'bundler/setup'
 Bundler.setup
 
 require 'rdf/spec'
+require 'webmock/rspec'
 require 'active_triples'
 
 require 'pry' unless ENV["CI"]
 
 Dir['./spec/support/**/*.rb'].each { |f| require f }
+
+WebMock.disable_net_connect!
 
 RSpec.configure do |config|
   config.color = true
