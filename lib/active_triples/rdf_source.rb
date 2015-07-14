@@ -278,14 +278,33 @@ module ActiveTriples
     # and available from property accessors if if predicates are
     # registered.
     #
+    # @example
     #    osu = new('http://dbpedia.org/resource/Oregon_State_University')
     #    osu.fetch
     #    osu.rdf_label.first
     #    # => "Oregon State University"
+    # 
+    # @example with default action block
+    #    my_source = new('http://example.org/dead_url')
+    #    my_source.fetch { |obj| obj.status = 'dead link' }
     #
-    # @return [ActiveTriples::Entity] self
-    def fetch
-      load(rdf_subject)
+    # @yield gives self to block if this is a node, or an error is raised during 
+    #   load
+    # @yieldparam [ActiveTriples::RDFSource] resource  self
+    #
+    # @return [ActiveTriples::RDFSource] self
+    def fetch(&block)
+      begin
+        load(rdf_subject)
+      rescue => e
+        if block_given?
+          yield(self)
+        else
+          raise "#{self} is a blank node; Cannot fetch a resource without a URI" if 
+            node?
+          raise e
+        end
+      end
       self
     end
 
