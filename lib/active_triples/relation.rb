@@ -8,10 +8,14 @@ module ActiveTriples
   #
   #   <{#parent}> <{#predicate}> [term] .
   #
-  # Relations, then, express n binary relationships between the parent node and
-  # a term.
-  #
+  # Relations express a set of binary relationships (on a predicate) between 
+  # the parent node and a term. 
   # 
+  # When the term is a URI or Blank Node, it is represented in the results
+  # {Array} as an {RDFSource} with a graph selected as a subgraph of the 
+  # parent's. The triples in this subgraph are: (a) those whose subject is the
+  # term; (b) ...
+  #
   #
   # @see RDF::Term
   class Relation
@@ -23,18 +27,17 @@ module ActiveTriples
     delegate :<=>, :==, :===, :[], :each, :empty?, :equal, :inspect, :last, 
        :to_a, :to_ary, :to => :result
 
+    ##
+    # @param [ActiveTriples::RDFSource] parent_source
+    # @param [Array<Symbol, Hash>] value_arguments  if a Hash is passed as the 
+    #   final element, it is removed and set to `@rel_args`.
     def initialize(parent_source, value_arguments)
       self.parent = parent_source
       @reflections = parent_source.reflections
       self.rel_args ||= {}
+      self.rel_args = value_arguments.pop if value_arguments.is_a?(Array) && 
+                                             value_arguments.last.is_a?(Hash)
       self.value_arguments = value_arguments
-    end
-
-    def value_arguments=(value_args)
-      if value_args.kind_of?(Array) && value_args.last.kind_of?(Hash)
-        self.rel_args = value_args.pop
-      end
-      @value_arguments = value_args
     end
 
     def clear
