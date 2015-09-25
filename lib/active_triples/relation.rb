@@ -40,16 +40,57 @@ module ActiveTriples
       self.value_arguments = value_arguments
     end
 
+    ##
+    # @return [Relation] self; a now empty relation
     def clear
-      return [] if predicate.nil?
       parent.query([rdf_subject, predicate, nil]).each_statement do |statement|
         parent.delete(statement)
       end
+      self
     end
 
+    ##
+    # Gives an {Array} containing the result set for the {Relation}.
+    #
+    # By default, {RDF::URI} and {RDF::Node} results are cast to `RDFSource`.
+    # {Literal} results are given as their `#object` representations (e.g. 
+    # {String}, {Date}.
+    #
+    # @example results with default casting
+    #   parent << [parent.rdf_subject, predicate, 'my value']
+    #   parent << [parent.rdf_subject, predicate, Date.today]
+    #   parent << [parent.rdf_subject, predicate, RDF::URI('http://ex.org/#me')]
+    #   parent << [parent.rdf_subject, predicate, RDF::Node.new]
+    #   relation.result
+    #   # => ["my_value", 
+    #   #     Fri, 25 Sep 2015, 
+    #   #     #<ActiveTriples::Resource:0x3f8...>, 
+    #   #     #<ActiveTriples::Resource:0x3f8...>]
+    #
+    # When `cast?` is `false`, {RDF::Resource} values are left in their raw 
+    # form. Similarly, when `#return_literals?` is `true`, literals are 
+    # returned in their {RDF::Literal} form, preserving language tags, 
+    # datatype, and value.
+    #
+    # @example results with `cast?` set to `false`
+    #   relation.result
+    #   # => ["my_value", 
+    #   #     Fri, 25 Sep 2015,
+    #   #     #<RDF::URI:0x3f8... URI:http://ex.org/#me>,
+    #   #     #<RDF::Node:0x3f8...(_:g69843536054680)>]
+    #
+    # @example results with `return_literals?` set to `true`
+    #   relation.result
+    #   # => [#<RDF::Literal:0x3f8...("my_value")>,
+    #   #     #<RDF::Literal::Date:0x3f8...("2015-09-25"^^<http://www.w3.org/2001/XMLSchema#date>)>,
+    #   #     #<ActiveTriples::Resource:0x3f8...>, 
+    #   #     #<ActiveTriples::Resource:0x3f8...>]
+    # 
+    # @return [Array<Object>] the result set
     def result
       return [] if predicate.nil?
-      statements = parent.query(:subject => rdf_subject, :predicate => predicate)
+      statements = parent.query(:subject => rdf_subject, 
+                                :predicate => predicate)
       statements.each_with_object([]) do |x, collector|
         converted_object = convert_object(x.object)
         collector << converted_object unless converted_object.nil?
@@ -105,13 +146,13 @@ module ActiveTriples
       values.each { |value| parent.delete([rdf_subject, predicate, value]) }
     end
 
-    def << (values)
+    def <<(values)
       values = Array.wrap(result) | Array.wrap(values)
       self.set(values)
     end
-
     alias_method :push, :<<
 
+    #
     def []=(index, value)
       values = Array.wrap(result)
       raise IndexError, "Index #{index} out of bounds." if values[index].nil?
@@ -126,13 +167,15 @@ module ActiveTriples
       reflections.reflect_on_property(property)
     end
 
-    def reset!
-    end
+    ##
+    # noop
+    def reset!; end
 
     ##
-    # Returns the property for the Relation. This may be a registered property key
+    # Returns the property for the Relation. This may be a registered 
+    # property key or an {RDF::URI}.
     #
-    # @return the property for this Relation.
+    # @return [Symbol, RDF::URI]  the property for this Relation.
     # @see #predicate
     def property
       value_arguments.last
