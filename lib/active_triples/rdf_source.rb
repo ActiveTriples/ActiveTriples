@@ -47,10 +47,10 @@ module ActiveTriples
     include RDF::Enumerable
     include RDF::Queryable
     include RDF::Mutable
-    include ActiveModel::Validations
     include ActiveModel::Conversion
     include ActiveModel::Serialization
     include ActiveModel::Serializers::JSON
+    include ActiveModel::Validations
 
     attr_accessor :parent
 
@@ -65,6 +65,13 @@ module ActiveTriples
       extend ActiveModel::Naming
       extend ActiveModel::Translation
       extend ActiveModel::Callbacks
+
+      validate do
+        errors.add(:rdf_subject, 'The #rdf_subject Term must be valid') unless
+          rdf_subject.valid?
+        errors.add(:base, 'The underlying graph must be valid') unless
+          graph.valid?
+      end
 
       delegate :each, :load!, :count, :has_statement?, :to => :@graph
 
@@ -435,6 +442,10 @@ module ActiveTriples
       end
 
     private
+
+      def graph
+        @graph
+      end
 
       ##
       # Returns the properties registered and their configurations.
