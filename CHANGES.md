@@ -1,3 +1,10 @@
+0.7.2
+----
+
+  - Allows interoperability between `ActiveModel::Validations` and
+    `RDF::Graph#valid?`. This fixes a bug with validation callbacks. See:
+    [#167](https://github.com/ActiveTriples/ActiveTriples/pull/167).
+    
 0.7.1
 ----
 
