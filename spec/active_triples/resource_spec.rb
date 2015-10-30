@@ -22,7 +22,9 @@ describe ActiveTriples::Resource do
 
   describe '#property' do
     it 'raises error when set directly on Resource' do
-      expect { ActiveTriples::Resource.property :blah, :predicate => RDF::DC.title }.to raise_error
+      expect { ActiveTriples::Resource.property :blah, predicate: RDF::DC.title }
+        .to raise_error 'Properties not definable directly on ' \
+                        'ActiveTriples::Resource, use a subclass'
     end
   end
 
@@ -67,7 +69,8 @@ describe ActiveTriples::Resource do
       end
 
       it 'should not be settable' do
-        expect{ subject.set_subject! RDF::URI('http://example.org/moomin2') }.to raise_error
+        expect{ subject.set_subject! RDF::URI('http://example.org/moomin2') }
+          .to raise_error "Refusing update URI when one is already assigned!" 
       end
     end
 
@@ -474,7 +477,8 @@ describe ActiveTriples::Resource do
       end
 
       it 'raises error when trying to set nil value' do
-        expect { subject.aggregates[1] = nil }.to raise_error /value must be an RDF URI, Node, Literal, or a valid datatype/
+        expect { subject.aggregates[1] = nil }
+          .to raise_error ActiveTriples::Relation::ValueError
       end
 
       it "should be changeable for multiple values" do
@@ -560,7 +564,8 @@ describe ActiveTriples::Resource do
     end
 
     it "raise an error if the value is not a URI, Node, Literal, RdfResource, or string" do
-      expect{subject.set_value(RDF::DC.title, Object.new)}.to raise_error
+      expect{subject.set_value(RDF::DC.title, Object.new)}
+        .to raise_error ActiveTriples::Relation::ValueError
     end
 
     it "should be able to accept a subject" do
@@ -583,7 +588,8 @@ describe ActiveTriples::Resource do
     end
 
     it "raise an error if the value is not a URI, Node, Literal, RdfResource, or string" do
-      expect { subject[RDF::DC.title] = Object.new }.to raise_error
+      expect { subject[RDF::DC.title] = Object.new }
+        .to raise_error ActiveTriples::Relation::ValueError
     end
   end
 

@@ -11,7 +11,7 @@ describe ActiveTriples::Relation do
     context "when relation has 0 value arguments" do
       before { subject.value_arguments = double(length: 0) }
       it "should raise an error" do
-        expect { subject.send(:rdf_subject) }.to raise_error
+        expect { subject.send(:rdf_subject) }.to raise_error ArgumentError
       end
     end
     context "when term has 1 value argument" do
@@ -35,7 +35,7 @@ describe ActiveTriples::Relation do
     context "when relation has 3 value arguments" do
       before { subject.value_arguments = double(length: 3) }
       it "should raise an error" do
-        expect { subject.send(:rdf_subject)  }.to raise_error
+        expect { subject.send(:rdf_subject)  }.to raise_error ArgumentError
       end
     end
   end
