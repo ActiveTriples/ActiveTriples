@@ -133,7 +133,7 @@ module ActiveTriples
           return
         end
         val = val.to_uri if val.respond_to? :to_uri
-        raise "value must be an RDF URI, Node, Literal, or a valid datatype. See RDF::Literal.\n\tYou provided #{val.inspect}" unless
+        raise ValueError, val unless 
           val.kind_of? RDF::Value or val.kind_of? RDF::Literal
         parent.insert [rdf_subject, predicate, val]
       end
@@ -235,6 +235,28 @@ module ActiveTriples
           parent.rdf_subject
         end
       end
+
+    public
+
+    ##
+    # An error class for unallowable values in relations.
+    class ValueError < ArgumentError
+      # @!attribute [r] value
+      attr_reader :value
+
+      ##
+      # @param value [Object]
+      def initialize(value)
+        @value = value
+      end
+
+      ##
+      # @return [String]
+      def message
+        'value must be an RDF URI, Node, Literal, or a valid datatype. '\
+        "See RDF::Literal.\n\tYou provided #{value.inspect}"
+      end
+    end
   end
 
   class Term < Relation

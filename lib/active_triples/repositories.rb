@@ -16,8 +16,15 @@ module ActiveTriples
   # @see Configurable
   module Repositories
 
+    ##
+    # @param name [Symbol] 
+    # @param repo [RDF::Repository] 
+    #
+    # @return [RDF::Repository]
+    # @raise [ArgumentError] if a non-repository is passed
     def add_repository(name, repo)
-      raise "Repositories must be an RDF::Repository" unless repo.kind_of? RDF::Repository
+      raise ArgumentError, "Repositories must be an RDF::Repository" unless 
+        repo.kind_of? RDF::Repository
       repositories[name] = repo
     end
     module_function :add_repository
