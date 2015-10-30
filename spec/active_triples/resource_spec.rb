@@ -25,7 +25,9 @@ describe ActiveTriples::Resource do
 
   describe '#property' do
     it 'raises error when set directly on Resource' do
-      expect { ActiveTriples::Resource.property :blah, :predicate => RDF::DC.title }.to raise_error
+      expect { ActiveTriples::Resource.property :p, predicate: RDF::DC.title }
+        .to raise_error 'Properties not definable directly on ' \
+                        'ActiveTriples::Resource, use a subclass'
     end
   end
 
@@ -70,7 +72,8 @@ describe ActiveTriples::Resource do
       end
 
       it 'should not be settable' do
-        expect{ subject.set_subject! RDF::URI('http://example.org/moomin2') }.to raise_error
+        expect{ subject.set_subject! RDF::URI('http://example.org/moomin2') }
+          .to raise_error 'Refusing update URI when one is already assigned!'
       end
     end
 
@@ -295,7 +298,7 @@ describe ActiveTriples::Resource do
 
     it "should warn when the repo doesn't exist" do
       allow(DummyLicense).to receive(:repository).and_return('repo2')
-      expect { subject }.to raise_error ActiveTriples::RepositoryNotFoundError, 'The class DummyLicense expects a repository called repo2, but none was declared'
+      expect { subject }.to raise_error ActiveTriples::RepositoryNotFoundError
     end
   end
 
@@ -477,7 +480,8 @@ describe ActiveTriples::Resource do
       end
 
       it 'raises error when trying to set nil value' do
-        expect { subject.aggregates[1] = nil }.to raise_error /value must be an RDF URI, Node, Literal, or a valid datatype/
+        expect { subject.aggregates[1] = nil }
+          .to raise_error ActiveTriples::Relation::ValueError
       end
 
       it "should be changeable for multiple values" do
@@ -562,8 +566,9 @@ describe ActiveTriples::Resource do
       expect(subject.title).to eq ['Comet in Moominland']
     end
 
-    it "raise an error if the value is not a URI, Node, Literal, RdfResource, or string" do
-      expect{subject.set_value(RDF::DC.title, Object.new)}.to raise_error
+    it "raise an error if the value is not a Term" do
+      expect{ subject.set_value(RDF::DC.title, Object.new) }
+        .to raise_error ActiveTriples::Relation::ValueError
     end
 
     it "should be able to accept a subject" do
@@ -586,7 +591,8 @@ describe ActiveTriples::Resource do
     end
 
     it "raise an error if the value is not a URI, Node, Literal, RdfResource, or string" do
-      expect { subject[RDF::DC.title] = Object.new }.to raise_error
+      expect { subject[RDF::DC.title] = Object.new }
+        .to raise_error ActiveTriples::Relation::ValueError
     end
   end
 
