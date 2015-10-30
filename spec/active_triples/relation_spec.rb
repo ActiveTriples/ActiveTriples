@@ -33,7 +33,7 @@ describe ActiveTriples::Relation do
       before { subject.value_arguments = double(length: 0) }
 
       it "should raise an error" do
-        expect { subject.send(:rdf_subject) }.to raise_error
+        expect { subject.send(:rdf_subject) }.to raise_error ArgumentError
       end
     end
 
@@ -64,7 +64,7 @@ describe ActiveTriples::Relation do
       before { subject.value_arguments = double(length: 3) }
 
       it "should raise an error" do
-        expect { subject.send(:rdf_subject)  }.to raise_error
+        expect { subject.send(:rdf_subject) }.to raise_error ArgumentError
       end
     end
   end

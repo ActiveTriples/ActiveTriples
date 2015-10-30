@@ -15,7 +15,8 @@ describe ActiveTriples::Repositories do
     end
 
     it 'should throw an error if passed something that is not a repository' do
-      expect{subject.add_repository :name, :not_a_repo}.to raise_error
+      expect{subject.add_repository :name, :not_a_repo}
+        .to raise_error ArgumentError
     end
   end
 

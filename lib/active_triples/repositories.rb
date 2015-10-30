@@ -26,9 +26,10 @@ module ActiveTriples
     #
     # @return [RDF::Repository] gives the original repository on success
     #
-    # @raise [RuntimeError] raised if the repository is not an `RDF::Repository`
+    # @raise [ArgumentError] raised if the repository is not an `RDF::Repository`
     def add_repository(name, repo)
-      raise "Repositories must be an RDF::Repository" unless repo.kind_of? RDF::Repository
+      raise ArgumentError, "Repositories must be an RDF::Repository" unless 
+        repo.kind_of? RDF::Repository
       repositories[name] = repo
     end
     module_function :add_repository
