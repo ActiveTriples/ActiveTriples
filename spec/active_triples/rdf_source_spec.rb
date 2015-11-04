@@ -233,6 +233,12 @@ describe ActiveTriples::RDFSource do
   end
 
   describe 'validation' do
+    let(:invalid_statement) do
+      RDF::Statement.from([RDF::Literal.new('blah'), 
+                           RDF::Literal.new('blah'), 
+                           RDF::Literal.new('blah')])
+    end
+      
     it { is_expected.to be_valid }
 
     it 'is valid with valid statements' do
@@ -254,7 +260,7 @@ describe ActiveTriples::RDFSource do
     end
 
     context 'with invalid statement' do
-      before { subject << RDF::Statement.from([nil, nil, nil]) }
+      before { subject << invalid_statement }
 
       it 'is invalid' do
         expect(subject).to be_invalid
@@ -300,7 +306,7 @@ describe ActiveTriples::RDFSource do
         it { is_expected.to be_valid }
 
         context 'and has invaild statements' do
-          before { subject << RDF::Statement.from([nil, nil, nil]) }
+          before { subject << invalid_statement }
 
           it { is_expected.to be_invalid }
 
@@ -308,7 +314,7 @@ describe ActiveTriples::RDFSource do
             expect { subject.valid? }
               .to change { subject.errors.messages }
                    .from({})
-                   .to(include({ title: ["can't be blank"] }))
+                   .to(include({ base: ["The underlying graph must be valid"] }))
           end
         end
       end

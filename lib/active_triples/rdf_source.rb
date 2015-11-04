@@ -74,7 +74,7 @@ module ActiveTriples
       define_model_callbacks :persist
     end
 
-    delegate :each, :load!, :count, :has_statement?, :to => :graph
+    delegate :query, :each, :load!, :count, :has_statement?, :to => :graph
     delegate :to_base, :term?, :escape, :to => :to_term
 
     ##
