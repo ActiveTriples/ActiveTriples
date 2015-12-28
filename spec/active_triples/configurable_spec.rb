@@ -22,7 +22,7 @@ describe ActiveTriples::Configurable do
 
   describe '#configure' do
     before do
-      DummyConfigurable.configure base_uri: "http://example.org/base", type: RDF::RDFS.Class, rdf_label: RDF::DC.title
+      DummyConfigurable.configure base_uri: "http://example.org/base", type: RDF::RDFS.Class, rdf_label: RDF::Vocab::DC.title
     end
 
     it 'should set a base uri' do
@@ -35,7 +35,7 @@ describe ActiveTriples::Configurable do
     end
 
     it 'should set an rdf_label' do
-      expect(DummyConfigurable.rdf_label).to eq RDF::DC.title
+      expect(DummyConfigurable.rdf_label).to eq RDF::Vocab::DC.title
     end
 
     it 'should set a type' do
