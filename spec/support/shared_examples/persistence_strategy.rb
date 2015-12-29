@@ -1,7 +1,8 @@
 shared_examples 'a persistence strategy' do
   shared_context 'with changes' do
     before do
-      subject.obj << RDF::Statement.new(RDF::Node.new, RDF::DC.title, 'moomin')
+      subject.obj << 
+        RDF::Statement.new(RDF::Node.new, RDF::Vocab::DC.title, 'moomin')
     end
   end
 

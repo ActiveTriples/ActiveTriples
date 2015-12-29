@@ -5,11 +5,11 @@ RSpec.describe ActiveTriples::Schema do
 
   describe ".property" do
     it "should define a property" do
-      subject.property :title, :predicate => RDF::DC.title
+      subject.property :title, :predicate => RDF::Vocab::DC.title
 
       property = subject.properties.first
       expect(property.name).to eq :title
-      expect(property.predicate).to eq RDF::DC.title
+      expect(property.predicate).to eq RDF::Vocab::DC.title
     end
   end
 end

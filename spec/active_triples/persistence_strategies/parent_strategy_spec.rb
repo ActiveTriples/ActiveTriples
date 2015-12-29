@@ -104,7 +104,7 @@ describe ActiveTriples::ParentStrategy do
       include_context 'with a parent'
 
       it 'writes to #final_parent graph' do
-        rdf_source << RDF::Statement.new(RDF::Node.new, RDF::DC.title, 'moomin')
+        rdf_source << [RDF::Node.new, RDF::Vocab::DC.title, 'moomin']
         subject.persist!
         expect(subject.final_parent.statements)
           .to contain_exactly *rdf_source.statements

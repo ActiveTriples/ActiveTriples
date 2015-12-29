@@ -6,7 +6,7 @@ RSpec.describe ActiveTriples::ExtensionStrategy do
   describe ".apply" do
     it "should copy the property to the asset" do
       asset = build_asset
-      property = build_property("name", {:predicate => RDF::DC.title})
+      property = build_property("name", {:predicate => RDF::Vocab::DC.title})
 
       subject.apply(asset, property)
 

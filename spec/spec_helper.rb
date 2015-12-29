@@ -5,6 +5,7 @@ require 'bundler/setup'
 Bundler.setup
 
 require 'rdf/spec'
+require 'rdf/vocab'
 require 'webmock/rspec'
 require 'active_triples'
 

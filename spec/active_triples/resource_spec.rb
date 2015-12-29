@@ -7,13 +7,13 @@ describe ActiveTriples::Resource do
 
   before do
     class DummyLicense < ActiveTriples::Resource
-      property :title, :predicate => RDF::DC.title
+      property :title, :predicate => RDF::Vocab::DC.title
     end
 
     class DummyResource < ActiveTriples::Resource
       configure :type => RDF::URI('http://example.org/SomeClass')
-      property :license, :predicate => RDF::DC.license, :class_name => DummyLicense
-      property :title, :predicate => RDF::DC.title
+      property :license, :predicate => RDF::Vocab::DC.license, :class_name => DummyLicense
+      property :title, :predicate => RDF::Vocab::DC.title
     end
   end
   after do
@@ -25,7 +25,7 @@ describe ActiveTriples::Resource do
 
   describe '#property' do
     it 'raises error when set directly on Resource' do
-      expect { ActiveTriples::Resource.property :p, predicate: RDF::DC.title }
+      expect { ActiveTriples::Resource.property :p, predicate: RDF::Vocab::DC.title }
         .to raise_error 'Properties not definable directly on ' \
                         'ActiveTriples::Resource, use a subclass'
     end
@@ -47,22 +47,22 @@ describe ActiveTriples::Resource do
 
     describe 'when changing subject' do
       before do
-        subject << RDF::Statement.new(subject.rdf_subject, RDF::DC.title, RDF::Literal('Comet in Moominland'))
-        subject << RDF::Statement.new(RDF::URI('http://example.org/moomin_comics'), RDF::DC.isPartOf, subject.rdf_subject)
-        subject << RDF::Statement.new(RDF::URI('http://example.org/moomin_comics'), RDF::DC.relation, 'http://example.org/moomin_land')
+        subject << RDF::Statement.new(subject.rdf_subject, RDF::Vocab::DC.title, RDF::Literal('Comet in Moominland'))
+        subject << RDF::Statement.new(RDF::URI('http://example.org/moomin_comics'), RDF::Vocab::DC.isPartOf, subject.rdf_subject)
+        subject << RDF::Statement.new(RDF::URI('http://example.org/moomin_comics'), RDF::Vocab::DC.relation, 'http://example.org/moomin_land')
         subject.set_subject! RDF::URI('http://example.org/moomin')
       end
 
       it 'should update graph subjects' do
-        expect(subject.has_statement?(RDF::Statement.new(subject.rdf_subject, RDF::DC.title, RDF::Literal('Comet in Moominland')))).to be true
+        expect(subject.has_statement?(RDF::Statement.new(subject.rdf_subject, RDF::Vocab::DC.title, RDF::Literal('Comet in Moominland')))).to be true
       end
 
       it 'should update graph objects' do
-        expect(subject.has_statement?(RDF::Statement.new(RDF::URI('http://example.org/moomin_comics'), RDF::DC.isPartOf, subject.rdf_subject))).to be true
+        expect(subject.has_statement?(RDF::Statement.new(RDF::URI('http://example.org/moomin_comics'), RDF::Vocab::DC.isPartOf, subject.rdf_subject))).to be true
       end
 
       it 'should leave other uris alone' do
-        expect(subject.has_statement?(RDF::Statement.new(RDF::URI('http://example.org/moomin_comics'), RDF::DC.relation, 'http://example.org/moomin_land'))).to be true
+        expect(subject.has_statement?(RDF::Statement.new(RDF::URI('http://example.org/moomin_comics'), RDF::Vocab::DC.relation, 'http://example.org/moomin_land'))).to be true
       end
     end
 
@@ -305,7 +305,7 @@ describe ActiveTriples::Resource do
   describe '#destroy!' do
     before do
       subject.title = 'Creative Commons'
-      subject << RDF::Statement(RDF::DC.LicenseDocument, RDF::DC.title, 'LICENSE')
+      subject << RDF::Statement(RDF::Vocab::DC.LicenseDocument, RDF::Vocab::DC.title, 'LICENSE')
     end
 
     subject { DummyLicense.new('http://example.org/cc')}
@@ -345,9 +345,9 @@ describe ActiveTriples::Resource do
 
   describe 'class_name' do
     it 'should raise an error when not a class or string' do
-      DummyResource.property :relation, :predicate => RDF::DC.relation, :class_name => RDF::URI('http://example.org')
+      DummyResource.property :relation, :predicate => RDF::Vocab::DC.relation, :class_name => RDF::URI('http://example.org')
       d = DummyResource.new
-      d.relation = RDF::DC.type
+      d.relation = RDF::Vocab::DC.type
       expect { d.relation.first }.to raise_error "class_name for relation is a RDF::URI; must be a class"
     end
 
@@ -397,29 +397,29 @@ describe ActiveTriples::Resource do
 
     context 'with unmodeled data' do
       before do
-        subject << RDF::Statement(subject.rdf_subject, RDF::DC.contributor, 'Tove Jansson')
-        subject << RDF::Statement(subject.rdf_subject, RDF::DC.relation, RDF::URI('http://example.org/moomi'))
+        subject << RDF::Statement(subject.rdf_subject, RDF::Vocab::DC.contributor, 'Tove Jansson')
+        subject << RDF::Statement(subject.rdf_subject, RDF::Vocab::DC.relation, RDF::URI('http://example.org/moomi'))
         node = RDF::Node.new
-        subject << RDF::Statement(RDF::URI('http://example.org/moomi'), RDF::DC.relation, node)
-        subject << RDF::Statement(node, RDF::DC.title, 'bnode')
+        subject << RDF::Statement(RDF::URI('http://example.org/moomi'), RDF::Vocab::DC.relation, node)
+        subject << RDF::Statement(node, RDF::Vocab::DC.title, 'bnode')
       end
 
       it 'should include data with URIs as attribute names' do
-        expect(subject.attributes[RDF::DC.contributor.to_s]).to eq ['Tove Jansson']
+        expect(subject.attributes[RDF::Vocab::DC.contributor.to_s]).to eq ['Tove Jansson']
       end
 
       it 'should return generic Resources' do
-        expect(subject.attributes[RDF::DC.relation.to_s].first).to be_a ActiveTriples::Resource
+        expect(subject.attributes[RDF::Vocab::DC.relation.to_s].first).to be_a ActiveTriples::Resource
       end
 
       it 'should build deep data for Resources' do
-        expect(subject.attributes[RDF::DC.relation.to_s].first.get_values(RDF::DC.relation).
-               first.get_values(RDF::DC.title)).to eq ['bnode']
+        expect(subject.attributes[RDF::Vocab::DC.relation.to_s].first.get_values(RDF::Vocab::DC.relation).
+               first.get_values(RDF::Vocab::DC.title)).to eq ['bnode']
       end
 
       it 'should include deep data in serializable_hash' do
-        expect(subject.serializable_hash[RDF::DC.relation.to_s].first.get_values(RDF::DC.relation).
-               first.get_values(RDF::DC.title)).to eq ['bnode']
+        expect(subject.serializable_hash[RDF::Vocab::DC.relation.to_s].first.get_values(RDF::Vocab::DC.relation).
+               first.get_values(RDF::Vocab::DC.title)).to eq ['bnode']
       end
     end
 
@@ -442,7 +442,7 @@ describe ActiveTriples::Resource do
 
   describe 'array setters' do
     before do
-      DummyResource.property :aggregates, :predicate => RDF::DC.relation
+      DummyResource.property :aggregates, :predicate => RDF::Vocab::DC.relation
     end
 
     it "should be empty array if we haven't set it" do
@@ -523,22 +523,22 @@ describe ActiveTriples::Resource do
 
   describe '#set_value' do
     it 'should set a value in the graph' do
-      subject.set_value(RDF::DC.title, 'Comet in Moominland')
-      subject.query(:subject => subject.rdf_subject, :predicate => RDF::DC.title).each_statement do |s|
+      subject.set_value(RDF::Vocab::DC.title, 'Comet in Moominland')
+      subject.query(:subject => subject.rdf_subject, :predicate => RDF::Vocab::DC.title).each_statement do |s|
         expect(s.object.to_s).to eq 'Comet in Moominland'
       end
     end
 
     context "when given a URI" do
       before do
-        subject.set_value(RDF::DC.title, RDF::URI("http://opaquenamespace.org/jokes/1"))
+        subject.set_value(RDF::Vocab::DC.title, RDF::URI("http://opaquenamespace.org/jokes/1"))
       end
       it "should return a resource" do
         expect(subject.title.first).to be_kind_of(ActiveTriples::RDFSource)
       end
       context "and it's configured to not cast" do
         before do
-          subject.class.property :title, predicate: RDF::DC.title, cast: false
+          subject.class.property :title, predicate: RDF::Vocab::DC.title, cast: false
         end
         it "should return a URI" do
           expect(subject.title.first).to be_kind_of(RDF::URI)
@@ -567,20 +567,20 @@ describe ActiveTriples::Resource do
     end
 
     it "raise an error if the value is not a Term" do
-      expect{ subject.set_value(RDF::DC.title, Object.new) }
+      expect{ subject.set_value(RDF::Vocab::DC.title, Object.new) }
         .to raise_error ActiveTriples::Relation::ValueError
     end
 
     it "should be able to accept a subject" do
-      expect{subject.set_value(RDF::URI("http://opaquenamespace.org/jokes"), RDF::DC.title, 'Comet in Moominland')}.not_to raise_error
-      expect(subject.query(:subject => RDF::URI("http://opaquenamespace.org/jokes"), :predicate => RDF::DC.title).statements.to_a.length).to eq 1
+      expect{subject.set_value(RDF::URI("http://opaquenamespace.org/jokes"), RDF::Vocab::DC.title, 'Comet in Moominland')}.not_to raise_error
+      expect(subject.query(:subject => RDF::URI("http://opaquenamespace.org/jokes"), :predicate => RDF::Vocab::DC.title).statements.to_a.length).to eq 1
     end
   end
 
   describe '#[]=' do
     it 'should set a value in the graph' do
-      subject[RDF::DC.title] = 'Comet in Moominland'
-      subject.query(:subject => subject.rdf_subject, :predicate => RDF::DC.title).each_statement do |s|
+      subject[RDF::Vocab::DC.title] = 'Comet in Moominland'
+      subject.query(:subject => subject.rdf_subject, :predicate => RDF::Vocab::DC.title).each_statement do |s|
         expect(s.object.to_s).to eq 'Comet in Moominland'
       end
     end
@@ -591,7 +591,7 @@ describe ActiveTriples::Resource do
     end
 
     it "raise an error if the value is not a URI, Node, Literal, RdfResource, or string" do
-      expect { subject[RDF::DC.title] = Object.new }
+      expect { subject[RDF::Vocab::DC.title] = Object.new }
         .to raise_error ActiveTriples::Relation::ValueError
     end
   end
@@ -602,7 +602,7 @@ describe ActiveTriples::Resource do
     end
 
     it 'should return values for a predicate uri' do
-      expect(subject.get_values(RDF::DC.title)).to eq ['Comet in Moominland', 'Finn Family Moomintroll']
+      expect(subject.get_values(RDF::Vocab::DC.title)).to eq ['Comet in Moominland', 'Finn Family Moomintroll']
     end
 
     it 'should return values for a registered predicate symbol' do
@@ -611,7 +611,7 @@ describe ActiveTriples::Resource do
 
     it "should return values for other subjects if asked" do
       expect(subject.get_values(RDF::URI("http://opaquenamespace.org/jokes"),:title)).to eq []
-      subject.set_value(RDF::URI("http://opaquenamespace.org/jokes"), RDF::DC.title, 'Comet in Moominland')
+      subject.set_value(RDF::URI("http://opaquenamespace.org/jokes"), RDF::Vocab::DC.title, 'Comet in Moominland')
       expect(subject.get_values(RDF::URI("http://opaquenamespace.org/jokes"),:title)).to eq ["Comet in Moominland"]
     end
 
@@ -619,17 +619,17 @@ describe ActiveTriples::Resource do
       let(:literal1) { RDF::Literal.new("test", :language => :en) }
       let(:literal2) { RDF::Literal.new("test", :language => :fr) }
       before do
-        subject.set_value(RDF::DC.title, [literal1, literal2])
+        subject.set_value(RDF::Vocab::DC.title, [literal1, literal2])
       end
       context "and literals are not requested" do
         it "should return a string" do
           # Should this de-duplicate?
-          expect(subject.get_values(RDF::DC.title)).to eq ["test", "test"]
+          expect(subject.get_values(RDF::Vocab::DC.title)).to eq ["test", "test"]
         end
       end
       context "and literals are requested" do
         it "should return literals" do
-          expect(subject.get_values(RDF::DC.title, :literal => true)).to eq [literal1, literal2]
+          expect(subject.get_values(RDF::Vocab::DC.title, :literal => true)).to eq [literal1, literal2]
         end
       end
     end
@@ -642,7 +642,7 @@ describe ActiveTriples::Resource do
     end
 
     it 'should return values for a predicate uri' do
-      expect(subject[RDF::DC.title]).to eq ['Comet in Moominland', 'Finn Family Moomintroll']
+      expect(subject[RDF::Vocab::DC.title]).to eq ['Comet in Moominland', 'Finn Family Moomintroll']
     end
 
     it 'should return values for a registered predicate symbol' do
@@ -651,7 +651,7 @@ describe ActiveTriples::Resource do
 
     it "should return values for other subjects if asked" do
       expect(subject.get_values(RDF::URI("http://opaquenamespace.org/jokes"),:title)).to eq []
-      subject.set_value(RDF::URI("http://opaquenamespace.org/jokes"), RDF::DC.title, 'Comet in Moominland')
+      subject.set_value(RDF::URI("http://opaquenamespace.org/jokes"), RDF::Vocab::DC.title, 'Comet in Moominland')
       expect(subject.get_values(RDF::URI("http://opaquenamespace.org/jokes"),:title)).to eq ["Comet in Moominland"]
     end
   end
@@ -694,13 +694,13 @@ describe ActiveTriples::Resource do
 
   describe 'editing the graph' do
     it 'should write properties when statements are added' do
-      subject << RDF::Statement.new(subject.rdf_subject, RDF::DC.title, 'Comet in Moominland')
+      subject << RDF::Statement.new(subject.rdf_subject, RDF::Vocab::DC.title, 'Comet in Moominland')
       expect(subject.title).to include 'Comet in Moominland'
     end
 
     it 'should delete properties when statements are removed' do
-      subject << RDF::Statement.new(subject.rdf_subject, RDF::DC.title, 'Comet in Moominland')
-      subject.delete RDF::Statement.new(subject.rdf_subject, RDF::DC.title, 'Comet in Moominland')
+      subject << RDF::Statement.new(subject.rdf_subject, RDF::Vocab::DC.title, 'Comet in Moominland')
+      subject.delete RDF::Statement.new(subject.rdf_subject, RDF::Vocab::DC.title, 'Comet in Moominland')
       expect(subject.title).to eq []
     end
   end
@@ -710,19 +710,19 @@ describe ActiveTriples::Resource do
       class DummyPerson
         include ActiveTriples::RDFSource
         configure :type => RDF::URI('http://example.org/Person')
-        property :foaf_name, :predicate => RDF::FOAF.name
-        property :publications, :predicate => RDF::FOAF.publications, :class_name => 'DummyDocument'
-        property :knows, :predicate => RDF::FOAF.knows, :class_name => DummyPerson
+        property :foaf_name, :predicate => RDF::Vocab::FOAF.name
+        property :publications, :predicate => RDF::Vocab::FOAF.publications, :class_name => 'DummyDocument'
+        property :knows, :predicate => RDF::Vocab::FOAF.knows, :class_name => DummyPerson
       end
 
       class DummyDocument
         include ActiveTriples::RDFSource
         configure :type => RDF::URI('http://example.org/Document')
-        property :title, :predicate => RDF::DC.title
-        property :creator, :predicate => RDF::DC.creator, :class_name => 'DummyPerson'
+        property :title, :predicate => RDF::Vocab::DC.title
+        property :creator, :predicate => RDF::Vocab::DC.creator, :class_name => 'DummyPerson'
       end
 
-      DummyResource.property :item, :predicate => RDF::DC.relation, :class_name => DummyDocument
+      DummyResource.property :item, :predicate => RDF::Vocab::DC.relation, :class_name => DummyDocument
     end
 
     subject { DummyResource.new }
