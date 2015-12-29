@@ -207,6 +207,21 @@ module ActiveTriples
     alias_method :to_term, :rdf_subject
 
     ##
+    # Returns `nil` as the `graph_name`. This behavior mimics an `RDF::Graph`
+    # with no graph name, or one without named graph support.
+    #
+    # @note: it's possible to think of an `RDFSource` as "supporting named 
+    #   graphs" in the sense that the `#rdf_subject` is an implied graph name.
+    #   For RDF.rb's purposes, however, it has a nil graph name: when 
+    #   enumerating statements, we treat them as triples.
+    #
+    # @return [nil]
+    # @sse RDF::Graph.graph_name
+    def graph_name
+      nil
+    end
+    
+    ##
     # @return [String] A string identifier for the resource; '' if the
     #   resource is a node
     def humanize
@@ -477,11 +492,11 @@ module ActiveTriples
       end
 
       def default_labels
-        [RDF::SKOS.prefLabel,
-         RDF::DC.title,
+        [RDF::Vocab::SKOS.prefLabel,
+         RDF::Vocab::DC.title,
          RDF::RDFS.label,
-         RDF::SKOS.altLabel,
-         RDF::SKOS.hiddenLabel]
+         RDF::Vocab::SKOS.altLabel,
+         RDF::Vocab::SKOS.hiddenLabel]
       end
 
       ##

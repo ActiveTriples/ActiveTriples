@@ -11,7 +11,7 @@ describe ActiveTriples::RDFSource do
         include ActiveTriples::RDFSource
       end
     end
-    
+
     after { Object.send(:remove_const, :AMLintClass) if defined?(AMLintClass) }
   end
 
@@ -146,12 +146,15 @@ describe ActiveTriples::RDFSource do
 
       context 'with a working link' do
         before do
-          stub_request(:get, uri).to_return(:status => 200, 
+          stub_request(:get, uri).to_return(:status => 200,
                                             :body => graph.dump(:ttl))
         end
 
         let(:graph) { RDF::Graph.new << statement }
-        let(:statement) { RDF::Statement(subject, RDF::DC.title, 'moomin') }
+
+        let(:statement) do
+          RDF::Statement(subject, RDF::Vocab::DC.title, 'moomin')
+        end
 
         it 'loads retrieved graph into its own' do
           expect { subject.fetch }
@@ -159,9 +162,9 @@ describe ActiveTriples::RDFSource do
                  .from(a_collection_containing_exactly())
                  .to(a_collection_containing_exactly(statement))
         end
-        
+
         it 'merges retrieved graph into its own' do
-          existing = RDF::Statement(subject, RDF::DC.creator, 'Tove Jansson')
+          existing = RDF::Statement(subject, RDF::Vocab::DC.creator, 'Tove')
           subject << existing
 
           expect { subject.fetch }
@@ -172,7 +175,13 @@ describe ActiveTriples::RDFSource do
       end
     end
   end
-  
+
+  describe '#graph_name' do
+    it 'returns nil' do
+      expect(subject.graph_name).to be_nil
+    end
+  end
+
   describe '#humanize' do
     it 'gives the "" for a node' do
       expect(subject.humanize).to eq ''
@@ -234,11 +243,11 @@ describe ActiveTriples::RDFSource do
 
   describe 'validation' do
     let(:invalid_statement) do
-      RDF::Statement.from([RDF::Literal.new('blah'), 
-                           RDF::Literal.new('blah'), 
+      RDF::Statement.from([RDF::Literal.new('blah'),
+                           RDF::Literal.new('blah'),
                            RDF::Literal.new('blah')])
     end
-      
+
     it { is_expected.to be_valid }
 
     it 'is valid with valid statements' do
@@ -276,12 +285,12 @@ describe ActiveTriples::RDFSource do
 
     context 'with ActiveModel validation' do
       let(:source_class) do
-        class Validation  
+        class Validation
           include ActiveTriples::RDFSource
 
           validates_presence_of :title
 
-          property :title, predicate: RDF::DC.title
+          property :title, predicate: RDF::Vocab::DC.title
         end
 
         Validation
@@ -326,7 +335,7 @@ describe ActiveTriples::RDFSource do
 
     before do
       class MyDataModel < ActiveTriples::Schema
-        property :test_title, :predicate => RDF::DC.title
+        property :test_title, :predicate => RDF::Vocab::DC.title
       end
     end
 
