@@ -21,6 +21,19 @@ describe ActiveTriples::RDFSource do
 
   subject { source_class.new }
 
+  shared_context 'with properties' do
+    let(:source_class) do
+      class SourceWithCreator
+        include ActiveTriples::RDFSource
+        property :creator, predicate: RDF::Vocab::DC.creator 
+      end
+      SourceWithCreator
+    end
+
+    let(:predicate) { RDF::Vocab::DC.creator } 
+    let(:property_name) { :creator }
+  end
+
   describe 'RDF interface' do
     it { is_expected.to be_enumerable }
     it { is_expected.to be_queryable }
@@ -118,6 +131,42 @@ describe ActiveTriples::RDFSource do
     context 'with a URI' do
       include_examples 'Term equality' do
         subject { source_class.new(uri) }
+      end
+    end
+  end
+
+  describe '#attributes' do
+    include_context 'with properties'
+
+    it 'has bnode id' do
+      expect(subject.attributes['id']).to eq subject.rdf_subject.id
+    end
+
+    it 'has empty properties' do
+      expect(subject.attributes['creator']).to be_empty
+    end
+
+    it 'has registered properties' do
+      subject.creator = 'moomin'
+      expect(subject.attributes['creator']).to contain_exactly 'moomin'
+    end
+    
+    it 'has unregistered properties' do
+      predicate = RDF::Vocab::OWL.sameAs
+      subject << [subject, predicate, 'moomin']
+      expect(subject.attributes[predicate.to_s]).to contain_exactly 'moomin'
+    end
+
+    context 'with uri' do
+      subject { source_class.new(uri) }
+
+      it 'has uri id' do
+        expect(subject.attributes['id']).to eq subject.rdf_subject.to_s
+      end
+
+      it 'has creator' do
+        subject.creator = 'moomin'
+        expect(subject.attributes['creator']).to contain_exactly 'moomin'
       end
     end
   end
@@ -227,20 +276,11 @@ describe ActiveTriples::RDFSource do
   end
 
   describe '#get_values' do
+    include_context 'with properties'
+
     before { statements.each { |statement| subject << statement } }
 
-    let(:predicate) { RDF::Vocab::DC.creator } 
-    let(:property_name) { :creator }
     let(:values) { ['Tove Jansson', subject] }
-
-    let(:source_class) do
-      class SourceWithCreator
-        include ActiveTriples::RDFSource
-
-        property :creator, predicate: RDF::Vocab::DC.creator 
-      end
-      SourceWithCreator
-    end
 
     let(:statements) do
       values.map { |value| RDF::Statement(subject, predicate, value) }
@@ -304,21 +344,12 @@ describe ActiveTriples::RDFSource do
     end
     
     shared_examples 'setting values' do
+      include_context 'with properties'
       after do
         Object.send(:remove_const, 'SourceWithCreator') if 
           defined? SourceWithCreator
       end
 
-      let(:source_class) do
-        class SourceWithCreator
-          include ActiveTriples::RDFSource
-          property :creator, predicate: RDF::Vocab::DC.creator 
-        end
-        SourceWithCreator
-      end
-
-      let(:predicate) { RDF::Vocab::DC.creator } 
-      let(:property_name) { :creator }
       let(:statements) do
         Array.wrap(value).map { |val| RDF::Statement(subject, predicate, val) }
       end

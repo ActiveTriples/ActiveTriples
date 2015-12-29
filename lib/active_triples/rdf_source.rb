@@ -123,9 +123,46 @@ module ActiveTriples
       other == to_term
     end
 
+    ##
+    # Gives a hash containing both the registered and unregistered attributes of
+    # the resource. Unregistered attributes are given with full URIs.
+    # 
+    # @example 
+    #   class WithProperties
+    #     include ActiveTriples::RDFSource
+    #     property :title,   predicate:  RDF::Vocab::DC.title
+    #     property :creator, predicate:  RDF::Vocab::DC.creator, 
+    #                        class_name: 'Agent'
+    #   end
+    #
+    #   class Agent; include ActiveTriples::RDFSource; end
+    #
+    #   resource = WithProperties.new
+    #
+    #   resource.attributes
+    #   # => {"id"=>"g47123700054720", "title"=>[], "creator"=>[]}
+    #
+    #   resource.creator.build
+    #   resource.title << ['Comet in Moominland', 'Christmas in Moominvalley']
+
+    #   resource.attributes
+    #   # => {"id"=>"g47123700054720",
+    #   #     "title"=>["Comet in Moominland", "Christmas in Moominvalley"],
+    #   #     "creator"=>[#<Agent:0x2adbd76f1a5c(#<Agent:0x0055b7aede34b8>)>]}
+    #
+    #   resource << [resource, RDF::Vocab::DC.relation, 'Helsinki']
+    #   # => {"id"=>"g47123700054720",
+    #   #     "title"=>["Comet in Moominland", "Christmas in Moominvalley"],
+    #   #     "creator"=>[#<Agent:0x2adbd76f1a5c(#<Agent:0x0055b7aede34b8>)>],
+    #   #     "http://purl.org/dc/terms/relation"=>["Helsinki"]}]}
+    #
+    # @return [Hash<String, Array<Object>>]
+    #
+    # @todo: should this, `#attributes=`, and `#serializable_hash` be moved out
+    #   into a dedicated `Serializer` object?
     def attributes
       attrs = {}
-      attrs['id'] = id if id
+      attrs['id'] = id
       fields.map { |f| attrs[f.to_s] = get_values(f) }
       unregistered_predicates.map { |uri| attrs[uri.to_s] = get_values(uri) }
       attrs
@@ -135,7 +172,7 @@ module ActiveTriples
       raise ArgumentError, "values must be a Hash, you provided #{values.class}" unless values.kind_of? Hash
       values = values.with_indifferent_access
       id = values.delete(:id)
-      set_subject!(id) if id && node?
+      set_subject!(id) if node?
       values.each do |key, value|
         if reflections.has_property?(key)
           set_value(rdf_subject, key, value)
