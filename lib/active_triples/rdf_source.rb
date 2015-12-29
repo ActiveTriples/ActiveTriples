@@ -73,7 +73,7 @@ module ActiveTriples
           graph.valid?
       end
 
-      delegate :each, :load!, :count, :has_statement?, :to => :@graph
+      delegate :query, :each, :load!, :count, :has_statement?, :to => :@graph
 
       define_model_callbacks :persist
 
