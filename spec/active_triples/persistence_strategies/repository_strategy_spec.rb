@@ -5,7 +5,7 @@ describe ActiveTriples::RepositoryStrategy do
   let(:rdf_source) { ActiveTriples::Resource.new }
 
   let(:statement) do
-    RDF::Statement.new(rdf_source.to_term, RDF::DC.title, 'moomin')
+    RDF::Statement.new(rdf_source.to_term, RDF::Vocab::DC.title, 'moomin')
   end
 
   it_behaves_like 'a persistence strategy'
@@ -49,7 +49,7 @@ describe ActiveTriples::RepositoryStrategy do
 
     it 'leaves other resources unchanged' do
       subject.repository <<
-        RDF::Statement(RDF::Node.new, RDF::DC.title, 'snorkmaiden')
+        RDF::Statement(RDF::Node.new, RDF::Vocab::DC.title, 'snorkmaiden')
       expect { subject.destroy }
         .not_to change { subject.repository.count }
     end

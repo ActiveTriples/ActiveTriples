@@ -28,7 +28,7 @@ describe "nesting attribute behavior" do
           include ActiveTriples::RDFSource
           property :topic, predicate: DummyMADS.Topic, class_name: "Topic"
           property :personalName, predicate: DummyMADS.PersonalName, class_name: "PersonalName"
-          property :title, predicate: RDF::DC.title
+          property :title, predicate: RDF::Vocab::DC.title
 
 
           accepts_nested_attributes_for :topic, :personalName
@@ -149,12 +149,12 @@ describe "nesting attribute behavior" do
       before do
         class SpecResource
           include ActiveTriples::RDFSource
-          property :parts, predicate: RDF::DC.hasPart, :class_name=>'Component'
+          property :parts, predicate: RDF::Vocab::DC.hasPart, :class_name=>'Component'
           accepts_nested_attributes_for :parts, allow_destroy: true
 
           class Component
             include ActiveTriples::RDFSource
-            property :label, predicate: RDF::DC.title
+            property :label, predicate: RDF::Vocab::DC.title
           end
         end
 

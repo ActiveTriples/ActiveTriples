@@ -19,12 +19,12 @@ describe ActiveTriples::Identifiable do
     before do
       class MyResource
         include ActiveTriples::RDFSource
-        property :relation, predicate: RDF::DC.relation, class_name: 'ActiveExample'
+        property :relation, predicate: RDF::Vocab::DC.relation, class_name: 'ActiveExample'
       end
 
-      klass.property :title, predicate: RDF::DC.title
-      klass.property :identifier, predicate: RDF::DC.identifier
-      klass.property :description, predicate: RDF::DC.description
+      klass.property :title, predicate: RDF::Vocab::DC.title
+      klass.property :identifier, predicate: RDF::Vocab::DC.identifier
+      klass.property :description, predicate: RDF::Vocab::DC.description
 
       subject.resource.title = 'Moomin Valley in November'
       subject.resource.identifier = 'moomvember'
@@ -84,7 +84,7 @@ describe ActiveTriples::Identifiable do
 
     describe '::properties' do
       before do
-        klass.property :title, :predicate => RDF::DC.title
+        klass.property :title, :predicate => RDF::Vocab::DC.title
       end
       it 'can be set' do
         expect(klass.properties).to include 'title'
@@ -116,7 +116,7 @@ describe ActiveTriples::Identifiable do
         end
 
         it 'does not effect other classes' do
-          klass.property :identifier, :predicate => RDF::DC.identifier
+          klass.property :identifier, :predicate => RDF::Vocab::DC.identifier
           expect(ActiveExampleTwo.properties).to be_empty
         end
       end
