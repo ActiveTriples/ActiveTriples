@@ -39,6 +39,37 @@ describe ActiveTriples::Relation do
     end
   end
 
+  describe '#clear' do
+    include_context 'with symbol property'
+    let(:parent_resource) { ActiveTriples::Resource.new }
+
+    context 'with values' do
+      before do
+        subject.parent << [subject.parent.rdf_subject, 
+                           subject.predicate, 
+                           'moomin']
+      end        
+
+      it 'clears the relation' do
+        expect { subject.clear }.to change { subject.result }
+                                     .from(['moomin']).to([])
+      end
+
+      it 'deletes statements from parent' do
+        query_pattern = [subject.parent.rdf_subject, subject.predicate, nil]
+
+        expect { subject.clear }
+          .to change { subject.parent.query(query_pattern) }.to([])
+      end
+    end
+    
+    it 'is a no-op when relation is empty' do
+      subject.parent << [subject.parent.rdf_subject, RDF.type, 'moomin']
+      expect { subject.clear }.not_to change { subject.parent.statements }
+    end
+
+  end
+
   describe "#predicate" do
     context 'when the property is an RDF::Term' do
       include_context 'with URI property'
@@ -271,5 +302,4 @@ describe ActiveTriples::Relation do
       end
     end
   end
-
 end

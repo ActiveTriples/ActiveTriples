@@ -41,11 +41,12 @@ module ActiveTriples
     end
 
     ##
+    # Empties the `Relation`, deleting any associated triples from `parent`.
+    #
     # @return [Relation] self; a now empty relation
     def clear
-      parent.query([rdf_subject, predicate, nil]).each_statement do |statement|
-        parent.delete(statement)
-      end
+      parent.delete([rdf_subject, predicate, nil])
+
       self
     end
 
