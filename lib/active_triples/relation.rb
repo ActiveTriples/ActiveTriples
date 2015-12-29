@@ -125,8 +125,54 @@ module ActiveTriples
       self
     end
 
+    ##
+    # Builds a node with the given attributes, adding it to the relation.
+    #
+    # @param attributes [Hash] a hash of attribute names and values for the 
+    #   built node.
+    #
+    # @example building an empty generic node
+    #   resource = ActiveTriples::Resource.new
+    #   resource.resource.get_values(RDF::Vocab::DC.relation).build
+    #   # => #<ActiveTriples::Resource:0x2b0(#<ActiveTriples::Resource:0x005>)>)
+    #
+    #   resource.dump :ttl
+    #   # => "\n [ <http://purl.org/dc/terms/relation> []] .\n"
+    #
+    # Nodes are built using the configured `class_name` for the relation. 
+    # Attributes passed in the Hash argument are set on the new node through
+    # `RDFSource#attributes=`. If the attribute keys are not valid properties 
+    # on the built node, we raise an error.
+    #
+    # @example building a node with attributes
+    #   class WithRelation
+    #     include ActiveTriples::RDFSource
+    #     property :relation, predicate:  RDF::Vocab::DC.relation, 
+    #       class_name: 'WithTitle'
+    #   end
+    #
+    #   class WithTitle
+    #     include ActiveTriples::RDFSource
+    #     property :title, predicate: RDF::Vocab::DC.title
+    #   end
+    #
+    #   resource = WithRelation.new
+    #   attributes = { id: 'http://ex.org/moomin', title: 'moomin' }
+    #
+    #   resource.get_values(:relation).build(attributes)
+    #   # => #<ActiveTriples::Resource:0x2b0(#<ActiveTriples::Resource:0x005>)>)
+    #
+    #   resource.dump :ttl
+    #   # => "\n<http://ex.org/moomin> <http://purl.org/dc/terms/title> \"moomin\" .\n\n [ <http://purl.org/dc/terms/relation> <http://ex.org/moomin>] .\n"
+    #
+    # @todo: clarify class behavior; it is actually tied to type, in some cases.
+    #
+    # @see RDFSource#attributes=
+    # @see http://guides.rubyonrails.org/active_model_basics.html for some 
+    #   context on ActiveModel attributes.
     def build(attributes={})
       new_subject = attributes.fetch('id') { RDF::Node.new }
+
       make_node(new_subject).tap do |node|
         node.attributes = attributes.except('id')
         if parent.kind_of? List::ListResource

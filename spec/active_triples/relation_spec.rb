@@ -39,6 +39,52 @@ describe ActiveTriples::Relation do
     end
   end
 
+  describe '#build' do
+    include_context 'with symbol property'
+
+    let(:parent_resource) { ActiveTriples::Resource.new }
+
+    it 'returns a new child node' do
+      expect(subject.build).to be_a ActiveTriples::RDFSource
+    end
+
+    it 'adds new child node to relation' do
+      expect { subject.build }.to change { subject.count }.by(1)
+    end
+
+    it 'builds child as new blank node by default' do
+      expect(subject.build).to be_node
+    end
+
+    it 'builds child with uri if given' do
+      uri = 'http://example.com/moomin'
+      expect(subject.build(id: uri)).to be_uri
+    end
+    
+    context 'with configured properties' do
+      include_context 'with symbol property' do
+        before do 
+          reflections.property :moomin,
+                               predicate:  RDF::Vocab::DC.relation,
+                               class_name: 'WithTitle'
+          class WithTitle
+            include ActiveTriples::RDFSource
+            property :title, predicate: RDF::Vocab::DC.title
+          end
+        end
+
+        after { Object.send(:remove_const, :WithTitle) }
+      end
+
+      it 'sets attributes for built node' do
+        attributes = { title: 'moomin' }
+        
+        expect(subject.build(attributes))
+          .to have_attributes(title: ['moomin'])
+      end
+    end
+  end
+
   describe '#clear' do
     include_context 'with symbol property'
     let(:parent_resource) { ActiveTriples::Resource.new }
@@ -67,7 +113,6 @@ describe ActiveTriples::Relation do
       subject.parent << [subject.parent.rdf_subject, RDF.type, 'moomin']
       expect { subject.clear }.not_to change { subject.parent.statements }
     end
-
   end
 
   describe "#predicate" do
