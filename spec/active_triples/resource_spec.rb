@@ -692,25 +692,6 @@ describe ActiveTriples::Resource do
     end
   end
 
-  describe '#rdf_label' do
-    it 'should return an array of label values' do
-      expect(subject.rdf_label).to be_kind_of Array
-    end
-
-    it 'should return the default label values' do
-      subject.title = 'Comet in Moominland'
-      expect(subject.rdf_label).to eq ['Comet in Moominland']
-    end
-
-    it 'should prioritize configured label values' do
-      custom_label = RDF::URI('http://example.org/custom_label')
-      subject.class.configure :rdf_label => custom_label
-      subject << RDF::Statement(subject.rdf_subject, custom_label, RDF::Literal('New Label'))
-      subject.title = 'Comet in Moominland'
-      expect(subject.rdf_label).to eq ['New Label']
-    end
-  end
-
   describe 'editing the graph' do
     it 'should write properties when statements are added' do
       subject << RDF::Statement.new(subject.rdf_subject, RDF::Vocab::DC.title, 'Comet in Moominland')

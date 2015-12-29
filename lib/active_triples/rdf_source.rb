@@ -271,6 +271,8 @@ module ActiveTriples
     ##
     # Looks for labels in various default fields, prioritizing
     # configured label fields.
+    #
+    # @see #default_labels
     def rdf_label
       labels = Array.wrap(self.class.rdf_label)
       labels += default_labels
@@ -281,6 +283,8 @@ module ActiveTriples
       node? ? [] : [rdf_subject.to_s]
     end
 
+    ##
+    # @return [Array<RDF::URI>] a group of properties to use for default labels.
     def default_labels
       [RDF::SKOS.prefLabel,
        RDF::DC.title,

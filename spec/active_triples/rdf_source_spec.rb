@@ -204,6 +204,28 @@ describe ActiveTriples::RDFSource do
     end
   end
 
+  describe '#rdf_label' do
+    let(:label_prop) { RDF::Vocab::SKOS.prefLabel }
+
+    it 'returns an array of label values' do
+      expect(subject.rdf_label).to be_kind_of Array
+    end
+
+    it 'returns the default label values' do
+      subject << [subject.rdf_subject, label_prop, 'Comet in Moominland']
+      expect(subject.rdf_label).to contain_exactly('Comet in Moominland')
+    end
+
+    it 'prioritizes configured label values' do
+      custom_label = RDF::URI('http://example.org/custom_label')
+      subject.class.configure rdf_label: custom_label
+      subject << [subject.rdf_subject, custom_label, RDF::Literal('New Label')]
+      subject << [subject.rdf_subject, label_prop, 'Comet in Moominland']
+
+      expect(subject.rdf_label).to contain_exactly('New Label')
+    end
+  end
+
   describe '#get_values' do
     before { statements.each { |statement| subject << statement } }
 
