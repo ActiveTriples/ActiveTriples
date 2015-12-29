@@ -354,6 +354,11 @@ describe ActiveTriples::RDFSource do
         Array.wrap(value).map { |val| RDF::Statement(subject, predicate, val) }
       end
 
+      it 'raises a ValueError when setting a nonsense value' do
+        expect { subject.set_value(predicate, Object.new) }
+          .to raise_error ActiveTriples::Relation::ValueError
+      end
+
       it 'sets a value' do
         expect { subject.set_value(predicate, value) }
           .to change { subject.statements }

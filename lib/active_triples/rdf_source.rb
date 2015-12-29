@@ -413,6 +413,9 @@ module ActiveTriples
     # @return [ActiveTriples::Relation] an array {Relation} containing the
     #   values of the property
     #
+    # @raise [ActiveTriples::Relation::ValueError] when the given value can't be
+    #   coerced into an acceptable `RDF::Term`.
+    #
     # @note This method will delete existing statements with the given
     #   subject and predicate from the graph
     #
