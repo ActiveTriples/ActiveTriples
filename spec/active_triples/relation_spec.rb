@@ -166,6 +166,33 @@ describe ActiveTriples::Relation do
     end
   end
 
+  describe '#first_or_create' do
+    let(:parent_resource) { ActiveTriples::Resource.new }
+
+    context 'with symbol' do
+      include_context 'with symbol property'
+      
+      it 'creates a new node' do
+        expect { subject.first_or_create }.to change { subject.count }.by(1)
+      end
+
+      it 'returns existing node if present' do
+        node = subject.build
+        expect(subject.first_or_create).to eq node
+      end
+
+      it 'does not create a new node when one exists' do
+        subject.build
+        expect { subject.first_or_create }.not_to change { subject.count }
+      end
+
+      it 'returns literal value if appropriate' do
+        subject << literal = 'moomin'
+        expect(subject.first_or_create).to eq literal
+      end
+    end
+  end
+
   describe '#result' do
     context 'with nil predicate' do
       include_context 'with unregistered property'

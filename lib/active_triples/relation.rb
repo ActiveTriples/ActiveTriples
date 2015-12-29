@@ -185,6 +185,10 @@ module ActiveTriples
       end
     end
 
+    ##
+    # @return [Object] the first result, if present; else a newly built node
+    #
+    # @see #build
     def first_or_create(attributes={})
       result.first || build(attributes)
     end
