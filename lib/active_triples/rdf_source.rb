@@ -1,5 +1,6 @@
 require 'active_model'
 require 'active_support/core_ext/hash'
+require 'active_support/core_ext/array/wrap'
 
 module ActiveTriples
   ##
@@ -34,7 +35,7 @@ module ActiveTriples
   # An `RDFSource` is an {RDF::Term}---it can be used as a subject, predicate,
   # object, or context in an {RDF::Statement}.
   #
-  # @todo complete RDF::Value/RDF::Term/RDF::Resource interfaces 
+  # @todo complete RDF::Value/RDF::Term/RDF::Resource interfaces
   #
   # @see ActiveModel
   # @see RDF::Resource
@@ -102,7 +103,7 @@ module ActiveTriples
       reload
 
       # Append type to graph if necessary.
-      Array(self.class.type).each do |type|
+      Array.wrap(self.class.type).each do |type|
         unless self.get_values(:type).include?(type)
           self.get_values(:type) << type
         end
@@ -278,7 +279,7 @@ module ActiveTriples
     # Looks for labels in various default fields, prioritizing
     # configured label fields.
     def rdf_label
-      labels = Array(self.class.rdf_label)
+      labels = Array.wrap(self.class.rdf_label)
       labels += default_labels
       labels.each do |label|
         values = get_values(label)
@@ -544,7 +545,7 @@ module ActiveTriples
 
       ##
       # Apply a predicate mapping using a given strategy.
-      # 
+      #
       # @param [ActiveTriples::Schema, #properties] schema A schema to apply.
       # @param [#apply!] strategy A strategy for applying. Defaults
       #   to ActiveTriples::ExtensionStrategy
