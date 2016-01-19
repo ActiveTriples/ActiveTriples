@@ -2,31 +2,96 @@ require 'active_support/core_ext/hash'
 
 module ActiveTriples
   ##
-  # Implements property configuration common to Rdf::Resource,
-  # RDFDatastream, and others.  It does its work at the class level,
-  # and is meant to be extended.
+  # Implements property configuration in the style of RDFSource. It does its 
+  # work at the class level, and is meant to be extended.
+  # 
+  # Collaborates closely with ActiveTriples::Reflection
   #
   # Define properties at the class level with:
   #
   #    property :title, predicate: RDF::DC.title, class_name: ResourceClass
   #
+  # @see {ActiveTriples::Reflection}
+  # @see {ActiveTriples::PropertyBuilder}
   module Properties
     extend ActiveSupport::Concern
 
     included do
+      include Reflection
       initialize_generated_modules
     end
 
+    private
+
+      ##
+      # Returns the properties registered and their configurations.
+      #
+      # @return [ActiveSupport::HashWithIndifferentAccess{String => ActiveTriples::NodeConfig}]
+      def properties
+        _active_triples_config
+      end
+
+      ##
+      # Lists fields registered as properties on the object.
+      #
+      # @return [Array<Symbol>] the list of registered properties.
+      def fields
+        properties.keys.map(&:to_sym).reject{ |x| x == :type }
+      end
+
+      ##
+      # List of RDF predicates registered as properties on the object.
+      #
+      # @return [Array<RDF::URI>]
+      def registered_predicates
+        properties.values.map { |config| config.predicate }
+      end
+
+      ##
+      # List of RDF predicates used in the Resource's triples, but not
+      # mapped to any property or accessor methods.
+      #
+      # @return [Array<RDF::URI>]
+      def unregistered_predicates
+        preds = registered_predicates
+        preds << RDF.type
+        predicates.select { |p| !preds.include? p }
+      end
+
+    public
+    
+    ##
+    # Class methods for classes with `Properties`
     module ClassMethods
       def inherited(child_class) #:nodoc:
         child_class.initialize_generated_modules
         super
       end
 
-      def initialize_generated_modules # :nodoc:
+      ##
+      # If the property methods are not yet present, generates them.
+      #
+      # @return [Module] a module self::GeneratedPropertyMethods which is 
+      #   included in self and defines the property methods
+      #
+      # @note this is an alias to #generated_property_methods. Use it when you 
+      #   intend to initialize, rather than retrieve, the methods for code
+      #   readability
+      # @see #generated_property_methods
+      def initialize_generated_modules
         generated_property_methods
       end
 
+      ##
+      # Gives existing generated property methods. If the property methods are 
+      # not yet present, generates them as a new Module and includes it.
+      #
+      # @return [Module] a module self::GeneratedPropertyMethods which is 
+      #   included in self and defines the property methods
+      #
+      # @note use the alias #initialize_generated_modules for clarity of intent
+      #   where appropriate
+      # @see #initialize_generated_modules
       def generated_property_methods
         @generated_property_methods ||= begin
           mod = const_set(:GeneratedPropertyMethods, Module.new)
@@ -37,15 +102,27 @@ module ActiveTriples
 
       ##
       # Registers properties for Resource-like classes
+      #
       # @param [Symbol]  name of the property (and its accessor methods)
       # @param [Hash]  opts for this property, must include a :predicate
       # @yield [index] index sets solr behaviors for the property
+      #
+      # @return [Hash{String=>ActiveTriples::NodeConfig}] the full current 
+      #   property configuration for the class
       def property(name, opts={}, &block)
         raise ArgumentError, "#{name} is a keyword and not an acceptable property name." if protected_property_name? name
         reflection = PropertyBuilder.build(self, name, opts, &block)
         Reflection.add_reflection self, name, reflection
       end
 
+      ##
+      # Checks potential property names for conflicts with existing class 
+      # instance methods. We avoid setting properties with these names to 
+      # prevent catastrophic method overwriting.
+      #
+      # @param [Symblol] name  A potential property name.
+      # @return [Boolean] true if the given name matches an existing instance 
+      #   method which is not an ActiveTriples property.
       def protected_property_name?(name)
         reject = self.instance_methods.map! { |s| s.to_s.gsub(/=$/, '').to_sym }
         reject -= properties.keys.map { |k| k.to_sym }
@@ -56,9 +133,9 @@ module ActiveTriples
       # Given a property name or a predicate, return the configuration
       # for the matching property.
       #
-      # @param term [#to_sym, RDF::Resource] a property name to predicate
+      # @param [#to_sym, RDF::Resource] term  property name or predicate
       #
-      # @return [ActiveTriples::NodeConfig]
+      # @return [ActiveTriples::NodeConfig] the configuration for the property
       def config_for_term_or_uri(term)
         return properties[term.to_s] unless
           term.is_a?(RDF::Resource) && !term.is_a?(RDFSource)

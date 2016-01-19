@@ -31,6 +31,26 @@ describe ActiveTriples::Resource do
     end
   end
 
+  describe 'setting properties' do
+    before do
+      class DummyWithClass < ActiveTriples::Resource
+        configure :type => RDF::URI('http://example.org/DummyClass')
+      end
+    end
+
+    after { Object.send(:remove_const, "DummyWithClass") }
+
+    it 'should replace property value when Resource class has a rdf type' do
+      dl1 = DummyWithClass.new('http://example.org/dl1')
+      dl2 = DummyWithClass.new('http://example.org/dl2')
+
+      subject.title = dl1
+      expect( subject.title ).to eq [dl1]
+      subject.title = dl2
+      expect( subject.title ).to eq [dl2]
+    end
+  end
+
   describe 'rdf_subject' do
     it "should be a blank node if we haven't set it" do
       expect(subject.rdf_subject.node?).to be true
@@ -633,7 +653,6 @@ describe ActiveTriples::Resource do
         end
       end
     end
-
   end
 
   describe '#[]' do
@@ -670,25 +689,6 @@ describe ActiveTriples::Resource do
       subject.query(:subject => subject.rdf_subject, :predicate => RDF.type).statements do |s|
         expect(s.object).to eq RDF::URI('http://example.org/AnotherClass')
       end
-    end
-  end
-
-  describe '#rdf_label' do
-    it 'should return an array of label values' do
-      expect(subject.rdf_label).to be_kind_of Array
-    end
-
-    it 'should return the default label values' do
-      subject.title = 'Comet in Moominland'
-      expect(subject.rdf_label).to eq ['Comet in Moominland']
-    end
-
-    it 'should prioritize configured label values' do
-      custom_label = RDF::URI('http://example.org/custom_label')
-      subject.class.configure :rdf_label => custom_label
-      subject << RDF::Statement(subject.rdf_subject, custom_label, RDF::Literal('New Label'))
-      subject.title = 'Comet in Moominland'
-      expect(subject.rdf_label).to eq ['New Label']
     end
   end
 

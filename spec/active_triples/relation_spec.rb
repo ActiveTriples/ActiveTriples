@@ -3,24 +3,269 @@ require 'rdf/isomorphic'
 
 describe ActiveTriples::Relation do
   let(:parent_resource) { double("parent resource", reflections: {}) }
+  let(:value_args) { double("value args", last: {}) }
 
-  subject { described_class.new(parent_resource, double("value args") ) }
+  let(:uri) { RDF::URI('http://example.org/moomin') }
+
+  subject { described_class.new(parent_resource,  value_args) }
+
+  shared_context 'with URI property' do
+    subject { described_class.new(parent_resource, [property] ) }
+    let(:property) { uri }
+  end
+
+  shared_context 'with symbol property' do
+    subject { described_class.new(parent_resource, [property] ) }
+    let(:property) { :moomin }
+    let(:reflections) do 
+      Class.new do
+        include ActiveTriples::RDFSource
+        property :moomin, predicate: RDF::URI('http://example.org/moomin')
+      end
+    end
+    
+    before do
+      allow(parent_resource).to receive(:reflections).and_return(reflections)
+    end
+  end
+
+  shared_context 'with unregistered property' do
+    subject { described_class.new(parent_resource, [property] ) }
+    let(:property) { :moomin }
+    let(:reflections) { Class.new { include ActiveTriples::RDFSource } }
+    
+    before do
+      allow(parent_resource).to receive(:reflections).and_return(reflections)
+    end
+  end
+
+  describe '#build' do
+    include_context 'with symbol property'
+
+    let(:parent_resource) { ActiveTriples::Resource.new }
+
+    it 'returns a new child node' do
+      expect(subject.build).to be_a ActiveTriples::RDFSource
+    end
+
+    it 'adds new child node to relation' do
+      expect { subject.build }.to change { subject.count }.by(1)
+    end
+
+    it 'builds child as new blank node by default' do
+      expect(subject.build).to be_node
+    end
+
+    it 'builds child with uri if given' do
+      uri = 'http://example.com/moomin'
+      expect(subject.build(id: uri)).to be_uri
+    end
+    
+    context 'with configured properties' do
+      include_context 'with symbol property' do
+        before do 
+          reflections.property :moomin,
+                               predicate:  RDF::Vocab::DC.relation,
+                               class_name: 'WithTitle'
+          class WithTitle
+            include ActiveTriples::RDFSource
+            property :title, predicate: RDF::Vocab::DC.title
+          end
+        end
+
+        after { Object.send(:remove_const, :WithTitle) }
+      end
+
+      it 'sets attributes for built node' do
+        attributes = { title: 'moomin' }
+        
+        expect(subject.build(attributes))
+          .to have_attributes(title: ['moomin'])
+      end
+    end
+  end
+
+  describe '#clear' do
+    include_context 'with symbol property'
+    let(:parent_resource) { ActiveTriples::Resource.new }
+
+    context 'with values' do
+      before do
+        subject.parent << [subject.parent.rdf_subject, 
+                           subject.predicate, 
+                           'moomin']
+      end        
+
+      it 'clears the relation' do
+        expect { subject.clear }.to change { subject.result }
+                                     .from(['moomin']).to([])
+      end
+
+      it 'deletes statements from parent' do
+        query_pattern = [subject.parent.rdf_subject, subject.predicate, nil]
+
+        expect { subject.clear }
+          .to change { subject.parent.query(query_pattern) }.to([])
+      end
+    end
+    
+    it 'is a no-op when relation is empty' do
+      subject.parent << [subject.parent.rdf_subject, RDF.type, 'moomin']
+      expect { subject.clear }.not_to change { subject.parent.statements.to_a }
+    end
+  end
 
   describe "#predicate" do
-    subject { described_class.new(parent_resource, [predicate] ) }
-
     context 'when the property is an RDF::Term' do
-      let(:predicate) { RDF::URI('http://example.org/moomin') }
-      
+      include_context 'with URI property'
+
       it 'returns the specified RDF::Term' do
-        expect(subject.predicate).to eq predicate
+        expect(subject.predicate).to eq uri
       end
     end
 
     context 'when the property is a symbol' do
-      # unit tests here are hard. There are too many moving parts for something
-      # so simple 
-      it 'returns the reflected property'
+      include_context 'with symbol property'
+
+      it 'returns the reflected property' do
+        expect(subject.predicate).to eq uri
+      end
+    end
+
+    context 'when the symbol property is unregistered' do
+      include_context 'with unregistered property'
+      it 'returns nil' do
+        expect(subject.predicate).to be_nil
+      end
+    end
+  end
+  
+  describe "#property" do
+    context 'when the property is an RDF::Term' do
+      include_context 'with URI property'
+
+      it 'returns the specified RDF::Term' do
+        expect(subject.property).to eq property
+      end
+    end
+
+    context 'when the property is a symbol' do
+      include_context 'with symbol property'
+
+      it 'returns the property symbol' do
+        expect(subject.property).to eq property
+      end
+    end
+
+    context 'when the symbol property is unregistered' do
+      include_context 'with unregistered property'
+
+      it 'returns the property symbol' do
+        expect(subject.property).to eq property
+      end
+    end
+  end
+
+  describe '#first_or_create' do
+    let(:parent_resource) { ActiveTriples::Resource.new }
+
+    context 'with symbol' do
+      include_context 'with symbol property'
+      
+      it 'creates a new node' do
+        expect { subject.first_or_create }.to change { subject.count }.by(1)
+      end
+
+      it 'returns existing node if present' do
+        node = subject.build
+        expect(subject.first_or_create).to eq node
+      end
+
+      it 'does not create a new node when one exists' do
+        subject.build
+        expect { subject.first_or_create }.not_to change { subject.count }
+      end
+
+      it 'returns literal value if appropriate' do
+        subject << literal = 'moomin'
+        expect(subject.first_or_create).to eq literal
+      end
+    end
+  end
+
+  describe '#result' do
+    context 'with nil predicate' do
+      include_context 'with unregistered property'
+      
+      it 'is empty' do
+        expect(subject.result).to contain_exactly()
+      end
+    end
+    
+    context 'with predicate' do
+      include_context 'with symbol property' do
+        let(:parent_resource) { ActiveTriples::Resource.new }
+      end
+
+      it 'is empty' do
+        expect(subject.result).to contain_exactly()
+      end
+
+      context 'with values' do
+        before do
+          values.each do |value|
+            subject.parent << [subject.parent.rdf_subject, uri, value]
+          end
+        end
+
+        let(:values) { ['Comet in Moominland', 'Finn Family Moomintroll'] }
+        let(:node) { RDF::Node.new }
+
+        it 'contain values' do
+          expect(subject.result).to contain_exactly(*values)
+        end
+
+        context 'with castable values' do
+          let(:values) do
+            [uri, RDF::URI('http://ex.org/too-ticky'), RDF::Node.new]
+          end
+
+          it 'casts Resource values' do
+            expect(subject.result)
+              .to contain_exactly(a_kind_of(ActiveTriples::Resource),
+                                  a_kind_of(ActiveTriples::Resource),
+                                  a_kind_of(ActiveTriples::Resource))
+          end
+
+          it 'cast values have correct URI' do
+            expect(subject.result.map(&:rdf_subject))
+              .to contain_exactly(*values)
+          end
+          
+          context 'when #cast? is false' do
+            let(:values) do
+              [uri, RDF::URI('http://ex.org/too-ticky'), RDF::Node.new,
+              'moomin', Date.today]
+            end
+
+            it 'does not cast results' do
+              allow(subject).to receive(:cast?).and_return(false)
+              expect(subject.result).to contain_exactly(*values)
+            end
+          end
+
+          context 'when #return_literals? is true' do
+            let(:values) do
+              [RDF::Literal('moomin'), RDF::Literal(Date.today)]
+            end
+
+            it 'does not cast results' do
+              allow(subject).to receive(:return_literals?).and_return(true)
+              expect(subject.result).to contain_exactly(*values)
+            end
+          end
+        end
+      end
     end
   end
 
@@ -129,5 +374,4 @@ describe ActiveTriples::Relation do
       end
     end
   end
-
 end

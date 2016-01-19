@@ -31,10 +31,6 @@ describe ActiveTriples::List do
       expect(subject.subject).not_to eq RDF.nil
     end
 
-    it 'has a non-nil subject' do
-      expect(subject.subject).not_to eq RDF.nil
-    end
-
     it 'has type of rdf:List' do
       expect(subject.type.first).to eq RDF.List
     end
