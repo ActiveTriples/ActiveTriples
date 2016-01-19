@@ -26,4 +26,17 @@ RSpec.describe ActiveTriples::Property do
       )
     end
   end
+
+  it 'requires a :name' do
+    expect { described_class.new({}) }.to raise_error(KeyError)
+  end
+
+  context '#cast' do
+    it 'has a default of false' do
+      expect(described_class.new(:name => :title).cast).to eq(false)
+    end
+    it 'allows for the default to be overridden' do
+      expect(described_class.new(:name => :title, :cast => true).cast).to eq(true)
+    end
+  end
 end
