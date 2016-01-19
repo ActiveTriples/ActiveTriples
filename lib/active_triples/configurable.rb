@@ -1,5 +1,4 @@
 require 'deprecation'
-require 'active_support/core_ext/array/wrap'
 
 module ActiveTriples
   ##
@@ -62,7 +61,7 @@ module ActiveTriples
     end
 
     def transform_type(values)
-      Array.wrap(values).map do |value|
+      Array(values).map do |value|
         RDF::URI.new(value).tap do |uri|
           RDFSource.type_registry[uri] = self
         end
