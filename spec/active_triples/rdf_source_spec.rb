@@ -152,7 +152,7 @@ describe ActiveTriples::RDFSource do
     end
     
     it 'has unregistered properties' do
-      predicate = RDF::Vocab::OWL.sameAs
+      predicate = RDF::OWL.sameAs
       subject << [subject, predicate, 'moomin']
       expect(subject.attributes[predicate.to_s]).to contain_exactly 'moomin'
     end
@@ -463,11 +463,11 @@ describe ActiveTriples::RDFSource do
         document.set_value(RDF::Vocab::DC.creator, person) 
         person.set_value(RDF::Vocab::FOAF.knows, subject) 
         subject.set_value(RDF::Vocab::FOAF.publications, document) 
-        subject.set_value(RDF::Vocab::OWL.sameAs, subject)         
+        subject.set_value(RDF::OWL.sameAs, subject)         
 
         expect(subject.get_values(RDF::Vocab::FOAF.publications))
           .to contain_exactly(document)
-        expect(subject.get_values(RDF::Vocab::OWL.sameAs))
+        expect(subject.get_values(RDF::OWL.sameAs))
           .to contain_exactly(subject)
         expect(document.get_values(RDF::Vocab::DC.creator))
           .to contain_exactly(person)

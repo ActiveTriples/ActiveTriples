@@ -111,7 +111,7 @@ describe ActiveTriples::Relation do
     
     it 'is a no-op when relation is empty' do
       subject.parent << [subject.parent.rdf_subject, RDF.type, 'moomin']
-      expect { subject.clear }.not_to change { subject.parent.statements }
+      expect { subject.clear }.not_to change { subject.parent.statements.to_a }
     end
   end
 
