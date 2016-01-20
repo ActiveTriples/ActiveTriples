@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 module ActiveTriples
   ##
   # Defines module methods for registering an RDF::Repository for

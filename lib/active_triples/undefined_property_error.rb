@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 module ActiveTriples
   ##
   # An error class to be raised when attempting to reflect on an undefined 

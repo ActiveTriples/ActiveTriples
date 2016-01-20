@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 module ActiveTriples
   require_relative 'configuration/item'
   require_relative 'configuration/merge_item'

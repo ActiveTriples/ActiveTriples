@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'rdf'
 require 'active_triples/version'
 require 'active_support'

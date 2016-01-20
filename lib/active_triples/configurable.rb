@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'deprecation'
 require 'active_support/core_ext/array/wrap'
 
