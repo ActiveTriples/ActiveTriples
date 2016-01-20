@@ -41,19 +41,17 @@ module ActiveTriples
     end
 
     ##
+    # @return [Array<RDFSource>]
+    def ancestors
+      enum_ancestors.to_a
+    end
+
+    ##
     # @return [#persist!] the last parent in a chain from `parent` (e.g.
     #   the parent's parent's parent). This is the RDF::Mutable that the
     #   object will project itself on when persisting.
     def final_parent
-      raise NilParentError if parent.nil?
-      @final_parent ||= begin
-        current = self.parent
-        while current && current.respond_to?(:parent) && current.parent
-          break if current.parent == current
-          current = current.parent
-        end
-        current
-      end
+      ancestors.last
     end
 
     ##
@@ -86,6 +84,27 @@ module ActiveTriples
       @persisted = true unless obj.empty?
       true
     end
+
+    private
+
+    def enum_ancestors
+      raise NilParentError if parent.nil?
+
+      Enumerator.new do |yielder|
+        current = parent
+
+        loop do
+          yielder.yield current
+
+          break unless (current && current.respond_to?(:parent) && current.parent)
+          break if current.parent == current
+
+          current = current.parent
+        end
+      end
+    end
+
+    public
 
     class NilParentError < RuntimeError; end
     class UnmutableParentError < ArgumentError; end

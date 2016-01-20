@@ -5,11 +5,8 @@ describe ActiveTriples::ParentStrategy do
   let(:rdf_source) { BasicPersistable.new }
 
   shared_context 'with a parent' do
-    before do
-      subject.parent = parent
-    end
-
     let(:parent) { BasicPersistable.new }
+    before { subject.parent = parent }
   end
 
   context 'with a parent' do
@@ -40,9 +37,39 @@ describe ActiveTriples::ParentStrategy do
     end
   end
 
+  describe '#ancestors' do
+    it 'raises NilParentError' do
+      expect { subject.ancestors }
+        .to raise_error described_class::NilParentError
+    end
+
+    context 'with parent' do
+      include_context 'with a parent'
+      
+      it 'gives the parent' do
+        expect(subject.ancestors).to contain_exactly(parent)
+      end
+
+      context 'and nested parents' do
+        let(:parents) { [double('second'), double('third')] }
+        let(:last) { double('last') }
+        
+        it 'gives all ancestors' do
+          allow(parent).to receive(:parent).and_return(parents.first)
+          allow(parents.first).to receive(:parent).and_return(parents[1])
+          allow(parents[1]).to receive(:parent).and_return(last)
+          
+          expect(subject.ancestors)
+            .to contain_exactly(*(parents << parent << last))
+        end
+      end
+    end
+  end
+
   describe '#final_parent' do
     it 'raises an error with no parent' do
-      expect { subject.final_parent }.to raise_error described_class::NilParentError
+      expect { subject.final_parent }
+        .to raise_error described_class::NilParentError
     end
 
     context 'with single parent' do
