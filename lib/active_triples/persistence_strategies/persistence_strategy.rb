@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 module ActiveTriples
   ##
   # @abstract defines the basic interface for persistence of {RDFSource}'s.

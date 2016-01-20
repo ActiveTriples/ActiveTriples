@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 module ActiveTriples
   ##
   # A value object to encapsulate what a Property is. Instantiate with a hash of

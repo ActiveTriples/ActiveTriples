@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 shared_examples_for "an ActiveModel" do
   subject { am_lint_class.new }
 

@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 module ActiveTriples
   ##
   # Default property applying strategy which just copies all configured properties

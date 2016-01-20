@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 module ActiveTriples
   ##
   # Persistence strategy for projecting `RDFSource` to `RDF::Repositories`.

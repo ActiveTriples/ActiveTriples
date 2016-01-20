@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 module ActiveTriples
   ##
   # Bundles the core interfaces used by ActiveTriples persistence strategies

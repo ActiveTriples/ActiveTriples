@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 module ActiveTriples
   ##
   # An implementation of RDF::List intregrated with ActiveTriples.

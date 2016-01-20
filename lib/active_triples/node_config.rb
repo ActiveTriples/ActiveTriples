@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 module ActiveTriples
   class NodeConfig
     attr_accessor :predicate, :term, :class_name, :type, :behaviors, :cast

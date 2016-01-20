@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 shared_examples 'a persistence strategy' do
   shared_context 'with changes' do
     before do
