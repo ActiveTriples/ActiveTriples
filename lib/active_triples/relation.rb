@@ -262,12 +262,10 @@ module ActiveTriples
       end
 
       def set_value(val)
-        object = val
-        val = val.resource if val.respond_to?(:resource)
-        val = value_to_node(val)
+        val = value_to_node(val.respond_to?(:resource) ? val.resource : val)
         if val.kind_of? RDFSource
           node_cache[val.rdf_subject] = nil
-          add_child_node(val, object)
+          add_child_node(val)
           return
         end
         val = val.to_uri if val.respond_to? :to_uri
@@ -283,19 +281,18 @@ module ActiveTriples
         valid_datatype?(val) ? RDF::Literal(val) : val
       end
 
-      def add_child_node(resource, object = nil)
+      def add_child_node(resource)
         parent.insert [rdf_subject, predicate, resource.rdf_subject]
 
-        unless resource.frozen? || 
-               resource == parent || 
-               resource.persistence_strategy.is_a?(ParentStrategy) ||
+        resource = resource.dup
+        unless resource == parent || 
                (parent.persistence_strategy.is_a?(ParentStrategy) &&
-                parent.persistence_strategy.ancestors.include?(resource))
+                parent.persistence_strategy.ancestors.find { |a| a.eql? resource })
           resource.set_persistence_strategy(ParentStrategy)
           resource.parent = parent
         end
 
-        self.node_cache[resource.rdf_subject] = (object ? object : resource)
+        self.node_cache[resource.rdf_subject] = resource
         resource.persist! if resource.persistence_strategy.is_a? ParentStrategy
       end
 

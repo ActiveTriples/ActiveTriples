@@ -523,12 +523,6 @@ module ActiveTriples
       end
     end
 
-    def destroy_child(child)
-      statements.each do |statement|
-        delete_statement(statement) if statement.subject == child.rdf_subject || statement.object == child.rdf_subject
-      end
-    end
-
     ##
     # Indicates if the record is 'new' (has not yet been persisted).
     #
