@@ -3,10 +3,16 @@ require 'spec_helper'
 describe ActiveTriples::ParentStrategy do
   subject { described_class.new(rdf_source) }
   let(:rdf_source) { BasicPersistable.new }
-
+  
   shared_context 'with a parent' do
     let(:parent) { BasicPersistable.new }
-    before { subject.parent = parent }
+
+    before do
+      subject.parent = parent
+
+      rdf_source.set_persistence_strategy(described_class)
+      rdf_source.persistence_strategy.parent = parent
+    end
   end
 
   context 'with a parent' do
@@ -38,8 +44,8 @@ describe ActiveTriples::ParentStrategy do
   end
 
   describe '#ancestors' do
-    it 'raises NilParentError' do
-      expect { subject.ancestors }
+    it 'raises NilParentError when enumerating' do
+      expect { subject.ancestors.next }
         .to raise_error described_class::NilParentError
     end
 
@@ -51,13 +57,19 @@ describe ActiveTriples::ParentStrategy do
       end
 
       context 'and nested parents' do
-        let(:parents) { [double('second'), double('third')] }
-        let(:last) { double('last') }
+        let(:parents) do
+          [double('second', persistence_strategy: double('strategy2')), 
+           double('third', persistence_strategy: double('strategy3'))]
+        end
+        let(:last) { double('last', persistence_strategy: double('last_strategy')) }
         
         it 'gives all ancestors' do
-          allow(parent).to receive(:parent).and_return(parents.first)
-          allow(parents.first).to receive(:parent).and_return(parents[1])
-          allow(parents[1]).to receive(:parent).and_return(last)
+          allow(parent.persistence_strategy)
+            .to receive(:parent).and_return(parents.first)
+          allow(parents.first.persistence_strategy)
+            .to receive(:parent).and_return(parents[1])
+          allow(parents[1].persistence_strategy)
+            .to receive(:parent).and_return(last)
           
           expect(subject.ancestors)
             .to contain_exactly(*(parents << parent << last))
@@ -82,20 +94,20 @@ describe ActiveTriples::ParentStrategy do
 
     context 'with parent chain' do
       include_context 'with a parent'
-      let(:last) { double('last') }
+      let(:last) { double('last', persistence_strategy: nil) }
 
       it 'gives last parent terminating when no futher parents given' do
-        allow(parent).to receive(:parent).and_return(last)
+        allow(parent.persistence_strategy).to receive(:parent).and_return(last)
         expect(subject.final_parent).to eq last
       end
 
       it 'gives last parent terminating parent is nil' do
-        allow(parent).to receive(:parent).and_return(last)
+        allow(parent.persistence_strategy).to receive(:parent).and_return(last)
         expect(subject.final_parent).to eq last
       end
 
       it 'gives last parent terminating parent is same as current' do
-        allow(parent).to receive(:parent).and_return(last)
+        allow(parent.persistence_strategy).to receive(:parent).and_return(last)
         expect(subject.final_parent).to eq last
       end
     end
@@ -135,6 +147,41 @@ describe ActiveTriples::ParentStrategy do
         subject.persist!
         expect(subject.final_parent.statements)
           .to contain_exactly *rdf_source.statements
+      end
+    end
+  end
+end
+
+describe ActiveTriples::ParentStrategy::Ancestors do
+  subject { described_class.new(rdf_source) }
+
+  let(:rdf_source) { BasicPersistable.new }
+
+  describe '#each' do
+    it 'raises NilParentError' do
+      expect { subject.each }
+        .to raise_error ActiveTriples::ParentStrategy::NilParentError
+    end
+
+    context 'with parents' do
+      let(:parent) { BasicPersistable.new }
+      let(:last) { BasicPersistable.new }
+      
+      before do
+        parent.set_persistence_strategy(ActiveTriples::ParentStrategy)
+        parent.persistence_strategy.parent = last
+        rdf_source.set_persistence_strategy(ActiveTriples::ParentStrategy)
+        rdf_source.persistence_strategy.parent = parent
+      end
+      
+      it { expect(subject.each).to be_a Enumerator }
+      
+      it 'enumerates ancestors' do
+        expect(subject.each).to contain_exactly(parent, last)
+      end
+
+      it 'yields ancestors' do
+        expect { |b| subject.each(&b) }.to yield_successive_args(parent, last)
       end
     end
   end

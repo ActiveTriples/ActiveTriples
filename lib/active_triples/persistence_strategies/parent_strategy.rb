@@ -41,9 +41,9 @@ module ActiveTriples
     end
 
     ##
-    # @return [Array<RDFSource>]
+    # @return [Enumerator<RDFSource>]
     def ancestors
-      enum_ancestors.to_a
+      Ancestors.new(obj).to_enum
     end
 
     ##
@@ -51,7 +51,7 @@ module ActiveTriples
     #   the parent's parent's parent). This is the RDF::Mutable that the
     #   object will project itself on when persisting.
     def final_parent
-      ancestors.last
+      ancestors.to_a.last
     end
 
     ##
@@ -85,27 +85,48 @@ module ActiveTriples
       true
     end
 
-    private
+    ##
+    # An enumerable over the ancestors of an object
+    class Ancestors
+      include Enumerable
 
-    def enum_ancestors
-      raise NilParentError if parent.nil?
+      # @!attribute obj
+      #   @return [RDFSource]
+      attr_reader :obj
 
-      Enumerator.new do |yielder|
-        current = parent
+      ##
+      # @param obj [RDFSource]
+      def initialize(obj)
+        @obj = obj
+      end
+      
+      ##
+      # @yield [RDFSource] gives each ancestor to the block
+      # @return [Enumerator<RDFSource>]
+      #
+      # @raise [NilParentError] if `obj` does not persist to a parent
+      def each
+        raise NilParentError if 
+          !obj.persistence_strategy.respond_to?(:parent) || 
+          obj.persistence_strategy.parent.nil?
+        
+        current = obj.persistence_strategy.parent
+        
+        if block_given?
+          loop do
+            yield current
+            
+            break unless (current.persistence_strategy.respond_to?(:parent) && 
+                          current.persistence_strategy.parent)
+            break if current.persistence_strategy.parent == current
 
-        loop do
-          yielder.yield current
-
-          break unless (current && current.respond_to?(:parent) && current.parent)
-          break if current.parent == current
-
-          current = current.parent
+            current = current.persistence_strategy.parent
+          end
         end
+        to_enum
       end
     end
-
-    public
-
+    
     class NilParentError < RuntimeError; end
     class UnmutableParentError < ArgumentError; end
   end
