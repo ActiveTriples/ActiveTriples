@@ -42,19 +42,17 @@ module ActiveTriples
     end
 
     ##
+    # @return [Enumerator<RDFSource>]
+    def ancestors
+      Ancestors.new(obj).to_enum
+    end
+
+    ##
     # @return [#persist!] the last parent in a chain from `parent` (e.g.
     #   the parent's parent's parent). This is the RDF::Mutable that the
     #   object will project itself on when persisting.
     def final_parent
-      raise NilParentError if parent.nil?
-      @final_parent ||= begin
-        current = self.parent
-        while current && current.respond_to?(:parent) && current.parent
-          break if current.parent == current
-          current = current.parent
-        end
-        current
-      end
+      ancestors.to_a.last
     end
 
     ##
@@ -88,6 +86,48 @@ module ActiveTriples
       true
     end
 
+    ##
+    # An enumerable over the ancestors of an object
+    class Ancestors
+      include Enumerable
+
+      # @!attribute obj
+      #   @return [RDFSource]
+      attr_reader :obj
+
+      ##
+      # @param obj [RDFSource]
+      def initialize(obj)
+        @obj = obj
+      end
+      
+      ##
+      # @yield [RDFSource] gives each ancestor to the block
+      # @return [Enumerator<RDFSource>]
+      #
+      # @raise [NilParentError] if `obj` does not persist to a parent
+      def each
+        raise NilParentError if 
+          !obj.persistence_strategy.respond_to?(:parent) || 
+          obj.persistence_strategy.parent.nil?
+        
+        current = obj.persistence_strategy.parent
+        
+        if block_given?
+          loop do
+            yield current
+            
+            break unless (current.persistence_strategy.respond_to?(:parent) && 
+                          current.persistence_strategy.parent)
+            break if current.persistence_strategy.parent == current
+
+            current = current.persistence_strategy.parent
+          end
+        end
+        to_enum
+      end
+    end
+    
     class NilParentError < RuntimeError; end
     class UnmutableParentError < ArgumentError; end
   end

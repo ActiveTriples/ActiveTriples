@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 require 'spec_helper'
+require 'rdf/turtle'
 require 'rdf/spec/enumerable'
 require 'rdf/spec/queryable'
 require 'rdf/spec/countable'
@@ -338,9 +339,8 @@ describe ActiveTriples::RDFSource do
       
       it 'is a no-op' do
         subject << RDF::Statement(subject, RDF::Vocab::DC.title, 'Moomin')
-        # this is a bit naive
         expect { subject.set_value(:not_a_property, '') rescue nil }
-          .not_to change { subject.triples.count }
+          .not_to change { subject.triples.to_a }
       end
     end
     
@@ -450,7 +450,7 @@ describe ActiveTriples::RDFSource do
       let(:document) { source_class.new }
       let(:person) { source_class.new }
 
-      it 'should handle setting reciprocally' do
+      it 'handles setting reciprocally' do
         document.set_value(RDF::Vocab::DC.creator, person)
         person.set_value(RDF::Vocab::FOAF.publications, document)
 
@@ -460,7 +460,7 @@ describe ActiveTriples::RDFSource do
           .to contain_exactly(person)
       end
 
-      it 'should handle setting' do
+      it 'handles setting' do
         document.set_value(RDF::Vocab::DC.creator, person) 
         person.set_value(RDF::Vocab::FOAF.knows, subject) 
         subject.set_value(RDF::Vocab::FOAF.publications, document) 
@@ -474,7 +474,7 @@ describe ActiveTriples::RDFSource do
           .to contain_exactly(person)
       end
 
-      it 'should handle setting circularly' do
+      it 'handles setting circularly' do
         document.set_value(RDF::Vocab::DC.creator, [person, subject])
         person.set_value(RDF::Vocab::FOAF.knows, subject)
 
@@ -482,6 +482,38 @@ describe ActiveTriples::RDFSource do
           .to contain_exactly(person, subject)
         expect(person.get_values(RDF::Vocab::FOAF.knows))
           .to contain_exactly subject
+      end
+
+      it 'handles setting circularly within ancestor list' do
+        person2 = source_class.new
+        subject.set_value(RDF::Vocab::DC.relation, document)
+        document.set_value(RDF::Vocab::DC.relation, person)
+        person.set_value(RDF::Vocab::DC.relation, person2)
+        person2.set_value(RDF::Vocab::DC.relation, document)
+        
+        expect(person.get_values(RDF::Vocab::DC.relation))
+          .to contain_exactly person2
+        expect(person2.get_values(RDF::Vocab::DC.relation))
+          .to contain_exactly document
+      end
+    end
+
+    describe 'capturing child nodes' do
+      let(:other) { source_class.new }
+
+      it 'captures a child node' do
+        expect { subject.set_value(RDF::OWL.sameAs, other) }
+          .to change { other.persistence_strategy }
+               .to(ActiveTriples::ParentStrategy)
+        expect(other.persistence_strategy.parent).to eq subject
+      end
+      
+      it 'does not capture a child node when it already persists to a parent' do
+        third = source_class.new
+        third.set_value(RDF::OWL.sameAs, other)
+
+        expect { subject.set_value(RDF::OWL.sameAs, other) }
+          .not_to change { other.persistence_strategy.parent }
       end
     end
   end
