@@ -67,13 +67,9 @@ module ActiveTriples
       # @todo find a way to move this logic out (PersistenceStrategyBuilder?).
       #   so the dependency on Repositories is externalized.
       def set_repository
-        repo_sym = obj.class.repository || obj.singleton_class.repository
-        if repo_sym.nil?
-          RDF::Repository.new
-        else
-          repo = Repositories.repositories[repo_sym]
-          repo || raise(RepositoryNotFoundError, "The class #{obj.class} expects a repository called #{repo_sym}, but none was declared")
-        end
+        return RDF::Repository.new if obj.class.repository.nil?
+        repo = Repositories.repositories[obj.class.repository]
+        repo || raise(RepositoryNotFoundError, "The class #{obj.class} expects a repository called #{obj.class.repository}, but none was declared")
       end
   end
 end
