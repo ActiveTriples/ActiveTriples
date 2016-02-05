@@ -335,6 +335,26 @@ describe ActiveTriples::Relation do
     end
   end
 
+  describe '#join' do
+    context 'with predicate' do
+      include_context 'with symbol property' do
+        let(:parent_resource) { ActiveTriples::Resource.new }
+      end
+
+      context 'with values' do
+        let(:values) { ['Comet in Moominland', 'Finn Family Moomintroll'] }
+        before do
+          values.each do |value|
+            subject.parent << [subject.parent.rdf_subject, uri, value]
+          end
+        end
+        it "returns joined strings" do
+          expect(subject.join(", ")).to eq "Comet in Moominland, Finn Family Moomintroll"
+        end
+      end
+    end
+  end
+
   describe "#valid_datatype?" do
     subject { described_class.new(double("parent", reflections: []), "value" ) }
     before { allow(subject.parent).to receive(:rdf_subject) { "parent subject" } }
