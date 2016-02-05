@@ -20,24 +20,39 @@ module ActiveTriples
       @obj = obj
     end
 
+    ##
+    # Objects using this strategy are persisted only if their parent is also 
+    # persisted.
+    #
+    # @see PersistenceStrategy#persisted?
     def persisted?
       super && parent.persisted?
     end
 
+    ##
+    # Destroys the resource by removing it graph and references from the 
+    # parent.
+    #
+    # @see PersistenceStrategy#destroy
     def destroy
-      super { parent.destroy_child(obj) }
+      final_parent.delete(obj.statements)
+
+      parent.statements.each do |statement|
+        parent.delete_statement(statement) if
+          statement.subject == obj.rdf_subject || 
+          statement.object == obj.rdf_subject
+      end
+
+      super 
     end
 
+    ##
     # Clear out any old assertions in the repository about this node or statement
     # thus preparing to receive the updated assertions.
     def erase_old_resource
-      if obj.rdf_subject.node?
-        final_parent.statements.each do |statement|
-          final_parent.send(:delete_statement, statement) if
-            statement.subject == obj.rdf_subject
-        end
-      else
-        final_parent.delete [obj.rdf_subject, nil, nil]
+      final_parent.statements.each do |statement|
+        final_parent.send(:delete_statement, statement) if
+          statement.subject == obj.rdf_subject
       end
     end
 

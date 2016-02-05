@@ -44,6 +44,39 @@ describe ActiveTriples::ParentStrategy do
     end
   end
 
+  describe '#destroy' do
+    include_context 'with a parent'
+
+    before do
+      rdf_source.insert(*statements)
+      subject.persist!
+    end
+    
+    let(:statements) do
+      [RDF::Statement(subject.obj.rdf_subject, RDF::Vocab::DC.title, 'moomin'),
+       RDF::Statement(:node, RDF::Vocab::DC.relation, subject.obj.rdf_subject),
+       RDF::Statement(:node, RDF::Vocab::DC.relation, :other_node)]
+    end
+
+    it 'removes graph from the parent' do
+      subject.destroy
+      
+      statements.each do |statement|
+        expect(subject.parent.statements).not_to have_statement statement
+      end
+    end
+
+    it 'removes subjects from parent' do
+      subject.destroy
+      expect(subject.parent).not_to have_subject(rdf_source)
+    end
+
+    it 'removes objects from parent' do
+      subject.destroy
+      expect(subject.parent).not_to have_object(rdf_source)
+    end
+  end
+
   describe '#ancestors' do
     it 'raises NilParentError when enumerating' do
       expect { subject.ancestors.next }
@@ -145,6 +178,7 @@ describe ActiveTriples::ParentStrategy do
 
       it 'writes to #final_parent graph' do
         rdf_source << [RDF::Node.new, RDF::Vocab::DC.title, 'moomin']
+
         subject.persist!
         expect(subject.final_parent.statements)
           .to contain_exactly *rdf_source.statements

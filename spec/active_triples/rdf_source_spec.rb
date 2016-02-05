@@ -501,19 +501,24 @@ describe ActiveTriples::RDFSource do
     describe 'capturing child nodes' do
       let(:other) { source_class.new }
 
-      it 'captures a child node' do
+      it 'adds child node data to own graph' do
+        other << RDF::Statement(:s, RDF::URI('p'), 'o')
         expect { subject.set_value(RDF::OWL.sameAs, other) }
-          .to change { other.persistence_strategy }
-               .to(ActiveTriples::ParentStrategy)
-        expect(other.persistence_strategy.parent).to eq subject
+          .to change { subject.statements.to_a }.to include(*other.statements.to_a)
+      end
+
+      it 'does not change persistence strategy of added node' do
+        expect { subject.set_value(RDF::OWL.sameAs, other) }
+          .not_to change { other.persistence_strategy }
       end
       
       it 'does not capture a child node when it already persists to a parent' do
         third = source_class.new
         third.set_value(RDF::OWL.sameAs, other)
-
-        expect { subject.set_value(RDF::OWL.sameAs, other) }
-          .not_to change { other.persistence_strategy.parent }
+        
+        child_other = third.get_values(RDF::OWL.sameAs).first
+        expect { subject.set_value(RDF::OWL.sameAs, child_other) }
+          .not_to change { child_other.persistence_strategy.parent }
       end
     end
   end

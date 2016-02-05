@@ -23,8 +23,8 @@ module ActiveTriples
     #   deletions in the persisted graph(s).
     # @return [Boolean] true if the resource was sucessfully destroyed
     def destroy(&block)
-      obj.clear
       yield if block_given?
+      obj.clear
       persist!
       @destroyed = true
     end

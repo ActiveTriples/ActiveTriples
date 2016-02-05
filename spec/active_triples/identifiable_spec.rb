@@ -141,11 +141,6 @@ describe ActiveTriples::Identifiable do
         it 'has a parent' do
           expect(parent.relation.first.parent).to eq parent
         end
-
-        it 'has a parent after reload' do
-          parent.relation.node_cache = {}
-          expect(parent.relation.first.parent).to eq parent
-        end
       end
     end
 

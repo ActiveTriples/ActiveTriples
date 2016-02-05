@@ -342,24 +342,21 @@ describe ActiveTriples::Resource do
     end
 
     context 'with a parent' do
-      before do
-        parent.license = subject
-      end
+      before { parent.license = subject }
 
       let(:parent) do
         DummyResource.new('http://example.org/moomi')
       end
 
-      it 'should empty the graph and remove it from the parent' do
-        subject.destroy
-        expect(parent.license).to be_empty
+      it 'empties the graph and removes it from the parent' do
+        expect { parent.license.first.destroy! }
+          .to change { parent.license.empty? }.to true
       end
 
-      it 'should remove its whole graph from the parent' do
-        subject.destroy
-        subject.each_statement do |s|
-          expect(parent.statements).not_to include s
-        end
+      it 'removes its whole graph from the parent' do
+        statements = subject.statements.to_a
+        parent.license.first.destroy
+        statements.each { |s| expect(parent.statements).not_to include s }
       end
     end
   end
