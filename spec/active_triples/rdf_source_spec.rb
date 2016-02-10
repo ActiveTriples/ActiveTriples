@@ -27,12 +27,12 @@ describe ActiveTriples::RDFSource do
     let(:source_class) do
       class SourceWithCreator
         include ActiveTriples::RDFSource
-        property :creator, predicate: RDF::Vocab::DC.creator 
+        property :creator, predicate: RDF::Vocab::DC.creator
       end
       SourceWithCreator
     end
 
-    let(:predicate) { RDF::Vocab::DC.creator } 
+    let(:predicate) { RDF::Vocab::DC.creator }
     let(:property_name) { :creator }
   end
 
@@ -222,6 +222,13 @@ describe ActiveTriples::RDFSource do
             .to change { subject.statements.to_a }
                  .from(a_collection_containing_exactly(existing))
                  .to(a_collection_containing_exactly(statement, existing))
+        end
+
+        it "passes extra arguments to RDF::Reader" do
+          expect(RDF::Reader).to receive(:open).with(subject.rdf_subject,
+                                                     { base_uri: subject.rdf_subject,
+                                                       headers: { Accept: 'x-humans/as-they-are' } })
+          subject.fetch(headers: { Accept: 'x-humans/as-they-are' })
         end
       end
     end
