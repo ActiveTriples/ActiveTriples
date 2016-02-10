@@ -255,8 +255,8 @@ module ActiveTriples
     #    # => "Oregon State University"
     #
     # @return [ActiveTriples::Entity] self
-    def fetch
-      load(rdf_subject)
+    def fetch(*args)
+      load(rdf_subject, *args)
       self
     end
 
