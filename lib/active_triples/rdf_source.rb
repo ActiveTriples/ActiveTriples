@@ -342,24 +342,24 @@ module ActiveTriples
     #    osu.fetch
     #    osu.rdf_label.first
     #    # => "Oregon State University"
-    # 
+    #
     # @example with default action block
     #    my_source = new('http://example.org/dead_url')
     #    my_source.fetch { |obj| obj.status = 'dead link' }
     #
-    # @yield gives self to block if this is a node, or an error is raised during 
+    # @yield gives self to block if this is a node, or an error is raised during
     #   load
     # @yieldparam [ActiveTriples::RDFSource] resource  self
     #
     # @return [ActiveTriples::RDFSource] self
-    def fetch(&block)
+    def fetch(*args, &block)
       begin
-        load(rdf_subject)
+        load(rdf_subject, *args)
       rescue => e
         if block_given?
           yield(self)
         else
-          raise "#{self} is a blank node; Cannot fetch a resource without a URI" if 
+          raise "#{self} is a blank node; Cannot fetch a resource without a URI" if
             node?
           raise e
         end
@@ -379,7 +379,7 @@ module ActiveTriples
     #     include ActiveTriples::RDFSource
     #     property :creator, predicate: RDF::DC.creator
     #   end
-    # 
+    #
     #   t = Thing.new
     #   t.set_value(:creator, 'Tove Jansson')  # => ['Tove Jansson']
     #
@@ -387,9 +387,9 @@ module ActiveTriples
     # @example setting with a predicate
     #   t = Thing.new
     #   t.set_value(RDF::DC.creator, 'Tove Jansson')  # => ['Tove Jansson']
-    #   
     #
-    # The recommended pattern, which sets properties directly on this 
+    #
+    # The recommended pattern, which sets properties directly on this
     # RDFSource, is: `set_value(property, values)`
     #
     # @overload set_value(property, values)
@@ -398,7 +398,7 @@ module ActiveTriples
     #   @param [RDF::Term, #to_sym] property  a symbol with the property name
     #     or an RDF::Term to use as a predicate.
     #   @param [Array<RDF::Resource>, RDF::Resource] values  an array of values
-    #     or a single value. If not an {RDF::Resource}, the values will be 
+    #     or a single value. If not an {RDF::Resource}, the values will be
     #     coerced to an {RDF::Literal} or {RDF::Node} by {RDF::Statement}
     #
     # @overload set_value(subject, property, values)
