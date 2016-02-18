@@ -7,17 +7,17 @@ module ActiveTriples
   class ParentStrategy
     include PersistenceStrategy
 
-    # @!attribute [r] obj
+    # @!attribute [r] source
     #   the source to persist with this strategy
     # @!attribute [r] parent
     #   the target parent source for persistence
-    attr_reader :obj, :parent
+    attr_reader :source, :parent
 
     ##
-    # @param obj [RDFSource, RDF::Enumerable] the `RDFSource` (or other
+    # @param source [RDFSource, RDF::Enumerable] the `RDFSource` (or other
     #   `RDF::Enumerable` to persist with the strategy.
-    def initialize(obj)
-      @obj = obj
+    def initialize(source)
+      @source = source
     end
 
     ##
@@ -35,15 +35,15 @@ module ActiveTriples
     #
     # @see PersistenceStrategy#destroy
     def destroy
-      final_parent.delete(obj.statements)
+      final_parent.delete(source.statements)
 
       parent.statements.each do |statement|
         parent.delete_statement(statement) if
-          statement.subject == obj.rdf_subject || 
-          statement.object == obj.rdf_subject
+          statement.subject == source.rdf_subject || 
+          statement.object == source.rdf_subject
       end
 
-      super { obj.clear }
+      super { source.clear }
     end
 
     ##
@@ -53,14 +53,14 @@ module ActiveTriples
     def erase_old_resource
       final_parent.statements.each do |statement|
         final_parent.send(:delete_statement, statement) if
-          statement.subject == obj.rdf_subject
+          statement.subject == source.rdf_subject
       end
     end
 
     ##
     # @return [Enumerator<RDFSource>]
     def ancestors
-      Ancestors.new(obj).to_enum
+      Ancestors.new(source).to_enum
     end
 
     ##
@@ -88,7 +88,7 @@ module ActiveTriples
     # @return [true] true if the save did not error
     def persist!
       erase_old_resource
-      final_parent << obj
+      final_parent << source
       @persisted = true
     end
 
@@ -97,8 +97,8 @@ module ActiveTriples
     #
     # @return [Boolean]
     def reload
-      obj << final_parent.query(subject: obj.rdf_subject)
-      @persisted = true unless obj.empty?
+      source << final_parent.query(subject: source.rdf_subject)
+      @persisted = true unless source.empty?
       true
     end
 
@@ -107,27 +107,27 @@ module ActiveTriples
     class Ancestors
       include Enumerable
 
-      # @!attribute obj
+      # @!attribute source
       #   @return [RDFSource]
-      attr_reader :obj
+      attr_reader :source
 
       ##
-      # @param obj [RDFSource]
-      def initialize(obj)
-        @obj = obj
+      # @param source [RDFSource]
+      def initialize(source)
+        @source = source
       end
       
       ##
       # @yield [RDFSource] gives each ancestor to the block
       # @return [Enumerator<RDFSource>]
       #
-      # @raise [NilParentError] if `obj` does not persist to a parent
+      # @raise [NilParentError] if `source` does not persist to a parent
       def each
         raise NilParentError if 
-          !obj.persistence_strategy.respond_to?(:parent) || 
-          obj.persistence_strategy.parent.nil?
+          !source.persistence_strategy.respond_to?(:parent) || 
+          source.persistence_strategy.parent.nil?
         
-        current = obj.persistence_strategy.parent
+        current = source.persistence_strategy.parent
         
         if block_given?
           loop do

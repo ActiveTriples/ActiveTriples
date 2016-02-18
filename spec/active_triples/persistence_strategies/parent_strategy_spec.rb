@@ -53,8 +53,8 @@ describe ActiveTriples::ParentStrategy do
     end
     
     let(:statements) do
-      [RDF::Statement(subject.obj.rdf_subject, RDF::Vocab::DC.title, 'moomin'),
-       RDF::Statement(:node, RDF::Vocab::DC.relation, subject.obj.rdf_subject),
+      [RDF::Statement(subject.source.rdf_subject, RDF::Vocab::DC.title, 'moomin'),
+       RDF::Statement(:node, RDF::Vocab::DC.relation, subject.source.rdf_subject),
        RDF::Statement(:node, RDF::Vocab::DC.relation, :other_node)]
     end
 

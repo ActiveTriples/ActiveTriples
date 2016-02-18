@@ -5,35 +5,35 @@ module ActiveTriples
   class RepositoryStrategy
     include PersistenceStrategy
 
-    # @!attribute [r] obj
-    #   the source to persist with this strategy
-    attr_reader :obj
+    # @!attribute [r] source
+    #   the resource to persist with this strategy
+    attr_reader :source
 
     ##
-    # @param obj [RDFSource, RDF::Enumerable] the `RDFSource` (or other
+    # @param source [RDFSource, RDF::Enumerable] the `RDFSource` (or other
     #   `RDF::Enumerable` to persist with the strategy.
-    def initialize(obj)
-      @obj = obj
+    def initialize(source)
+      @source = source
     end
 
     ##
     # Deletes the resource from the repository.
     #
     def destroy
-      super { obj.clear }
+      super { source.clear }
     end
 
     ##
     # Clear out any old assertions in the repository about this node or statement
     # thus preparing to receive the updated assertions.
     def erase_old_resource
-      if obj.node?
+      if source.node?
         repository.statements.each do |statement|
           repository.send(:delete_statement, statement) if
-            statement.subject == obj
+            statement.subject == source
         end
       else
-        repository.delete [obj.to_term, nil, nil]
+        repository.delete [source.to_term, nil, nil]
       end
     end
 
@@ -43,7 +43,7 @@ module ActiveTriples
     # @return [true] returns true if the save did not error
     def persist!
       erase_old_resource
-      repository << obj
+      repository << source
       @persisted = true
     end
 
@@ -52,8 +52,8 @@ module ActiveTriples
     #
     # @return [Boolean]
     def reload
-      obj << repository.query(subject: obj)
-      @persisted = true unless obj.empty?
+      source << repository.query(subject: source)
+      @persisted = true unless source.empty?
       true
     end
 
@@ -74,9 +74,9 @@ module ActiveTriples
       # @todo find a way to move this logic out (PersistenceStrategyBuilder?).
       #   so the dependency on Repositories is externalized.
       def set_repository
-        return RDF::Repository.new if obj.class.repository.nil?
-        repo = Repositories.repositories[obj.class.repository]
-        repo || raise(RepositoryNotFoundError, "The class #{obj.class} expects a repository called #{obj.class.repository}, but none was declared")
+        return RDF::Repository.new if source.class.repository.nil?
+        repo = Repositories.repositories[source.class.repository]
+        repo || raise(RepositoryNotFoundError, "The class #{source.class} expects a repository called #{source.class.repository}, but none was declared")
       end
   end
 end
