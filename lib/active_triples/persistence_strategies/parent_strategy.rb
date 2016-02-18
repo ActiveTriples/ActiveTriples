@@ -21,7 +21,7 @@ module ActiveTriples
     end
 
     ##
-    # Objects using this strategy are persisted only if their parent is also 
+    # Resources using this strategy are persisted only if their parent is also 
     # persisted.
     #
     # @see PersistenceStrategy#persisted?
@@ -47,8 +47,9 @@ module ActiveTriples
     end
 
     ##
-    # Clear out any old assertions in the repository about this node or statement
-    # thus preparing to receive the updated assertions.
+    # @abstract Clear out any old assertions in the datastore / repository 
+    # about this node  or statement thus preparing to receive the updated 
+    # assertions.
     def erase_old_resource
       final_parent.statements.each do |statement|
         final_parent.send(:delete_statement, statement) if
@@ -65,7 +66,7 @@ module ActiveTriples
     ##
     # @return [#persist!] the last parent in a chain from `parent` (e.g.
     #   the parent's parent's parent). This is the RDF::Mutable that the
-    #   object will project itself on when persisting.
+    #   resource will project itself on when persisting.
     def final_parent
       ancestors.to_a.last
     end
@@ -82,7 +83,7 @@ module ActiveTriples
     end
 
     ##
-    # Persists the object to the final parent.
+    # Persists the resource to the final parent.
     #
     # @return [true] true if the save did not error
     def persist!
@@ -102,7 +103,7 @@ module ActiveTriples
     end
 
     ##
-    # An enumerable over the ancestors of an object
+    # An enumerable over the ancestors of an resource
     class Ancestors
       include Enumerable
 

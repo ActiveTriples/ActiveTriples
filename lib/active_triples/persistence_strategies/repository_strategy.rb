@@ -38,7 +38,7 @@ module ActiveTriples
     end
 
     ##
-    # Persists the object to the repository
+    # Persists the resource to the repository
     #
     # @return [true] returns true if the save did not error
     def persist!
@@ -58,7 +58,7 @@ module ActiveTriples
     end
 
     ##
-    # @return [RDF::Repository] The RDF::Repository that the object will project
+    # @return [RDF::Repository] The RDF::Repository that the resource will project
     #   itself on when persisting.
     def repository
       @repository ||= set_repository
@@ -67,7 +67,7 @@ module ActiveTriples
     private
 
       ##
-      # Finds an appropriate repository from the calling object's configuration.
+      # Finds an appropriate repository from the calling resource's configuration.
       # If no repository is configured, builds an ephemeral in-memory
       # repository and 'persists' there.
       #
