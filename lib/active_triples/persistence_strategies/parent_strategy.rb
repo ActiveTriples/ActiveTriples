@@ -43,7 +43,7 @@ module ActiveTriples
           statement.object == obj.rdf_subject
       end
 
-      super 
+      super { obj.clear }
     end
 
     ##

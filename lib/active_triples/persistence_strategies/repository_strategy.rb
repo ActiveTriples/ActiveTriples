@@ -17,6 +17,13 @@ module ActiveTriples
     end
 
     ##
+    # Deletes the resource from the repository.
+    #
+    def destroy
+      super { obj.clear }
+    end
+
+    ##
     # Clear out any old assertions in the repository about this node or statement
     # thus preparing to receive the updated assertions.
     def erase_old_resource

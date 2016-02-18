@@ -24,7 +24,6 @@ module ActiveTriples
     # @return [Boolean] true if the resource was sucessfully destroyed
     def destroy(&block)
       yield if block_given?
-      obj.clear
       persist!
       @destroyed = true
     end
