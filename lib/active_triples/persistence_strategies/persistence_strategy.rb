@@ -24,6 +24,13 @@ module ActiveTriples
     # @return [Boolean] true if the resource was sucessfully destroyed
     def destroy(&block)
       yield if block_given?
+      
+      # Provide a warning for strategies relying on #destroy to clear the resource
+      if defined? obj
+        warn "DEPRECATION WARNING: #destroy implementations must now explicitly call 'source.clear'"
+        obj.clear
+      end
+      
       persist!
       @destroyed = true
     end
