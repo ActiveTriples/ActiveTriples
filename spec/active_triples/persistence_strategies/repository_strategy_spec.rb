@@ -66,7 +66,7 @@ describe ActiveTriples::RepositoryStrategy do
 
       context 'with subjects' do
         before do
-          subject.obj.set_subject! RDF::URI('http://example.org/moomin')
+          subject.source.set_subject! RDF::URI('http://example.org/moomin')
         end
 
         include_examples 'destroy resource'
