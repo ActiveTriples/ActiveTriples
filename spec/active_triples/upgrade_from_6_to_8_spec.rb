@@ -318,4 +318,77 @@ describe 'upgrade_from_6_to_8 --' do
       end
     end
   end
+
+  describe 'persisting resource that has property with class_name defined' do
+    # This test is written in a way that allows it to be run at 0.8 or 0.6 to see the difference in behavior
+
+    before(:context) do
+      class DummyChapter < ActiveTriples::Resource
+        configure repository: :default, type: RDF::URI('http://www.example.com/type/Chapter')
+        property :title, predicate: RDF::URI('http://www.example.com/ontology/title')
+      end
+
+      class DummyBook < ActiveTriples::Resource
+        configure repository: :default, type: RDF::URI('http://www.example.com/type/Book')
+        property :title, predicate: RDF::URI('http://www.example.com/ontology/title')
+        property :has_chapter, predicate: RDF::URI('http://www.example.com/ontology/hasChapter'), class_name: DummyChapter  # Explicit Link
+      end
+    end
+
+    context 'and resuming' do
+      before(:context) do
+        r = RDF::Repository.new
+        ActiveTriples::Repositories.repositories[:default] = r
+
+        bk1 = DummyBook.new('http://www.example.com/book1')
+        bk1.title = 'Learning about Explicit Links in ActiveTriples'
+
+        ch1 = DummyChapter.new('http://www.example.com/book1/chapter1')
+        ch1.title = 'Defining a source with an Explicit Link'
+        bk1.has_chapter = ch1
+        ch1.persist!
+
+        bk1.persist!
+
+        # puts "\n\n================================================"
+        # puts 'Triples in Repository (context: after persist of bk1 and ch1)'
+        # puts '------------------------------------------------'
+        # puts r.dump :ttl
+
+        @bk1 = DummyBook.new('http://www.example.com/book1')
+        # puts "\n\n================================================"
+        # puts 'Triples in Resumed Resource (context: bk1 which should include ch1)'
+        # puts '------------------------------------------------'
+        # puts @bk1.dump :ttl
+        #
+        # puts "\n\n================================================"
+        # puts 'Triples in property with class_name defined (context: ch1 coming from bk1.has_chapter)'
+        # puts '------------------------------------------------'
+        # puts @bk1.has_chapter.first.dump :ttl
+
+        @ch1 = DummyChapter.new('http://www.example.com/book1/chapter1')
+        # puts "\n\n================================================"
+        # puts 'Triples when property resource resumed directly (context: ch1 coming new using rdf_subject from bk1.has_chapter)'
+        # puts '------------------------------------------------'
+        # puts @ch1.dump :ttl
+      end
+
+      it 'populates DummyBook (resumed resource) properly' do
+        expect(@bk1.type.first).to eq RDF::URI('http://www.example.com/type/Book')
+        expect(@bk1.title.first).to eq 'Learning about Explicit Links in ActiveTriples'
+      end
+
+
+      it 'populates DummyChapter (property resource) properly' do
+        ch1 = @bk1.has_chapter.first
+        expect(ch1.type.first).to eq RDF::URI('http://www.example.com/type/Chapter')
+        expect(ch1.title.first).to eq 'Defining a source with an Explicit Link'  # This passes at 0.6, but fails at 0.8
+      end
+
+      it 'populates DummyChapter (directly from repository) properly' do
+        expect(@ch1.type.first).to eq RDF::URI('http://www.example.com/type/Chapter')
+        expect(@ch1.title.first).to eq 'Defining a source with an Explicit Link'
+      end
+    end
+  end
 end
