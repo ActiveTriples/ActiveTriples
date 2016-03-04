@@ -30,7 +30,15 @@ module ActiveTriples
     end
 
     ##
-    # Destroys the resource by removing it graph and references from the 
+    # Indicates if the resource has been loaded from the repository (used for lazy load)
+    #
+    # @return [Boolean] true if loaded; else false.
+    def loaded?
+      @loaded ||= false
+    end
+
+    ##
+    # Destroys the resource by removing it graph and references from the
     # parent.
     #
     # @see PersistenceStrategy#destroy
@@ -97,7 +105,13 @@ module ActiveTriples
     #
     # @return [Boolean]
     def reload
-      source << final_parent.query(subject: source.rdf_subject)
+      if loaded? || !persisted?
+        source << final_parent.query(subject: source.rdf_subject)
+      else
+        RepositoryStrategy.new(source).reload
+        source.persist!
+        @loaded=true
+      end
       @persisted = true unless source.empty?
       true
     end
