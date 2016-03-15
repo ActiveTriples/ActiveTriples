@@ -486,6 +486,7 @@ module ActiveTriples
     # @see #get_values
     # @todo deprecate and remove? this is an alias to `#get_values`
     def get_relation(args)
+      reload if (persistence_strategy.respond_to? :loaded?) && !persistence_strategy.loaded?
       @relation_cache ||= {}
       rel = Relation.new(self, args)
       @relation_cache["#{rel.send(:rdf_subject)}/#{rel.property}/#{rel.rel_args}"] ||= rel
