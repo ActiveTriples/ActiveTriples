@@ -287,7 +287,7 @@ module ActiveTriples
         resource = resource.dup
         unless resource == parent || 
                (parent.persistence_strategy.is_a?(ParentStrategy) &&
-                parent.persistence_strategy.ancestors.find { |a| a.eql? resource })
+                parent.persistence_strategy.ancestors.find { |a| a == resource })
           resource.set_persistence_strategy(ParentStrategy)
           resource.parent = parent
         end
