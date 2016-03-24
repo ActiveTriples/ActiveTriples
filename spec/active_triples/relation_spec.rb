@@ -335,6 +335,15 @@ describe ActiveTriples::Relation do
     end
   end
 
+  describe '#set' do
+    include_context 'with unregistered property'
+    
+    it 'raises UndefinedPropertyError' do
+      expect { subject.set('x') }
+        .to raise_error ActiveTriples::UndefinedPropertyError
+    end
+  end
+
   describe '#join' do
     context 'with predicate' do
       include_context 'with symbol property' do
