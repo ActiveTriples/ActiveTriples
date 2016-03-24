@@ -6,14 +6,15 @@ module ActiveTriples
     def initialize(term, predicate, args={})
       self.term = term
       self.predicate = predicate
-      self.class_name = args.fetch(:class_name) { default_class_name }
-      self.cast = args.fetch(:cast) { true }
+      self.class_name = args.delete(:class_name) { default_class_name }
+      self.cast = args.delete(:cast) { true }
+      @opts = args
       yield(self) if block_given?
     end
 
     def [](value)
       value = value.to_sym
-      self.respond_to?(value) ? self.send(value) : nil
+      self.respond_to?(value) ? self.send(value) : @opts[value]
     end
 
     def class_name
