@@ -194,19 +194,17 @@ module ActiveTriples
       result.first || build(attributes)
     end
 
+    ##
+    # Adds values to the result set
+    #
+    # @param values [Object, Array<Object>] values to add
+    #
+    # @return [Relation] a relation containing the set values; i.e. `self`
     def <<(values)
       values = Array.wrap(result) | Array.wrap(values)
       self.set(values)
     end
     alias_method :push, :<<
-
-    #
-    def []=(index, value)
-      values = Array.wrap(result)
-      raise IndexError, "Index #{index} out of bounds." if values[index].nil?
-      values[index] = value
-      self.set(values)
-    end
 
     # @todo find a way to simplify this?
     def property_config
