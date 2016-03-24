@@ -194,10 +194,6 @@ module ActiveTriples
       result.first || build(attributes)
     end
 
-    def delete(*values)
-      values.each { |value| parent.delete([rdf_subject, predicate, value]) }
-    end
-
     def <<(values)
       values = Array.wrap(result) | Array.wrap(values)
       self.set(values)
