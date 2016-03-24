@@ -242,8 +242,24 @@ describe ActiveTriples::Relation do
             expect(subject.result.map(&:rdf_subject))
               .to contain_exactly(*values)
           end
+
+          context 'and persistence_strategy is configured' do
+            before do
+              reflections
+                .property :moomin, 
+                          predicate: RDF::URI('http://example.org/moomin'), 
+                          persist_to: ActiveTriples::RepositoryStrategy
+            end
+            
+            it 'assigns persistence strategy' do
+              subject.result.each do |node|
+                expect(node.persistence_strategy)
+                  .to be_a ActiveTriples::RepositoryStrategy
+              end
+            end
+          end
           
-          context 'when #cast? is false' do
+          context 'and #cast? is false' do
             let(:values) do
               [uri, RDF::URI('http://ex.org/too-ticky'), RDF::Node.new,
               'moomin', Date.today]
@@ -341,6 +357,26 @@ describe ActiveTriples::Relation do
     it 'raises UndefinedPropertyError' do
       expect { subject.set('x') }
         .to raise_error ActiveTriples::UndefinedPropertyError
+    end
+
+    context 'with predicate' do
+      include_context 'with symbol property' do
+        let(:parent_resource) { ActiveTriples::Resource.new }
+      end
+      
+      context 'and persistence config' do
+        before do
+          reflections
+            .property :moomin, 
+                      predicate: RDF::URI('http://example.org/moomin'), 
+                      persist_to: ActiveTriples::RepositoryStrategy
+        end
+
+        it 'returns values with persistence strategy set' do
+          expect(subject.set(RDF::Node.new).map(&:persistence_strategy))
+            .to contain_exactly(an_instance_of(ActiveTriples::RepositoryStrategy))
+        end
+      end
     end
   end
 

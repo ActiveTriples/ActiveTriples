@@ -328,6 +328,8 @@ module ActiveTriples
         value = RDF::Node.new if value.nil?
         node = node_cache[value] if node_cache[value]
         node ||= klass.from_uri(value,parent)
+        node.set_persistence_strategy(property_config[:persist_to]) if 
+          is_property? && property_config[:persist_to]
         return nil if (is_property? && property_config[:class_name]) && (class_for_value(value) != class_for_property)
         self.node_cache[value] ||= node
         node
