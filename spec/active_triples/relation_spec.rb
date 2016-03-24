@@ -116,6 +116,22 @@ describe ActiveTriples::Relation do
     end
   end
 
+  describe '#<<' do
+    include_context 'with symbol property'
+    let(:parent_resource) { ActiveTriples::Resource.new }
+    
+    it 'adds a value' do
+      expect { subject << :moomin }
+        .to change { subject.to_a }.to contain_exactly(:moomin)
+    end
+
+    it 'adds multiple values' do
+      values = [:moomin, :snork]
+      expect { subject << values }
+        .to change { subject.to_a }.to contain_exactly(*values)
+    end
+  end
+
   describe "#predicate" do
     context 'when the property is an RDF::Term' do
       include_context 'with URI property'
