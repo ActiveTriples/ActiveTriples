@@ -342,6 +342,23 @@ describe ActiveTriples::Relation do
       expect { subject.set('x') }
         .to raise_error ActiveTriples::UndefinedPropertyError
     end
+
+    context 'with predicate' do
+      include_context 'with symbol property' do
+        let(:parent_resource) { ActiveTriples::Resource.new }
+      end
+
+      it 'sets a value' do
+        expect { subject.set(:moomin) }
+          .to change { subject.to_a }.to contain_exactly(:moomin)
+      end
+
+      it 'sets mulitple values' do
+        values = [:moomin, :snork]
+        expect { subject.set(values) }
+          .to change { subject.to_a }.to contain_exactly(*values)
+      end
+    end
   end
 
   describe '#join' do
