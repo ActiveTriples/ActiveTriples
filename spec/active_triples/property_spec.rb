@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 require 'spec_helper'
 
-RSpec.describe ActiveTriples::Property do
+describe ActiveTriples::Property do
   subject { described_class.new(options) }
   let(:options) do
     {
