@@ -214,10 +214,6 @@ module ActiveTriples
     end
 
     ##
-    # noop
-    def reset!; end
-
-    ##
     # Returns the property for the Relation. This may be a registered 
     # property key or an {RDF::URI}.
     #
