@@ -195,14 +195,17 @@ module ActiveTriples
     end
 
     ##
-    # @note this method behaves somewhat differently from `Array#delete`. It 
-    #   accepts multiple values to delete via a splat argument, and will delete
-    #   any of the values preseent. It always returns `self` unless an error 
-    #   is raised. 
+    # @note this method behaves somewhat differently from `Array#delete`. 
+    #   It succeeds on deletion of non-existing values, always returning
+    #   `self` unless an error is raised. There is no option to pass a block 
+    #   to evaluate if the value is not present. This is because access for 
+    #   `value` depends on query time. i.e. the `Relation` set does not have an
+    #   underlying efficient data structure allowing a reliably cheap existence
+    #   check.
     #
     # @note symbols are treated as RDF::Nodes by default in 
     #   `RDF::Mutable#delete`, but may also represent tokens in statements.
-    #   This casts sybbols to a literals, which gets us symmetric behavior 
+    #   This casts symbols to a literals, which gets us symmetric behavior 
     #   between `#set(:sym)` and `#delete(:sym)`.
     #
     # @example deleting a value
@@ -211,24 +214,39 @@ module ActiveTriples
     #   resource.title.delete('moomin') # => ["valley"]
     #   resource.title # => ['valley']
     #
-    # @example deleting multiple values
-    #   resource = MySource.new
-    #   resource.title = ['moomin', 'valley']
-    #   resource.title.delete('moomin', 'valley')
-    #   resource.title # => []
-    #
     # @example note the behavior of unmatched values
     #   resource = MySource.new
     #   resource.title = 'moomin'
     #   resource.title.delete('valley') # => ["moomin"]
     #   resource.title # => ['moomin']
     # 
-    # @param *values [Array<Object>]
+    # @param values [Object]
     # @return [ActiveTriples::Relation] self
-    def delete(*values)
-      statements = values.map do |val|
-        val = RDF::Literal(val) if val.is_a? Symbol
-        [rdf_subject, predicate, val]
+    def delete(value)
+      value = RDF::Literal(value) if value.is_a? Symbol
+      parent.delete([rdf_subject, predicate, value])
+
+      self
+    end
+
+    ##
+    # @overload subtract(enum)
+    #   Deletes objects in the enumerable from the relation
+    #   @param values [Enumerable] an enumerable of objects to delete
+    # @overload subtract(*values)
+    #   Deletes each argument value from the relation
+    #   @param *values [Array<Object>] the objects to delete
+    #
+    # @return [Relation] self
+    #
+    # @note This casts symbols to a literals, which gets us symmetric behavior 
+    #   with `#set(:sym)`.
+    # @see #delete
+    def subtract(*values)
+      values = values.first if values.first.is_a? Enumerable
+      statements = values.map do |value|
+        value = RDF::Literal(value) if value.is_a? Symbol
+        [rdf_subject, predicate, value]
       end
       
       parent.delete(*statements)

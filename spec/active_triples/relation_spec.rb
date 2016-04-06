@@ -88,18 +88,11 @@ describe ActiveTriples::Relation do
 
   describe '#delete' do
     include_context 'with symbol property'
+
     let(:parent_resource) { ActiveTriples::Resource.new }
 
-    it 'can delete nothing' do
-      expect { subject.delete }.not_to change { subject.to_a }
-    end
-    
     it 'handles a non-existent value' do
       expect { subject.delete(1) }.not_to change { subject.to_a }
-    end
-
-    it 'handles multiple non-existent values' do
-      expect { subject.delete(1, 'blah') }.not_to change { subject.to_a }
     end
 
     context 'with values' do
@@ -113,20 +106,10 @@ describe ActiveTriples::Relation do
         expect { subject.delete('blah') }.not_to change { subject.to_a }
       end
 
-      it 'handles multiple non-existent values' do
-        expect { subject.delete('blah', 2) }.not_to change { subject.to_a }
-      end
-
       it 'deletes a matched value' do
         expect { subject.delete(values.first) }
           .to change { subject.to_a }
                .to contain_exactly(*values[1..-1])
-      end
-
-      it 'deletes multiple matched values' do
-        expect { subject.delete(values.first, values.last) }
-          .to change { subject.to_a }
-               .to contain_exactly(*values[1..-2])
       end
 
       it 'deletes a URI value' do
@@ -149,6 +132,30 @@ describe ActiveTriples::Relation do
           .to change { subject.to_a }
                .to contain_exactly(*values)
       end
+    end
+  end
+
+  describe '#subtract' do
+    include_context 'with symbol property'
+
+    let(:parent_resource) { ActiveTriples::Resource.new }
+    
+    it 'subtracts values as arguments' do
+      subject.set([1,2,3])
+      expect { subject.subtract(2,3) }
+        .to change { subject.to_a }.to contain_exactly(1)
+    end
+
+    it 'subtracts values as an enumerable' do
+      subject.set([1,2,3])
+      expect { subject.subtract([2,3]) }
+        .to change { subject.to_a }.to contain_exactly(1)
+    end
+
+    it 'subtracts token values' do
+      subject.set([:one, :two, :three])
+      expect { subject.subtract([:two, :three]) }
+        .to change { subject.to_a }.to contain_exactly(:one)
     end
   end
 
