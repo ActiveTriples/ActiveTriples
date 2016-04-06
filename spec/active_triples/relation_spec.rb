@@ -135,6 +135,27 @@ describe ActiveTriples::Relation do
     end
   end
 
+  describe '#delete?' do
+    include_context 'with symbol property'
+
+    let(:parent_resource) { ActiveTriples::Resource.new }
+
+    it 'gives nil for non-existant value' do
+      expect(subject.delete?(1)).to be_nil
+    end
+
+    it 'returns value when deleted' do
+      subject.set(1)
+      expect(subject.delete?(1)).to eq 1
+    end
+
+    it 'deletes existing values' do
+      subject.set(1)
+      expect { subject.delete?(1) }
+        .to change { subject.to_a }.to be_empty
+    end
+  end
+
   describe '#subtract' do
     include_context 'with symbol property'
 
@@ -156,6 +177,27 @@ describe ActiveTriples::Relation do
       subject.set([:one, :two, :three])
       expect { subject.subtract([:two, :three]) }
         .to change { subject.to_a }.to contain_exactly(:one)
+    end
+  end
+
+  describe '#swap' do
+    include_context 'with symbol property'
+
+    let(:parent_resource) { ActiveTriples::Resource.new }
+    
+    it 'returns nil when the value is not present' do
+      expect(subject.swap(1, 2)).to be_nil
+    end
+
+    it 'does not change contents for non-existent value' do
+      expect { subject.swap(1, 2) }.not_to change { subject.to_a }
+    end
+
+    it 'swaps the value' do
+      values = [1, 2, 3]
+      subject.set(values)
+      expect { subject.swap(1, 4) }
+        .to change { subject.to_a }.to contain_exactly(2, 3, 4)
     end
   end
 

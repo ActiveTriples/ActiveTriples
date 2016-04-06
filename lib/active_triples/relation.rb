@@ -220,13 +220,31 @@ module ActiveTriples
     #   resource.title.delete('valley') # => ["moomin"]
     #   resource.title # => ['moomin']
     # 
-    # @param values [Object]
+    # @param value [Object] the value to delete from the relation
     # @return [ActiveTriples::Relation] self
     def delete(value)
       value = RDF::Literal(value) if value.is_a? Symbol
       parent.delete([rdf_subject, predicate, value])
 
       self
+    end
+
+    ##
+    # A variation on `#delete`. This queries the relation for matching 
+    # values before running the deletion, returning `nil` if it does not exist.
+    #
+    # @param value [Object] the value to delete from the relation
+    #
+    # @return [Object, nil] `nil` if the value doesn't exist; the value 
+    #   otherwise
+    # @see #delete
+    def delete?(value)
+      value = RDF::Literal(value) if value.is_a? Symbol
+
+      return nil if parent.query([rdf_subject, predicate, value]).empty?
+
+      delete(value)
+      value
     end
 
     ##
@@ -251,6 +269,21 @@ module ActiveTriples
       
       parent.delete(*statements)
       self
+    end
+
+    ##
+    # Replaces the first argument with the second as a value within the 
+    # relation.
+    #
+    # @example
+    #   
+    #
+    # @param swap_out [Object] the value to delete
+    # @param swap_in  [Object] the replacement value
+    # 
+    # @return [Relation] self
+    def swap(swap_out, swap_in)
+      self.<<(swap_in) if delete?(swap_out)
     end
 
     ##
