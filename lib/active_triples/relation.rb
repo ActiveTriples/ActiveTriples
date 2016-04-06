@@ -195,6 +195,47 @@ module ActiveTriples
     end
 
     ##
+    # @note this method behaves somewhat differently from `Array#delete`. It 
+    #   accepts multiple values to delete via a splat argument, and will delete
+    #   any of the values preseent. It always returns `self` unless an error 
+    #   is raised. 
+    #
+    # @note symbols are treated as RDF::Nodes by default in 
+    #   `RDF::Mutable#delete`, but may also represent tokens in statements.
+    #   This casts sybbols to a literals, which gets us symmetric behavior 
+    #   between `#set(:sym)` and `#delete(:sym)`.
+    #
+    # @example deleting a value
+    #   resource = MySource.new
+    #   resource.title = ['moomin', 'valley']
+    #   resource.title.delete('moomin') # => ["valley"]
+    #   resource.title # => ['valley']
+    #
+    # @example deleting multiple values
+    #   resource = MySource.new
+    #   resource.title = ['moomin', 'valley']
+    #   resource.title.delete('moomin', 'valley')
+    #   resource.title # => []
+    #
+    # @example note the behavior of unmatched values
+    #   resource = MySource.new
+    #   resource.title = 'moomin'
+    #   resource.title.delete('valley') # => ["moomin"]
+    #   resource.title # => ['moomin']
+    # 
+    # @param *values [Array<Object>]
+    # @return [ActiveTriples::Relation] self
+    def delete(*values)
+      statements = values.map do |val|
+        val = RDF::Literal(val) if val.is_a? Symbol
+        [rdf_subject, predicate, val]
+      end
+      
+      parent.delete(*statements)
+      self
+    end
+
+    ##
     # @return [Object] the first result, if present; else a newly built node
     #
     # @see #build

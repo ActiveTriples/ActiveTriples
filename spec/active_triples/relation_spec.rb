@@ -86,6 +86,72 @@ describe ActiveTriples::Relation do
     end
   end
 
+  describe '#delete' do
+    include_context 'with symbol property'
+    let(:parent_resource) { ActiveTriples::Resource.new }
+
+    it 'can delete nothing' do
+      expect { subject.delete }.not_to change { subject.to_a }
+    end
+    
+    it 'handles a non-existent value' do
+      expect { subject.delete(1) }.not_to change { subject.to_a }
+    end
+
+    it 'handles multiple non-existent values' do
+      expect { subject.delete(1, 'blah') }.not_to change { subject.to_a }
+    end
+
+    context 'with values' do
+      before { subject << values }
+
+      let(:node) { RDF::Node.new(:node) }
+      let(:uri) { RDF.Property }
+      let(:values) { ['1', 1, :one, false, DateTime.now, node, uri] }
+
+      it 'handles a non-existent value' do
+        expect { subject.delete('blah') }.not_to change { subject.to_a }
+      end
+
+      it 'handles multiple non-existent values' do
+        expect { subject.delete('blah', 2) }.not_to change { subject.to_a }
+      end
+
+      it 'deletes a matched value' do
+        expect { subject.delete(values.first) }
+          .to change { subject.to_a }
+               .to contain_exactly(*values[1..-1])
+      end
+
+      it 'deletes multiple matched values' do
+        expect { subject.delete(values.first, values.last) }
+          .to change { subject.to_a }
+               .to contain_exactly(*values[1..-2])
+      end
+
+      it 'deletes a URI value' do
+        values.delete(uri)
+        expect { subject.delete(uri) }
+          .to change { subject.to_a }
+               .to contain_exactly(*values)
+      end
+
+      it 'deletes a node value' do
+        values.delete(node)
+        expect { subject.delete(node) }
+          .to change { subject.to_a }
+               .to contain_exactly(*values)
+      end
+
+      it 'deletes a token value' do
+        values.delete(:one)
+        expect { subject.delete(:one) }
+          .to change { subject.to_a }
+               .to contain_exactly(*values)
+      end
+    end
+  end
+
   describe '#clear' do
     include_context 'with symbol property'
     let(:parent_resource) { ActiveTriples::Resource.new }
