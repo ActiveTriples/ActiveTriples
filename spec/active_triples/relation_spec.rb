@@ -86,6 +86,121 @@ describe ActiveTriples::Relation do
     end
   end
 
+  describe '#delete' do
+    include_context 'with symbol property'
+
+    let(:parent_resource) { ActiveTriples::Resource.new }
+
+    it 'handles a non-existent value' do
+      expect { subject.delete(1) }.not_to change { subject.to_a }
+    end
+
+    context 'with values' do
+      before { subject << values }
+
+      let(:node) { RDF::Node.new(:node) }
+      let(:uri) { RDF.Property }
+      let(:values) { ['1', 1, :one, false, DateTime.now, node, uri] }
+
+      it 'handles a non-existent value' do
+        expect { subject.delete('blah') }.not_to change { subject.to_a }
+      end
+
+      it 'deletes a matched value' do
+        expect { subject.delete(values.first) }
+          .to change { subject.to_a }
+               .to contain_exactly(*values[1..-1])
+      end
+
+      it 'deletes a URI value' do
+        values.delete(uri)
+        expect { subject.delete(uri) }
+          .to change { subject.to_a }
+               .to contain_exactly(*values)
+      end
+
+      it 'deletes a node value' do
+        values.delete(node)
+        expect { subject.delete(node) }
+          .to change { subject.to_a }
+               .to contain_exactly(*values)
+      end
+
+      it 'deletes a token value' do
+        values.delete(:one)
+        expect { subject.delete(:one) }
+          .to change { subject.to_a }
+               .to contain_exactly(*values)
+      end
+    end
+  end
+
+  describe '#delete?' do
+    include_context 'with symbol property'
+
+    let(:parent_resource) { ActiveTriples::Resource.new }
+
+    it 'gives nil for non-existant value' do
+      expect(subject.delete?(1)).to be_nil
+    end
+
+    it 'returns value when deleted' do
+      subject.set(1)
+      expect(subject.delete?(1)).to eq 1
+    end
+
+    it 'deletes existing values' do
+      subject.set(1)
+      expect { subject.delete?(1) }
+        .to change { subject.to_a }.to be_empty
+    end
+  end
+
+  describe '#subtract' do
+    include_context 'with symbol property'
+
+    let(:parent_resource) { ActiveTriples::Resource.new }
+    
+    it 'subtracts values as arguments' do
+      subject.set([1,2,3])
+      expect { subject.subtract(2,3) }
+        .to change { subject.to_a }.to contain_exactly(1)
+    end
+
+    it 'subtracts values as an enumerable' do
+      subject.set([1,2,3])
+      expect { subject.subtract([2,3]) }
+        .to change { subject.to_a }.to contain_exactly(1)
+    end
+
+    it 'subtracts token values' do
+      subject.set([:one, :two, :three])
+      expect { subject.subtract([:two, :three]) }
+        .to change { subject.to_a }.to contain_exactly(:one)
+    end
+  end
+
+  describe '#swap' do
+    include_context 'with symbol property'
+
+    let(:parent_resource) { ActiveTriples::Resource.new }
+    
+    it 'returns nil when the value is not present' do
+      expect(subject.swap(1, 2)).to be_nil
+    end
+
+    it 'does not change contents for non-existent value' do
+      expect { subject.swap(1, 2) }.not_to change { subject.to_a }
+    end
+
+    it 'swaps the value' do
+      values = [1, 2, 3]
+      subject.set(values)
+      expect { subject.swap(1, 4) }
+        .to change { subject.to_a }.to contain_exactly(2, 3, 4)
+    end
+  end
+
   describe '#clear' do
     include_context 'with symbol property'
     let(:parent_resource) { ActiveTriples::Resource.new }
@@ -113,6 +228,22 @@ describe ActiveTriples::Relation do
     it 'is a no-op when relation is empty' do
       subject.parent << [subject.parent.rdf_subject, RDF.type, 'moomin']
       expect { subject.clear }.not_to change { subject.parent.statements.to_a }
+    end
+  end
+
+  describe '#<<' do
+    include_context 'with symbol property'
+    let(:parent_resource) { ActiveTriples::Resource.new }
+    
+    it 'adds a value' do
+      expect { subject << :moomin }
+        .to change { subject.to_a }.to contain_exactly(:moomin)
+    end
+
+    it 'adds multiple values' do
+      values = [:moomin, :snork]
+      expect { subject << values }
+        .to change { subject.to_a }.to contain_exactly(*values)
     end
   end
 
@@ -341,6 +472,23 @@ describe ActiveTriples::Relation do
     it 'raises UndefinedPropertyError' do
       expect { subject.set('x') }
         .to raise_error ActiveTriples::UndefinedPropertyError
+    end
+
+    context 'with predicate' do
+      include_context 'with symbol property' do
+        let(:parent_resource) { ActiveTriples::Resource.new }
+      end
+
+      it 'sets a value' do
+        expect { subject.set(:moomin) }
+          .to change { subject.to_a }.to contain_exactly(:moomin)
+      end
+
+      it 'sets mulitple values' do
+        values = [:moomin, :snork]
+        expect { subject.set(values) }
+          .to change { subject.to_a }.to contain_exactly(*values)
+      end
     end
   end
 
