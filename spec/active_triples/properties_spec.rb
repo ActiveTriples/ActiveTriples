@@ -41,6 +41,17 @@ describe ActiveTriples::Properties do
       expect(DummyProperties.reflect_on_property(:title)[:class_name]).to eq RDF::Literal
     end
 
+    it 'sets persistence strategy' do
+      DummyProperties
+        .property :title, :predicate => RDF::Vocab::DC.title, :persist_to => :moomin
+      expect(DummyProperties.reflect_on_property(:title)[:persist_to]).to eq :moomin
+    end
+
+    it 'sets arbitrary properties' do
+      DummyProperties.property :title, :predicate => RDF::Vocab::DC.title, :moomin => :moomin
+      expect(DummyProperties.reflect_on_property(:title)[:moomin]).to eq :moomin
+    end
+
     it 'constantizes string class names' do
       DummyProperties.property :title, :predicate => RDF::Vocab::DC.title, :class_name => "RDF::Literal"
       expect(DummyProperties.reflect_on_property(:title)[:class_name]).to eq RDF::Literal
