@@ -18,7 +18,7 @@ module ActiveTriples
     class << self
       def from_uri(uri, vals)
         list = ListResource.from_uri(uri, vals)
-        self.new(list.rdf_subject, list)
+        self.new(subject: list.rdf_subject, graph: list)
       end
     end
 
@@ -26,13 +26,15 @@ module ActiveTriples
       graph
     end
 
-    def initialize(*args)
+    ##
+    # @param subject 
+    def initialize(subject: nil, graph: nil, values: nil, &block)
       super
       @graph = ListResource.new(subject) unless
         graph.kind_of? RDFSource
-      graph << parent if parent
-      graph.list = self
-      graph.reload
+      self.graph << parent if parent
+      self.graph.list = self
+      self.graph.reload
     end
 
     def clear
@@ -124,7 +126,7 @@ module ActiveTriples
       # Clear out any old assertions in the repository about this node or statement
       # thus preparing to receive the updated assertions.
       def erase_old_resource
-        RDF::List.new(rdf_subject, self).clear
+        RDF::List.new(subject: rdf_subject, graph: self).clear
       end
 
       private

@@ -6,14 +6,14 @@ describe ActiveTriples::Property do
   let(:options) do
     {
       :name => :title,
-      :predicate => RDF::DC.title,
+      :predicate => RDF::Vocab::DC.title,
       :class_name => "Test"
     }
   end
 
   it "should create accessors for each passed option" do
     expect(subject.name).to eq :title
-    expect(subject.predicate).to eq RDF::DC.title
+    expect(subject.predicate).to eq RDF::Vocab::DC.title
     expect(subject.class_name).to eq "Test"
   end
 
@@ -21,7 +21,7 @@ describe ActiveTriples::Property do
     it "should not return the property's name" do
       expect(subject.to_h).to eq (
         {
-          :predicate => RDF::DC.title,
+          :predicate => RDF::Vocab::DC.title,
           :class_name => "Test"
         }
       )

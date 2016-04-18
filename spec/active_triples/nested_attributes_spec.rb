@@ -105,14 +105,18 @@ describe "nesting attribute behavior" do
         subject { ComplexResource::PersonalName.new }
         it "should accept a hash" do
           subject.elementList_attributes =  [{ topicElement_attributes: {'0' => { elementValue:"Quantum Behavior" }, '1' => { elementValue:"Wave Function" }}}]
-          expect(subject.elementList.first[0].elementValue).to eq ["Quantum Behavior"]
-          expect(subject.elementList.first[1].elementValue).to eq ["Wave Function"]
+          expect(subject.elementList.first[0].elementValue)
+            .to contain_exactly 'Quantum Behavior'
+          expect(subject.elementList.first[1].elementValue)
+            .to contain_exactly "Wave Function"
 
         end
         it "should accept an array" do
           subject.elementList_attributes =  [{ topicElement_attributes: [{ elementValue:"Quantum Behavior" }, { elementValue:"Wave Function" }]}]
-          expect(subject.elementList.first[0].elementValue).to eq ["Quantum Behavior"]
-          expect(subject.elementList.first[1].elementValue).to eq ["Wave Function"]
+          expect(subject.elementList.first[0].elementValue)
+            .to contain_exactly "Quantum Behavior"
+          expect(subject.elementList.first[1].elementValue)
+            .to contain_exactly "Wave Function"
         end
       end
 
@@ -123,15 +127,21 @@ describe "nesting attribute behavior" do
         end
 
         it 'should have attributes' do
-          expect(subject.topic[0].elementList.first[0].elementValue).to eq ["Cosmology"]
-          expect(subject.topic[1].elementList.first[0].elementValue).to eq ["Quantum Behavior"]
-          expect(subject.personalName.first.elementList.first.fullNameElement).to eq ["Jefferson, Thomas"]
-          expect(subject.personalName.first.elementList.first.dateNameElement).to eq ["1743-1826"]
+          expect(subject.topic[0].elementList.first[0].elementValue)
+            .to contain_exactly 'Cosmology'
+          expect(subject.topic[1].elementList.first[0].elementValue)
+            .to contain_exactly 'Quantum Behavior'
+          expect(subject.personalName.first.elementList.first.fullNameElement)
+            .to contain_exactly 'Jefferson, Thomas'
+          expect(subject.personalName.first.elementList.first.dateNameElement)
+            .to contain_exactly '1743-1826'
         end
 
         it 'should build nodes with ids' do
-          expect(subject.topic[0].elementList.first[0].rdf_subject).to eq 'http://library.ucsd.edu/ark:/20775/bb3333333x'
-          expect(subject.personalName.first.rdf_subject).to eq  'http://library.ucsd.edu/ark:20775/jefferson'
+          expect(subject.topic[0].elementList.first[0].rdf_subject)
+            .to eq 'http://library.ucsd.edu/ark:/20775/bb3333333x'
+          expect(subject.personalName.first.rdf_subject)
+            .to eq  'http://library.ucsd.edu/ark:20775/jefferson'
         end
 
         it 'should fail when writing to a non-predicate' do
@@ -186,7 +196,11 @@ describe "nesting attribute behavior" do
                                   { id: remove_object_id, _destroy: '1', label: "bar1 uno" }] }
 
           it "should update nested objects" do
-            expect(subject.parts.map{|p| p.label.first}).to eq ['Alternator', 'Universal Joint', 'Transmission', 'Oil Pump']
+            expect(subject.parts.map{|p| p.label.first})
+              .to contain_exactly 'Alternator', 
+                                  'Universal Joint', 
+                                  'Transmission', 
+                                  'Oil Pump'
           end
         end
 
@@ -214,7 +228,10 @@ describe "nesting attribute behavior" do
                                 { id: 'http://id.loc.gov/authorities/subjects/sh85052223' }] }
 
         it "should update nested objects" do
-          expect(subject.parts.map{|p| p.id}).to eq ["http://id.loc.gov/authorities/subjects/sh85010251", "http://id.loc.gov/authorities/subjects/sh2001009145", "http://id.loc.gov/authorities/subjects/sh85052223"]
+          expect(subject.parts.map { |p| p.id })
+            .to contain_exactly 'http://id.loc.gov/authorities/subjects/sh85010251',
+                                'http://id.loc.gov/authorities/subjects/sh2001009145',
+                                'http://id.loc.gov/authorities/subjects/sh85052223'
         end
       end
 

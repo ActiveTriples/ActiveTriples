@@ -92,7 +92,7 @@ describe ActiveTriples::List do
     end
 
     describe "a new list" do
-      let (:ds) { DemoList.new('http://example.org/foo') }
+      let (:ds) { DemoList.new(subject: 'http://example.org/foo') }
       subject { ds.elementList.build}
 
       it "should insert at the end" do
@@ -149,7 +149,7 @@ describe ActiveTriples::List do
     end
 
     describe "a list that has a constructed element" do
-      let(:ds) { DemoList.new('http://example.org/foo') }
+      let(:ds) { DemoList.new(subject: 'http://example.org/foo') }
       let(:list) { ds.elementList.build }
       let!(:topic) { list.topicElement.build }
 
@@ -249,12 +249,14 @@ END
           expect(doc.xpath('//mads:ComplexSubject/mads:elementList/*[position() = 2]/mads:elementValue', ns).map(&:text)).to eq ["Relations with Mexican Americans"]
           expect(doc.xpath('//mads:ComplexSubject/mads:elementList/*[position() = 3]/@rdf:about', ns).map(&:value)).to eq ["http://library.ucsd.edu/ark:/20775/bbXXXXXXX4"]
           expect(doc.xpath('//mads:ComplexSubject/mads:elementList/*[position() = 4]/mads:elementValue', ns).map(&:text)).to eq ["1900s"]
-          expect(RDF::List.new(list.rdf_subject, subject)).to be_valid
+          expect(RDF::List.new(subject: list.rdf_subject, graph: subject))
+            .to be_valid
         end
 
         it "should be a valid list" do
           list << "Val"
-          expect(RDF::List.new(list.rdf_subject, subject)).to be_valid
+          expect(RDF::List.new(subject: list.rdf_subject, graph: subject))
+            .to be_valid
         end
       end
     end
