@@ -171,6 +171,17 @@ describe ActiveTriples::RDFSource do
         expect(subject.attributes['creator']).to contain_exactly 'moomin'
       end
     end
+
+    context 'with statements for other subjects' do
+      before do
+        subject << RDF::Statement(RDF::URI('http://example.org/OTHER_SUBJECT'), RDF::URI('http://example.org/ontology/OTHER_PRED'), 'OTHER_OBJECT')
+      end
+
+      it "should not include predicate-values for statements with rdf_subject != this object's rdf_subject" do
+        expect(subject.attributes.keys).not_to include 'http://example.org/ontology/OTHER_PRED'
+        expect(subject.attributes.values).not_to include ['OTHER_OBJECT']
+      end
+    end
   end
 
   describe '#fetch' do

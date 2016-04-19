@@ -586,9 +586,11 @@ module ActiveTriples
       #
       # @return [Array<RDF::URI>]
       def unregistered_predicates
-        preds = registered_predicates
-        preds << RDF.type
-        predicates.select { |p| !preds.include? p }
+        registered_preds = registered_predicates
+        registered_preds << RDF.type
+        unregistered_preds = []
+        each_statement { |s,p,o| unregistered_preds << p unless (s != rdf_subject) || (registered_preds.include? p) }
+        unregistered_preds
       end
 
       def default_labels
