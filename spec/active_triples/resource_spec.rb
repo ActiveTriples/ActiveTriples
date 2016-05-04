@@ -504,7 +504,8 @@ describe ActiveTriples::Resource do
       vals = subject.get_values('license')
       vals << "foo"
       subject.set_value('license',vals)
-      expect(subject.get_values('license')).to eq ["foo"]
+      expect(subject.get_values('license'))
+        .to contain_exactly "foo"
     end
 
     it "safely handles terms passed in with pre-existing values" do
@@ -512,12 +513,14 @@ describe ActiveTriples::Resource do
       vals = subject.get_values('license')
       vals << "bar"
       subject.set_value('license',vals)
-      expect(subject.get_values('license')).to eq ["foo","bar"]
+      expect(subject.get_values('license'))
+        .to contain_exactly "foo","bar"
     end
 
     it 'should set a value in the when given a registered property symbol' do
       subject.set_value(:title, 'Comet in Moominland')
-      expect(subject.title).to eq ['Comet in Moominland']
+      expect(subject.title)
+        .to contain_exactly 'Comet in Moominland'
     end
 
     it "raise an error if the value is not a Term" do
@@ -541,7 +544,7 @@ describe ActiveTriples::Resource do
 
     it 'should set a value in the when given a registered property symbol' do
       subject[:title] = 'Comet in Moominland'
-      expect(subject.title).to eq ['Comet in Moominland']
+      expect(subject.title).to contain_exactly 'Comet in Moominland'
     end
 
     it "raise an error if the value is not a URI, Node, Literal, RdfResource, or string" do
@@ -556,17 +559,21 @@ describe ActiveTriples::Resource do
     end
 
     it 'should return values for a predicate uri' do
-      expect(subject.get_values(RDF::Vocab::DC.title)).to eq ['Comet in Moominland', 'Finn Family Moomintroll']
+      expect(subject.get_values(RDF::Vocab::DC.title))
+        .to contain_exactly 'Comet in Moominland', 'Finn Family Moomintroll'
     end
 
     it 'should return values for a registered predicate symbol' do
-      expect(subject.get_values(:title)).to eq ['Comet in Moominland', 'Finn Family Moomintroll']
+      expect(subject.get_values(:title))
+        .to contain_exactly 'Comet in Moominland', 'Finn Family Moomintroll'
     end
 
     it "should return values for other subjects if asked" do
       expect(subject.get_values(RDF::URI("http://opaquenamespace.org/jokes"),:title)).to eq []
       subject.set_value(RDF::URI("http://opaquenamespace.org/jokes"), RDF::Vocab::DC.title, 'Comet in Moominland')
-      expect(subject.get_values(RDF::URI("http://opaquenamespace.org/jokes"),:title)).to eq ["Comet in Moominland"]
+
+      expect(subject.get_values(RDF::URI("http://opaquenamespace.org/jokes"),:title))
+        .to contain_exactly "Comet in Moominland"
     end
 
     context "literals are set" do
@@ -578,12 +585,14 @@ describe ActiveTriples::Resource do
       context "and literals are not requested" do
         it "should return a string" do
           # Should this de-duplicate?
-          expect(subject.get_values(RDF::Vocab::DC.title)).to eq ["test", "test"]
+          expect(subject.get_values(RDF::Vocab::DC.title))
+            .to contain_exactly "test", "test"
         end
       end
       context "and literals are requested" do
         it "should return literals" do
-          expect(subject.get_values(RDF::Vocab::DC.title, :literal => true)).to eq [literal1, literal2]
+          expect(subject.get_values(RDF::Vocab::DC.title, :literal => true))
+            .to contain_exactly literal1, literal2
         end
       end
     end
@@ -595,11 +604,13 @@ describe ActiveTriples::Resource do
     end
 
     it 'should return values for a predicate uri' do
-      expect(subject[RDF::Vocab::DC.title]).to eq ['Comet in Moominland', 'Finn Family Moomintroll']
+      expect(subject[RDF::Vocab::DC.title])
+        .to contain_exactly('Comet in Moominland', 'Finn Family Moomintroll')
     end
 
     it 'should return values for a registered predicate symbol' do
-      expect(subject[:title]).to eq ['Comet in Moominland', 'Finn Family Moomintroll']
+      expect(subject[:title])
+        .to contain_exactly('Comet in Moominland', 'Finn Family Moomintroll')
     end
 
     it "should return values for other subjects if asked" do
@@ -709,8 +720,11 @@ END
       document1.creator = [person1, person2]
       document2.creator = person1
       person1.knows = person2
+      person2.knows = person1
       subject.item = [document1]
-      expect(subject.item.first.creator.first.knows.first.foaf_name).to eq ['Bob']
+
+      expect(subject.item.first.creator.first.knows.first.foaf_name)
+        .to satisfy { |names| ['Alice', 'Bob'].include? names.first }
     end
   end
 
@@ -730,7 +744,7 @@ END
       it "should call prior to persisting" do
         expect(subject.title).to be_blank
         subject.persist!
-        expect(subject.title).to eq ["test"]
+        expect(subject.title).to contain_exactly "test"
       end
     end
   end

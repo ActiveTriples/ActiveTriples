@@ -241,7 +241,7 @@ module ActiveTriples
     def delete?(value)
       value = RDF::Literal(value) if value.is_a? Symbol
 
-      return nil if parent.query([rdf_subject, predicate, value]).empty?
+      return nil if parent.query([rdf_subject, predicate, value]).nil?
 
       delete(value)
       value
