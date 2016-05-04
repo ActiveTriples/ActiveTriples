@@ -1,3 +1,8 @@
+0.8.3
+-----
+ - Do not include all predicates from other subjects in unregistered_predicates
+ - Minor corrections to README.md
+
 0.8.2
 -----
 * Allow PersistenceStrategy set by property config [Tom Johnson]
