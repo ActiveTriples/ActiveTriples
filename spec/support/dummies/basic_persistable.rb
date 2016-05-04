@@ -1,13 +1,4 @@
+# frozen_string_literal: true
 class BasicPersistable
-  include ActiveTriples::Persistable
-
-  attr_reader :graph
-
-  def initialize
-    @graph = RDF::Graph.new
-  end
-
-  def rdf_subject
-    RDF::Node.new
-  end
+  include ActiveTriples::RDFSource
 end

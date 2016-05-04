@@ -1,8 +1,9 @@
+# frozen_string_literal: true
 module ActiveTriples
   ##
   # @abstract defines the basic interface for persistence of {RDFSource}'s.
   #
-  # A `PersistenceStrategy` has an underlying object (`obj`) which should 
+  # A `PersistenceStrategy` has an underlying resource which should 
   # be an `RDFSource` or equivalent. Strategies can be injected into `RDFSource`
   # instances at runtime to change the target datastore, repository, or object 
   # the instance syncs its graph with on save and reload operations.
@@ -16,14 +17,20 @@ module ActiveTriples
   #
   module PersistenceStrategy
     ##
-    # Deletes the resource from the repository.
+    # Deletes the resource from the datastore / repository.
     #
     # @yield prior to persisting, yields to allow a block that performs
     #   deletions in the persisted graph(s).
     # @return [Boolean] true if the resource was sucessfully destroyed
     def destroy(&block)
-      obj.clear
       yield if block_given?
+      
+      # Provide a warning for strategies relying on #destroy to clear the resource
+      if defined? obj
+        warn "DEPRECATION WARNING: #destroy implementations must now explicitly call 'source.clear'"
+        obj.clear
+      end
+      
       persist!
       @destroyed = true
     end
@@ -38,7 +45,7 @@ module ActiveTriples
     end
 
     ##
-    # Indicates if the resource is persisted to the repository
+    # Indicates if the resource is persisted to the datastore / repository
     #
     # @return [Boolean] true if persisted; else false.
     def persisted?
@@ -46,7 +53,7 @@ module ActiveTriples
     end
 
     ##
-    # @abstract save the object according to the strategy and set the 
+    # @abstract save the resource according to the strategy and set the 
     #   @persisted flag to `true`
     #
     # @see #persisted?
@@ -57,8 +64,9 @@ module ActiveTriples
     end
 
     ##
-    # @abstract Clear out any old assertions in the repository about this node 
-    # or statement thus preparing to receive the updated assertions.
+    # @abstract Clear out any old assertions in the datastore / repository 
+    # about this node  or statement thus preparing to receive the updated 
+    # assertions.
     #
     # @return [Boolean]
     def erase_old_resource

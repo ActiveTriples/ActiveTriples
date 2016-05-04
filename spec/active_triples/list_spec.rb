@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'spec_helper'
 require 'nokogiri'
 require 'linkeddata'
@@ -25,10 +26,6 @@ describe ActiveTriples::List do
       subject << 1
       subject << 2
       subject << 3
-    end
-
-    it 'has a non-nil subject' do
-      expect(subject.subject).not_to eq RDF.nil
     end
 
     it 'has a non-nil subject' do

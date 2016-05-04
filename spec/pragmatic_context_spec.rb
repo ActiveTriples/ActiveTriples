@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'spec_helper'
 require 'pragmatic_context'
 
@@ -6,9 +7,9 @@ describe 'PragmaticContext integration' do
     class DummyLicense
       include ActiveTriples::RDFSource
       include PragmaticContext::Contextualizable
-      property :title, :predicate => RDF::DC.title
+      property :title, :predicate => RDF::Vocab::DC.title
 
-      contextualize :title, :as => RDF::DC.title.to_s
+      contextualize :title, :as => RDF::Vocab::DC.title.to_s
     end
 
     class DummyResource
@@ -16,11 +17,12 @@ describe 'PragmaticContext integration' do
       include PragmaticContext::Contextualizable
 
       configure :type => RDF::URI('http://example.org/SomeClass')
-      property :license, :predicate => RDF::DC.license, :class_name => DummyLicense
-      property :title, :predicate => RDF::DC.title
+      property :license, :predicate => RDF::Vocab::DC.license, 
+                         :class_name => DummyLicense
+      property :title, :predicate => RDF::Vocab::DC.title
 
-      contextualize :title, :as => RDF::DC.title.to_s
-      contextualize :license, :as => RDF::DC.license.to_s
+      contextualize :title, :as => RDF::Vocab::DC.title.to_s
+      contextualize :license, :as => RDF::Vocab::DC.license.to_s
     end
 
     license.title = 'cc'
@@ -30,8 +32,8 @@ describe 'PragmaticContext integration' do
   end
 
   after do
-    Object.send(:remove_const, "DummyResource") if Object
-    Object.send(:remove_const, "DummyLicense") if Object
+    Object.send(:remove_const, "DummyResource")
+    Object.send(:remove_const, "DummyLicense")
   end
 
   subject { DummyResource.new('http://example.org/test') }

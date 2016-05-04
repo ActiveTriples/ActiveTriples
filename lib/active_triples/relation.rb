@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'active_support/core_ext/module/delegation'
 
 module ActiveTriples
@@ -8,63 +9,179 @@ module ActiveTriples
   #
   #   <{#parent}> <{#predicate}> [term] .
   #
-  # Relations, then, express n binary relationships between the parent node and
-  # a term.
+  # Relations express a set of binary relationships (on a predicate) between
+  # the parent node and a term.
+  #
+  # When the term is a URI or Blank Node, it is represented in the results
+  # {Array} as an {RDFSource} with a graph selected as a subgraph of the
+  # parent's. The triples in this subgraph are: (a) those whose subject is the
+  # term; (b) ...
+  #
   #
   # @see RDF::Term
   class Relation
+    include Enumerable
 
-    attr_accessor :parent, :value_arguments, :node_cache, :rel_args
+    # @!attribute [rw] parent
+    #   @return [RDFSource] the resource that is the domain of this relation
+    # @!attribute [rw] value_arguments
+    #   @return [Array<Object>]
+    # @!attribute [rw] rel_args
+    #   @return [Hash]
+    # @!attribute [r] reflections
+    #   @return [Class]
+    attr_accessor :parent, :value_arguments, :rel_args
     attr_reader :reflections
 
-    delegate *(Array.public_instance_methods - [:send, :__send__, :__id__, :class, :object_id] + [:as_json]), :to => :result
+    delegate :<=>, :==, :===, :[], :each, :empty?, :equal, :inspect, :last,
+       :to_a, :to_ary, :size, :join, :to => :result
 
+    ##
+    # @param [ActiveTriples::RDFSource] parent_source
+    # @param [Array<Symbol, Hash>] value_arguments  if a Hash is passed as the
+    #   final element, it is removed and set to `@rel_args`.
     def initialize(parent_source, value_arguments)
       self.parent = parent_source
       @reflections = parent_source.reflections
       self.rel_args ||= {}
+      self.rel_args = value_arguments.pop if value_arguments.is_a?(Array) &&
+                                             value_arguments.last.is_a?(Hash)
       self.value_arguments = value_arguments
     end
 
-    def value_arguments=(value_args)
-      if value_args.kind_of?(Array) && value_args.last.kind_of?(Hash)
-        self.rel_args = value_args.pop
-      end
-      @value_arguments = value_args
-    end
-
+    ##
+    # Empties the `Relation`, deleting any associated triples from `parent`.
+    #
+    # @return [Relation] self; a now empty relation
     def clear
-      set(nil)
+      parent.delete([rdf_subject, predicate, nil])
+
+      self
     end
 
+    ##
+    # Gives an {Array} containing the result set for the {Relation}.
+    #
+    # By default, {RDF::URI} and {RDF::Node} results are cast to `RDFSource`.
+    # {Literal} results are given as their `#object` representations (e.g.
+    # {String}, {Date}.
+    #
+    # @example results with default casting
+    #   parent << [parent.rdf_subject, predicate, 'my value']
+    #   parent << [parent.rdf_subject, predicate, Date.today]
+    #   parent << [parent.rdf_subject, predicate, RDF::URI('http://ex.org/#me')]
+    #   parent << [parent.rdf_subject, predicate, RDF::Node.new]
+    #   relation.result
+    #   # => ["my_value",
+    #   #     Fri, 25 Sep 2015,
+    #   #     #<ActiveTriples::Resource:0x3f8...>,
+    #   #     #<ActiveTriples::Resource:0x3f8...>]
+    #
+    # When `cast?` is `false`, {RDF::Resource} values are left in their raw
+    # form. Similarly, when `#return_literals?` is `true`, literals are
+    # returned in their {RDF::Literal} form, preserving language tags,
+    # datatype, and value.
+    #
+    # @example results with `cast?` set to `false`
+    #   relation.result
+    #   # => ["my_value",
+    #   #     Fri, 25 Sep 2015,
+    #   #     #<RDF::URI:0x3f8... URI:http://ex.org/#me>,
+    #   #     #<RDF::Node:0x3f8...(_:g69843536054680)>]
+    #
+    # @example results with `return_literals?` set to `true`
+    #   relation.result
+    #   # => [#<RDF::Literal:0x3f8...("my_value")>,
+    #   #     #<RDF::Literal::Date:0x3f8...("2015-09-25"^^<http://www.w3.org/2001/XMLSchema#date>)>,
+    #   #     #<ActiveTriples::Resource:0x3f8...>,
+    #   #     #<ActiveTriples::Resource:0x3f8...>]
+    #
+    # @return [Array<Object>] the result set
     def result
-      parent.query(:subject => rdf_subject, :predicate => predicate)
-        .each_with_object([]) do |x, collector|
-          converted_object = convert_object(x.object)
-          collector << converted_object unless converted_object.nil?
+      return [] if predicate.nil?
+      statements = parent.query(:subject => rdf_subject,
+                                :predicate => predicate)
+      statements.each_with_object([]) do |x, collector|
+        converted_object = convert_object(x.object)
+        collector << converted_object unless converted_object.nil?
       end
     end
 
+    ##
+    # Adds values to the relation
+    #
+    # @param [Array<RDF::Resource>, RDF::Resource] values  an array of values
+    #   or a single value. If not an {RDF::Resource}, the values will be
+    #   coerced to an {RDF::Literal} or {RDF::Node} by {RDF::Statement}
+    #
+    # @return [Relation] a relation containing the set values; i.e. `self`
+    #
+    # @raise [ActiveTriples::UndefinedPropertyError] if the property is not
+    #   already an {RDF::Term} and is not defined in `#property_config`
+    #
+    # @see http://www.rubydoc.info/github/ruby-rdf/rdf/RDF/Statement For
+    #   documentation on {RDF::Statement} and the handling of
+    #   non-{RDF::Resource} values.
     def set(values)
+      raise UndefinedPropertyError.new(property, reflections) if predicate.nil?
+      values = values.to_a if values.is_a? Relation
       values = [values].compact unless values.kind_of?(Array)
-      values = values.to_a if values.class == Relation
-      empty_property
-      values.each do |val|
-        set_value(val)
-      end
+
+      clear
+      values.each { |val| set_value(val) }
+
       parent.persist! if parent.persistence_strategy.is_a? ParentStrategy
+      self
     end
 
-    def empty_property
-      parent.query([rdf_subject, predicate, nil]).each_statement do |statement|
-        if !uri_class(statement.object) || uri_class(statement.object) == class_for_property
-          parent.delete(statement)
-        end
-      end
-    end
-
+    ##
+    # Builds a node with the given attributes, adding it to the relation.
+    #
+    # @param attributes [Hash] a hash of attribute names and values for the
+    #   built node.
+    #
+    # @example building an empty generic node
+    #   resource = ActiveTriples::Resource.new
+    #   resource.resource.get_values(RDF::Vocab::DC.relation).build
+    #   # => #<ActiveTriples::Resource:0x2b0(#<ActiveTriples::Resource:0x005>)>)
+    #
+    #   resource.dump :ttl
+    #   # => "\n [ <http://purl.org/dc/terms/relation> []] .\n"
+    #
+    # Nodes are built using the configured `class_name` for the relation.
+    # Attributes passed in the Hash argument are set on the new node through
+    # `RDFSource#attributes=`. If the attribute keys are not valid properties
+    # on the built node, we raise an error.
+    #
+    # @example building a node with attributes
+    #   class WithRelation
+    #     include ActiveTriples::RDFSource
+    #     property :relation, predicate:  RDF::Vocab::DC.relation,
+    #       class_name: 'WithTitle'
+    #   end
+    #
+    #   class WithTitle
+    #     include ActiveTriples::RDFSource
+    #     property :title, predicate: RDF::Vocab::DC.title
+    #   end
+    #
+    #   resource = WithRelation.new
+    #   attributes = { id: 'http://ex.org/moomin', title: 'moomin' }
+    #
+    #   resource.get_values(:relation).build(attributes)
+    #   # => #<ActiveTriples::Resource:0x2b0(#<ActiveTriples::Resource:0x005>)>)
+    #
+    #   resource.dump :ttl
+    #   # => "\n<http://ex.org/moomin> <http://purl.org/dc/terms/title> \"moomin\" .\n\n [ <http://purl.org/dc/terms/relation> <http://ex.org/moomin>] .\n"
+    #
+    # @todo: clarify class behavior; it is actually tied to type, in some cases.
+    #
+    # @see RDFSource#attributes=
+    # @see http://guides.rubyonrails.org/active_model_basics.html for some
+    #   context on ActiveModel attributes.
     def build(attributes={})
       new_subject = attributes.fetch('id') { RDF::Node.new }
+
       make_node(new_subject).tap do |node|
         node.attributes = attributes.except('id')
         if parent.kind_of? List::ListResource
@@ -77,44 +194,148 @@ module ActiveTriples
       end
     end
 
+    ##
+    # @note this method behaves somewhat differently from `Array#delete`. 
+    #   It succeeds on deletion of non-existing values, always returning
+    #   `self` unless an error is raised. There is no option to pass a block 
+    #   to evaluate if the value is not present. This is because access for 
+    #   `value` depends on query time. i.e. the `Relation` set does not have an
+    #   underlying efficient data structure allowing a reliably cheap existence
+    #   check.
+    #
+    # @note symbols are treated as RDF::Nodes by default in 
+    #   `RDF::Mutable#delete`, but may also represent tokens in statements.
+    #   This casts symbols to a literals, which gets us symmetric behavior 
+    #   between `#set(:sym)` and `#delete(:sym)`.
+    #
+    # @example deleting a value
+    #   resource = MySource.new
+    #   resource.title = ['moomin', 'valley']
+    #   resource.title.delete('moomin') # => ["valley"]
+    #   resource.title # => ['valley']
+    #
+    # @example note the behavior of unmatched values
+    #   resource = MySource.new
+    #   resource.title = 'moomin'
+    #   resource.title.delete('valley') # => ["moomin"]
+    #   resource.title # => ['moomin']
+    # 
+    # @param value [Object] the value to delete from the relation
+    # @return [ActiveTriples::Relation] self
+    def delete(value)
+      value = RDF::Literal(value) if value.is_a? Symbol
+      parent.delete([rdf_subject, predicate, value])
+
+      self
+    end
+
+    ##
+    # A variation on `#delete`. This queries the relation for matching 
+    # values before running the deletion, returning `nil` if it does not exist.
+    #
+    # @param value [Object] the value to delete from the relation
+    #
+    # @return [Object, nil] `nil` if the value doesn't exist; the value 
+    #   otherwise
+    # @see #delete
+    def delete?(value)
+      value = RDF::Literal(value) if value.is_a? Symbol
+
+      return nil if parent.query([rdf_subject, predicate, value]).empty?
+
+      delete(value)
+      value
+    end
+
+    ##
+    # @overload subtract(enum)
+    #   Deletes objects in the enumerable from the relation
+    #   @param values [Enumerable] an enumerable of objects to delete
+    # @overload subtract(*values)
+    #   Deletes each argument value from the relation
+    #   @param *values [Array<Object>] the objects to delete
+    #
+    # @return [Relation] self
+    #
+    # @note This casts symbols to a literals, which gets us symmetric behavior 
+    #   with `#set(:sym)`.
+    # @see #delete
+    def subtract(*values)
+      values = values.first if values.first.is_a? Enumerable
+      statements = values.map do |value|
+        value = RDF::Literal(value) if value.is_a? Symbol
+        [rdf_subject, predicate, value]
+      end
+      
+      parent.delete(*statements)
+      self
+    end
+
+    ##
+    # Replaces the first argument with the second as a value within the 
+    # relation.
+    #
+    # @example
+    #   
+    #
+    # @param swap_out [Object] the value to delete
+    # @param swap_in  [Object] the replacement value
+    # 
+    # @return [Relation] self
+    def swap(swap_out, swap_in)
+      self.<<(swap_in) if delete?(swap_out)
+    end
+
+    ##
+    # @return [Object] the first result, if present; else a newly built node
+    #
+    # @see #build
     def first_or_create(attributes={})
       result.first || build(attributes)
     end
 
-    def delete(*values)
-      values.each do |value|
-        parent.delete([rdf_subject, predicate, value])
-      end
-    end
-
-    def << (values)
+    ##
+    # Adds values to the result set
+    #
+    # @param values [Object, Array<Object>] values to add
+    #
+    # @return [Relation] a relation containing the set values; i.e. `self`
+    def <<(values)
       values = Array.wrap(result) | Array.wrap(values)
       self.set(values)
     end
-
     alias_method :push, :<<
 
-    def []=(index, value)
-      values = Array.wrap(result)
-      raise IndexError, "Index #{index} out of bounds." if values[index].nil?
-      values[index] = value
-      self.set(values)
-    end
-
+    ##
+    # @return [Hash<Symbol, ]
+    # @todo find a way to simplify this?
     def property_config
-      return type_property if (property == RDF.type || property.to_s == "type") && (!reflections.kind_of?(RDFSource) || !reflections.reflect_on_property(property))
+      return type_property if is_type?
+      
       reflections.reflect_on_property(property)
     end
 
-    def type_property
-      { :predicate => RDF.type, :cast => false }
-    end
-
-    def reset!
-    end
-
+    ##
+    # Returns the property for the Relation. This may be a registered
+    # property key or an {RDF::URI}.
+    #
+    # @return [Symbol, RDF::URI]  the property for this Relation.
+    # @see #predicate
     def property
       value_arguments.last
+    end
+
+    ##
+    # Gives the predicate used by the Relation. Values of this object are
+    # those that match the pattern `<rdf_subject> <predicate> [value] .`
+    #
+    # @return [RDF::Term, nil] the predicate for this relation; nil if
+    #   no predicate can be found
+    #
+    # @see #property
+    def predicate
+      return property if property.is_a?(RDF::Term)
+      property_config[:predicate] if is_property?
     end
 
     protected
@@ -123,38 +344,48 @@ module ActiveTriples
         @node_cache ||= {}
       end
 
+      def is_property?
+        reflections.has_property?(property) || is_type?
+      end
+
+      def is_type?
+        (property == RDF.type || property.to_s == "type") &&
+        (!reflections.kind_of?(RDFSource) || !is_property?)
+      end
+
       def set_value(val)
-        object = val
-        val = val.resource if val.respond_to?(:resource)
-        val = value_to_node(val)
+        val = value_to_node(val.respond_to?(:resource) ? val.resource : val)
         if val.kind_of? RDFSource
           node_cache[val.rdf_subject] = nil
-          add_child_node(val, object)
+          add_child_node(val)
           return
         end
         val = val.to_uri if val.respond_to? :to_uri
-        raise "value must be an RDF URI, Node, Literal, or a valid datatype." \
-              " See RDF::Literal.\n\tYou provided #{val.inspect}" unless
-          val.kind_of? RDF::Term
+        raise ValueError, val unless val.kind_of? RDF::Term
         parent.insert [rdf_subject, predicate, val]
+      end
+
+      def type_property
+        { :predicate => RDF.type, :cast => false }
       end
 
       def value_to_node(val)
         valid_datatype?(val) ? RDF::Literal(val) : val
       end
 
-      def add_child_node(resource,object=nil)
+      def add_child_node(resource)
         parent.insert [rdf_subject, predicate, resource.rdf_subject]
-        unless resource.frozen?
+
+        resource = resource.dup
+        unless resource == parent ||
+               (parent.persistence_strategy.is_a?(ParentStrategy) &&
+                parent.persistence_strategy.ancestors.find { |a| a == resource })
           resource.set_persistence_strategy(ParentStrategy)
           resource.parent = parent
         end
-        self.node_cache[resource.rdf_subject] = (object ? object : resource)
-        resource.persist! if resource.persistence_strategy.is_a? ParentStrategy
-      end
 
-      def predicate
-        property.kind_of?(RDF::URI) ? property : property_config[:predicate]
+        self.node_cache[resource.rdf_subject] = resource
+        resource.persist! if resource.persistence_strategy.is_a? ParentStrategy
       end
 
       def valid_datatype?(val)
@@ -189,13 +420,15 @@ module ActiveTriples
         value = RDF::Node.new if value.nil?
         node = node_cache[value] if node_cache[value]
         node ||= klass.from_uri(value,parent)
-        return nil if (property_config && property_config[:class_name]) && (class_for_value(value) != class_for_property)
+        node.set_persistence_strategy(property_config[:persist_to]) if 
+          is_property? && property_config[:persist_to]
+        return nil if (is_property? && property_config[:class_name]) && (class_for_value(value) != class_for_property)
         self.node_cache[value] ||= node
         node
       end
 
       def cast?
-        return true unless property_config || (rel_args && rel_args[:cast])
+        return true unless is_property? || (rel_args && rel_args[:cast])
         return rel_args[:cast] if rel_args.has_key?(:cast)
         !!property_config[:cast]
       end
@@ -226,20 +459,44 @@ module ActiveTriples
       end
 
       def class_for_property
-        klass = property_config[:class_name] if property_config
+        klass = property_config[:class_name] if is_property?
         klass ||= Resource
         klass = ActiveTriples.class_from_string(klass, final_parent.class) if
           klass.kind_of? String
         klass
       end
 
+      ##
+      # @return [RDF::Term] the subject of the relation
       def rdf_subject
-        raise ArgumentError, "wrong number of arguments (#{value_arguments.length} for 1-2)" if value_arguments.length < 1 || value_arguments.length > 2
-        if value_arguments.length > 1
-          value_arguments.first
-        else
-          parent.rdf_subject
+        if value_arguments.length < 1 || value_arguments.length > 2
+          raise(ArgumentError,
+                "wrong number of arguments (#{value_arguments.length} for 1-2)")
         end
+
+        value_arguments.length > 1 ? value_arguments.first : parent.rdf_subject
       end
+
+    public
+
+    ##
+    # An error class for unallowable values in relations.
+    class ValueError < ArgumentError
+      # @!attribute [r] value
+      attr_reader :value
+
+      ##
+      # @param value [Object]
+      def initialize(value)
+        @value = value
+      end
+
+      ##
+      # @return [String]
+      def message
+        'value must be an RDF URI, Node, Literal, or a valid datatype. '\
+        "See RDF::Literal.\n\tYou provided #{value.inspect}"
+      end
+    end
   end
 end

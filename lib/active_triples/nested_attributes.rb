@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'active_support'
 require 'active_support/concern'
 require 'active_support/core_ext/class'
@@ -121,7 +122,6 @@ module ActiveTriples
               assign_nested_attributes_for_collection_association(:#{association_name}, attributes)
               ## in lieu of autosave_association_callbacks just save all of em.
               send(:#{association_name}).each {|obj| obj.marked_for_destruction? ? obj.destroy : nil}
-              send(:#{association_name}).reset!
             end
           eoruby
       end

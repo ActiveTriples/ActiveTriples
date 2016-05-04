@@ -1,19 +1,40 @@
+# frozen_string_literal: true
 require 'spec_helper'
 
 describe ActiveTriples::RepositoryStrategy do
   subject { described_class.new(rdf_source) }
-  let(:rdf_source) { ActiveTriples::Resource.new }
+  let(:source_class) { class MySource; include ActiveTriples::RDFSource; end }
+  let(:rdf_source) { source_class.new }
 
   let(:statement) do
-    RDF::Statement.new(rdf_source.to_term, RDF::DC.title, 'moomin')
+    RDF::Statement.new(rdf_source.to_term, RDF::Vocab::DC.title, 'moomin')
   end
 
   it_behaves_like 'a persistence strategy'
 
+
+  describe '#persisted?' do
+    context 'before persist!' do
+      it 'returns false' do
+        expect(subject).not_to be_persisted
+      end
+    end
+
+    context 'after persist!' do
+      it 'returns true' do
+        subject.persist!
+        expect(subject).to be_persisted
+      end
+    end
+  end
+
   shared_context 'with repository' do
+    let(:repo) { RDF::Repository.new }
     before do
-      allow(subject.obj.singleton_class).to receive(:repository)
-                                             .and_return(:my_repo)
+      source_class.configure repository: :my_repo
+
+      allow(ActiveTriples::Repositories.repositories)
+        .to receive(:[]).with(:my_repo).and_return(repo)
     end
   end
 
@@ -33,7 +54,7 @@ describe ActiveTriples::RepositoryStrategy do
 
     it 'leaves other resources unchanged' do
       subject.repository <<
-        RDF::Statement(RDF::Node.new, RDF::DC.title, 'snorkmaiden')
+        RDF::Statement(RDF::Node.new, RDF::Vocab::DC.title, 'snorkmaiden')
       expect { subject.destroy }
         .not_to change { subject.repository.count }
     end
@@ -45,7 +66,7 @@ describe ActiveTriples::RepositoryStrategy do
 
       context 'with subjects' do
         before do
-          subject.obj.set_subject! RDF::URI('http://example.org/moomin')
+          subject.source.set_subject! RDF::URI('http://example.org/moomin')
         end
 
         include_examples 'destroy resource'
@@ -80,13 +101,7 @@ describe ActiveTriples::RepositoryStrategy do
 
     context 'with unknown content in repo' do
       include_context 'with repository' do
-        before do
-          allow(ActiveTriples::Repositories.repositories)
-            .to receive(:[]).with(:my_repo).and_return(repo)
-          repo << statement
-        end
-
-        let(:repo) { RDF::Repository.new }
+        before { repo << statement }
       end
     end
   end
@@ -103,16 +118,16 @@ describe ActiveTriples::RepositoryStrategy do
     context 'with repository configured' do
       include_context 'with repository'
 
-      let(:repo) { double('repo') }
-
       it 'when repository is not registered raises an error' do
+        source_class.configure repository: :no_repo
+
+        allow(ActiveTriples::Repositories.repositories)
+          .to receive(:[]).with(:no_repo).and_call_original
         expect { subject.repository }
           .to raise_error ActiveTriples::RepositoryNotFoundError
       end
 
       it 'gets repository' do
-        allow(ActiveTriples::Repositories.repositories)
-          .to receive(:[]).with(:my_repo).and_return(repo)
         expect(subject.repository).to eq repo
       end
     end

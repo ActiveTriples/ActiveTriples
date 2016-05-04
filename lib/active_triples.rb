@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'rdf'
 require 'active_triples/version'
 require 'active_support'
@@ -53,6 +54,9 @@ module ActiveTriples
              'active_triples/persistence_strategies/parent_strategy'
     autoload :RepositoryStrategy,
              'active_triples/persistence_strategies/repository_strategy'
+
+    # error classes
+    autoload :UndefinedPropertyError
   end
   
   ##

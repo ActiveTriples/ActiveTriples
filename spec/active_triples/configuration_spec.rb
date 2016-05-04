@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'spec_helper'
 
 RSpec.describe ActiveTriples::Configuration do
@@ -43,7 +44,7 @@ RSpec.describe ActiveTriples::Configuration do
   describe "#merge" do
     let(:starting_hash) do
       {
-        :rdf_label => RDF::SKOS.prefLabel,
+        :rdf_label => RDF::Vocab::SKOS.prefLabel,
         :type => RDF::RDFS.Class
       }
     end

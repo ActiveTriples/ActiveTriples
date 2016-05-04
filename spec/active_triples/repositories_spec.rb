@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require "spec_helper"
 describe ActiveTriples::Repositories do
   subject { ActiveTriples::Repositories }
@@ -15,7 +16,8 @@ describe ActiveTriples::Repositories do
     end
 
     it 'should throw an error if passed something that is not a repository' do
-      expect{subject.add_repository :name, :not_a_repo}.to raise_error
+      expect{subject.add_repository :name, :not_a_repo}
+        .to raise_error ArgumentError
     end
   end
 

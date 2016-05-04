@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 module ActiveTriples
   ##
   # Persistence strategy for projecting `RDFSource`s onto the graph of an owning
@@ -6,50 +7,76 @@ module ActiveTriples
   class ParentStrategy
     include PersistenceStrategy
 
-    # @!attribute [r] obj
+    # @!attribute [r] source
     #   the source to persist with this strategy
     # @!attribute [r] parent
     #   the target parent source for persistence
-    attr_reader :obj, :parent
+    attr_reader :source, :parent
 
     ##
-    # @param obj [RDFSource, RDF::Enumerable] the `RDFSource` (or other
+    # @param source [RDFSource, RDF::Enumerable] the `RDFSource` (or other
     #   `RDF::Enumerable` to persist with the strategy.
-    def initialize(obj)
-      @obj = obj
+    def initialize(source)
+      @source = source
     end
 
+    ##
+    # Resources using this strategy are persisted only if their parent is also 
+    # persisted.
+    #
+    # @see PersistenceStrategy#persisted?
+    def persisted?
+      super && parent.persisted?
+    end
+
+    ##
+    # Indicates if the resource has been loaded from the repository (used for lazy load)
+    #
+    # @return [Boolean] true if loaded; else false.
+    def loaded?
+      @loaded ||= false
+    end
+
+    ##
+    # Destroys the resource by removing it graph and references from the
+    # parent.
+    #
+    # @see PersistenceStrategy#destroy
     def destroy
-      super { parent.destroy_child(obj) }
+      final_parent.delete(source.statements)
+
+      parent.statements.each do |statement|
+        parent.delete_statement(statement) if
+          statement.subject == source.rdf_subject || 
+          statement.object == source.rdf_subject
+      end
+
+      super { source.clear }
     end
 
-    # Clear out any old assertions in the repository about this node or statement
-    # thus preparing to receive the updated assertions.
+    ##
+    # @abstract Clear out any old assertions in the datastore / repository 
+    # about this node  or statement thus preparing to receive the updated 
+    # assertions.
     def erase_old_resource
-      if obj.rdf_subject.node?
-        final_parent.statements.each do |statement|
-          final_parent.send(:delete_statement, statement) if
-            statement.subject == obj.rdf_subject
-        end
-      else
-        final_parent.delete [obj.rdf_subject, nil, nil]
+      final_parent.statements.each do |statement|
+        final_parent.send(:delete_statement, statement) if
+          statement.subject == source.rdf_subject
       end
+    end
+
+    ##
+    # @return [Enumerator<RDFSource>]
+    def ancestors
+      Ancestors.new(source).to_enum
     end
 
     ##
     # @return [#persist!] the last parent in a chain from `parent` (e.g.
     #   the parent's parent's parent). This is the RDF::Mutable that the
-    #   object will project itself on when persisting.
+    #   resource will project itself on when persisting.
     def final_parent
-      raise NilParentError if parent.nil?
-      @final_parent ||= begin
-        current = self.parent
-        while current && current.respond_to?(:parent) && current.parent
-          break if current.parent == current
-          current = current.parent
-        end
-        current
-      end
+      ancestors.to_a.last
     end
 
     ##
@@ -64,12 +91,12 @@ module ActiveTriples
     end
 
     ##
-    # Persists the object to the final parent.
+    # Persists the resource to the final parent.
     #
     # @return [true] true if the save did not error
     def persist!
       erase_old_resource
-      final_parent << obj
+      final_parent << source
       @persisted = true
     end
 
@@ -78,11 +105,59 @@ module ActiveTriples
     #
     # @return [Boolean]
     def reload
-      obj << final_parent.query(subject: obj.rdf_subject)
-      @persisted = true unless obj.empty?
+      if loaded? || !persisted?
+        source << final_parent.query(subject: source.rdf_subject)
+      else
+        RepositoryStrategy.new(source).reload
+        source.persist!
+        @loaded=true
+      end
+      @persisted = true unless source.empty?
       true
     end
 
+    ##
+    # An enumerable over the ancestors of an resource
+    class Ancestors
+      include Enumerable
+
+      # @!attribute source
+      #   @return [RDFSource]
+      attr_reader :source
+
+      ##
+      # @param source [RDFSource]
+      def initialize(source)
+        @source = source
+      end
+      
+      ##
+      # @yield [RDFSource] gives each ancestor to the block
+      # @return [Enumerator<RDFSource>]
+      #
+      # @raise [NilParentError] if `source` does not persist to a parent
+      def each
+        raise NilParentError if 
+          !source.persistence_strategy.respond_to?(:parent) || 
+          source.persistence_strategy.parent.nil?
+        
+        current = source.persistence_strategy.parent
+        
+        if block_given?
+          loop do
+            yield current
+            
+            break unless (current.persistence_strategy.respond_to?(:parent) && 
+                          current.persistence_strategy.parent)
+            break if current.persistence_strategy.parent == current
+
+            current = current.persistence_strategy.parent
+          end
+        end
+        to_enum
+      end
+    end
+    
     class NilParentError < RuntimeError; end
     class UnmutableParentError < ArgumentError; end
   end

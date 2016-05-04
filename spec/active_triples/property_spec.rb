@@ -1,6 +1,7 @@
+# frozen_string_literal: true
 require 'spec_helper'
 
-RSpec.describe ActiveTriples::Property do
+describe ActiveTriples::Property do
   subject { described_class.new(options) }
   let(:options) do
     {
@@ -24,6 +25,19 @@ RSpec.describe ActiveTriples::Property do
           :class_name => "Test"
         }
       )
+    end
+  end
+
+  it 'requires a :name' do
+    expect { described_class.new({}) }.to raise_error(KeyError)
+  end
+
+  context '#cast' do
+    it 'has a default of false' do
+      expect(described_class.new(:name => :title).cast).to eq(false)
+    end
+    it 'allows for the default to be overridden' do
+      expect(described_class.new(:name => :title, :cast => true).cast).to eq(true)
     end
   end
 end

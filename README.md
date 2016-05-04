@@ -68,7 +68,7 @@ related << RDF::Statement(related, RDF::DC.subject, 'ActiveTriples')
 
 related.query(:subject => related, :predicate => RDF::DC.relation).each_statement {|s,p,o| puts o}
 # => http://example.org/things#123
-related.query(:subject => subject, :predicate => RDF::DC.relation).each_statement {|s,p,o| puts o}
+related.query(:subject => related, :predicate => RDF::DC.subject).each_statement {|s,p,o| puts o}
 # => http://example.org/things#123
 ```
 
@@ -92,7 +92,7 @@ require 'linkeddata' # to support various serializations
 osu = ActiveTriples::Resource.new 'http://dbpedia.org/resource/Oregon_State_University'
 osu.fetch
 
-osu.rdf_label => => ["Oregon State University", "Oregon State University", "Université d'État de l'Oregon", "Oregon State University", "Oregon State University", "オレゴン州立大学", "Universidad Estatal de Oregón", "Oregon State University", "俄勒岡州立大學", "Universidade do Estado do Oregon"]
+osu.rdf_label # => ["Oregon State University", "Oregon State University", "Université d'État de l'Oregon", "Oregon State University", "Oregon State University", "オレゴン州立大学", "Universidad Estatal de Oregón", "Oregon State University", "俄勒岡州立大學", "Universidade do Estado do Oregon"]
 ```
 
 Typed Data

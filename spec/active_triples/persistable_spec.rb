@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'spec_helper'
 
 describe ActiveTriples::Persistable do
@@ -5,7 +6,9 @@ describe ActiveTriples::Persistable do
 
   let(:klass) { Class.new { include ActiveTriples::Persistable } }
 
-  let(:statement) { RDF::Statement(RDF::Node.new, RDF::DC.title, 'Moomin') }
+  let(:statement) do
+    RDF::Statement(RDF::Node.new, RDF::Vocab::DC.title, 'Moomin')
+  end
 
   it 'raises an error with no #graph implementation' do
     expect { subject << statement }.to raise_error(NameError, /graph/)

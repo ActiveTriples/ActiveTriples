@@ -1,5 +1,7 @@
+# frozen_string_literal: true
 require 'active_model'
 require 'active_support/core_ext/hash'
+require 'active_support/core_ext/array/wrap'
 
 module ActiveTriples
   ##
@@ -34,7 +36,7 @@ module ActiveTriples
   # An `RDFSource` is an {RDF::Term}---it can be used as a subject, predicate,
   # object, or context in an {RDF::Statement}.
   #
-  # @todo complete RDF::Value/RDF::Term/RDF::Resource interfaces 
+  # @todo complete RDF::Value/RDF::Term/RDF::Resource interfaces
   #
   # @see ActiveModel
   # @see RDF::Resource
@@ -45,7 +47,6 @@ module ActiveTriples
     include NestedAttributes
     include Persistable
     include Properties
-    include Reflection
     include RDF::Value
     include RDF::Queryable
     include ActiveModel::Validations
@@ -74,7 +75,7 @@ module ActiveTriples
       define_model_callbacks :persist
     end
 
-    delegate :each, :load!, :count, :has_statement?, :to => :graph
+    delegate :query, :each, :load!, :count, :has_statement?, :to => :graph
     delegate :to_base, :term?, :escape, :to => :to_term
 
     ##
@@ -102,7 +103,7 @@ module ActiveTriples
       reload
 
       # Append type to graph if necessary.
-      Array(self.class.type).each do |type|
+      Array.wrap(self.class.type).each do |type|
         unless self.get_values(:type).include?(type)
           self.get_values(:type) << type
         end
@@ -124,49 +125,57 @@ module ActiveTriples
     end
 
     ##
-    # Delegate parent to the persistence strategy if possible
+    # Gives a hash containing both the registered and unregistered attributes of
+    # the resource. Unregistered attributes are given with full URIs.
+    # 
+    # @example 
+    #   class WithProperties
+    #     include ActiveTriples::RDFSource
+    #     property :title,   predicate:  RDF::Vocab::DC.title
+    #     property :creator, predicate:  RDF::Vocab::DC.creator, 
+    #                        class_name: 'Agent'
+    #   end
     #
-    # @todo establish a better pattern for this. `#parent` has been a public method
-    #   in the past, but it's probably time to deprecate it.
-    def parent
-      persistence_strategy.respond_to?(:parent) ? persistence_strategy.parent : nil
-    end
+    #   class Agent; include ActiveTriples::RDFSource; end
+    #
+    #   resource = WithProperties.new
+    #
+    #   resource.attributes
+    #   # => {"id"=>"g47123700054720", "title"=>[], "creator"=>[]}
+    #
+    #   resource.creator.build
+    #   resource.title << ['Comet in Moominland', 'Christmas in Moominvalley']
 
-    ##
-    # @todo deprecate/remove
-    # @see #parent
-    def parent=(parent)
-      persistence_strategy.respond_to?(:parent=) ? (persistence_strategy.parent = parent) : nil
-    end
-
+    #   resource.attributes
+    #   # => {"id"=>"g47123700054720",
+    #   #     "title"=>["Comet in Moominland", "Christmas in Moominvalley"],
+    #   #     "creator"=>[#<Agent:0x2adbd76f1a5c(#<Agent:0x0055b7aede34b8>)>]}
+    #
+    #   resource << [resource, RDF::Vocab::DC.relation, 'Helsinki']
+    #   # => {"id"=>"g47123700054720",
+    #   #     "title"=>["Comet in Moominland", "Christmas in Moominvalley"],
+    #   #     "creator"=>[#<Agent:0x2adbd76f1a5c(#<Agent:0x0055b7aede34b8>)>],
+    #   #     "http://purl.org/dc/terms/relation"=>["Helsinki"]}]}
+    #
+    # @return [Hash<String, Array<Object>>]
+    #
+    # @todo: should this, `#attributes=`, and `#serializable_hash` be moved out
+    #   into a dedicated `Serializer` object?
     def attributes
       attrs = {}
-      attrs['id'] = id if id
+      attrs['id'] = id
       fields.map { |f| attrs[f.to_s] = get_values(f) }
       unregistered_predicates.map { |uri| attrs[uri.to_s] = get_values(uri) }
       attrs
-    end
-
-    def serializable_hash(options = nil)
-      attrs = (fields.map { |f| f.to_s }) << 'id'
-      hash = super(:only => attrs)
-      unregistered_predicates.map { |uri| hash[uri.to_s] = get_values(uri) }
-      hash
-    end
-
-    ##
-    # @return [Class] gives `self#class`
-    def reflections
-      self.class
     end
 
     def attributes=(values)
       raise ArgumentError, "values must be a Hash, you provided #{values.class}" unless values.kind_of? Hash
       values = values.with_indifferent_access
       id = values.delete(:id)
-      set_subject!(id) if id && node?
+      set_subject!(id) if node?
       values.each do |key, value|
-        if reflections.reflect_on_property(key)
+        if reflections.has_property?(key)
           set_value(rdf_subject, key, value)
         elsif nested_attributes_options.keys.map { |k| "#{k}_attributes" }.include?(key)
           send("#{key}=".to_sym, value)
@@ -174,6 +183,13 @@ module ActiveTriples
           raise ArgumentError, "No association found for name `#{key}'. Has it been defined yet?"
         end
       end
+    end
+
+    def serializable_hash(options = nil)
+      attrs = (fields.map { |f| f.to_s }) << 'id'
+      hash = super(:only => attrs)
+      unregistered_predicates.map { |uri| hash[uri.to_s] = get_values(uri) }
+      hash
     end
 
     ##
@@ -195,7 +211,23 @@ module ActiveTriples
     end
 
     ##
-    # Gives the representation of this
+    # Delegate parent to the persistence strategy if possible
+    #
+    # @todo establish a better pattern for this. `#parent` has been a public 
+    #   method in the past, but it's probably time to deprecate it.
+    def parent
+      persistence_strategy.respond_to?(:parent) ? persistence_strategy.parent : nil
+    end
+
+    ##
+    # @todo deprecate/remove
+    # @see #parent
+    def parent=(parent)
+      persistence_strategy.respond_to?(:parent=) ? (persistence_strategy.parent = parent) : nil
+    end
+
+    ##
+    # Gives the representation of this RDFSource as an RDF::Term
     #
     # @return [RDF::URI, RDF::Node] the URI that identifies this `RDFSource`;
     #   or a bnode identifier
@@ -207,6 +239,21 @@ module ActiveTriples
     alias_method :to_term, :rdf_subject
 
     ##
+    # Returns `nil` as the `graph_name`. This behavior mimics an `RDF::Graph`
+    # with no graph name, or one without named graph support.
+    #
+    # @note: it's possible to think of an `RDFSource` as "supporting named 
+    #   graphs" in the sense that the `#rdf_subject` is an implied graph name.
+    #   For RDF.rb's purposes, however, it has a nil graph name: when 
+    #   enumerating statements, we treat them as triples.
+    #
+    # @return [nil]
+    # @sse RDF::Graph.graph_name
+    def graph_name
+      nil
+    end
+    
+    ##
     # @return [String] A string identifier for the resource; '' if the
     #   resource is a node
     def humanize
@@ -216,7 +263,7 @@ module ActiveTriples
     ##
     # @return [RDF::URI] the uri
     def to_uri
-      uri? ? rdf_subject : NullURI.new
+      rdf_subject if uri?
     end
 
     ##
@@ -251,7 +298,7 @@ module ActiveTriples
     end
 
     def type
-      self.get_values(:type).to_a
+      self.get_values(:type)
     end
 
     def type=(type)
@@ -262,8 +309,10 @@ module ActiveTriples
     ##
     # Looks for labels in various default fields, prioritizing
     # configured label fields.
+    #
+    # @see #default_labels
     def rdf_label
-      labels = Array(self.class.rdf_label)
+      labels = Array.wrap(self.class.rdf_label)
       labels += default_labels
       labels.each do |label|
         values = get_values(label)
@@ -273,33 +322,107 @@ module ActiveTriples
     end
 
     ##
+    # @return [Array<RDF::URI>] a group of properties to use for default labels.
+    def default_labels
+      [RDF::SKOS.prefLabel,
+       RDF::DC.title,
+       RDF::RDFS.label,
+       RDF::SKOS.altLabel,
+       RDF::SKOS.hiddenLabel]
+    end
+
+    ##
     # Load data from the #rdf_subject URI. Retrieved data will be
     # parsed into the Resource's graph from available RDF::Readers
     # and available from property accessors if if predicates are
     # registered.
     #
+    # @example
     #    osu = new('http://dbpedia.org/resource/Oregon_State_University')
     #    osu.fetch
     #    osu.rdf_label.first
     #    # => "Oregon State University"
     #
-    # @return [ActiveTriples::Entity] self
-    def fetch
-      load(rdf_subject)
+    # @example with default action block
+    #    my_source = new('http://example.org/dead_url')
+    #    my_source.fetch { |obj| obj.status = 'dead link' }
+    #
+    # @yield gives self to block if this is a node, or an error is raised during
+    #   load
+    # @yieldparam [ActiveTriples::RDFSource] resource  self
+    #
+    # @return [ActiveTriples::RDFSource] self
+    def fetch(*args, &block)
+      begin
+        load(rdf_subject, *args)
+      rescue => e
+        if block_given?
+          yield(self)
+        else
+          raise "#{self} is a blank node; Cannot fetch a resource without a URI" if
+            node?
+          raise e
+        end
+      end
       self
     end
 
     ##
-    # Adds or updates a property with supplied values.
+    # Adds or updates a property by creating triples for each of the supplied
+    # values.
     #
-    # Handles two argument patterns. The recommended pattern is:
-    #    set_value(property, values)
+    # The `property` argument may be either a symbol representing a registered
+    # property name, or an RDF::Term to use as the predicate.
     #
-    # For backwards compatibility, there is support for explicitly
-    # passing the rdf_subject to be used in the statement:
-    #    set_value(uri, property, values)
+    # @example setting with a property name
+    #   class Thing
+    #     include ActiveTriples::RDFSource
+    #     property :creator, predicate: RDF::DC.creator
+    #   end
     #
-    # @note This method will delete existing statements with the correct subject and predicate from the graph
+    #   t = Thing.new
+    #   t.set_value(:creator, 'Tove Jansson')  # => ['Tove Jansson']
+    #
+    #
+    # @example setting with a predicate
+    #   t = Thing.new
+    #   t.set_value(RDF::DC.creator, 'Tove Jansson')  # => ['Tove Jansson']
+    #
+    #
+    # The recommended pattern, which sets properties directly on this
+    # RDFSource, is: `set_value(property, values)`
+    #
+    # @overload set_value(property, values)
+    #   Updates the values for the property, using this RDFSource as the subject
+    #
+    #   @param [RDF::Term, #to_sym] property  a symbol with the property name
+    #     or an RDF::Term to use as a predicate.
+    #   @param [Array<RDF::Resource>, RDF::Resource] values  an array of values
+    #     or a single value. If not an {RDF::Resource}, the values will be
+    #     coerced to an {RDF::Literal} or {RDF::Node} by {RDF::Statement}
+    #
+    # @overload set_value(subject, property, values)
+    #   Updates the values for the property, using the given term as the subject
+    # 
+    #   @param [RDF::Term] subject  the term representing the 
+    #   @param [RDF::Term, #to_sym] property  a symbol with the property name
+    #     or an RDF::Term to use as a predicate.
+    #   @param [Array<RDF::Resource>, RDF::Resource] values  an array of values
+    #     or a single value. If not an {RDF::Resource}, the values will be 
+    #     coerced to an {RDF::Literal} or {RDF::Node} by {RDF::Statement}
+    #
+    # @return [ActiveTriples::Relation] an array {Relation} containing the
+    #   values of the property
+    #
+    # @raise [ActiveTriples::Relation::ValueError] when the given value can't be
+    #   coerced into an acceptable `RDF::Term`.
+    #
+    # @note This method will delete existing statements with the given
+    #   subject and predicate from the graph
+    #
+    # @see http://www.rubydoc.info/github/ruby-rdf/rdf/RDF/Statement For 
+    #   documentation on {RDF::Statement} and the handling of 
+    #   non-{RDF::Resource} values.
     def set_value(*args)
       # Add support for legacy 3-parameter syntax
       if args.length > 3 || args.length < 2
@@ -310,37 +433,60 @@ module ActiveTriples
     end
 
     ##
-    # Adds or updates a property with supplied values.
-    #
-    # @note This method will delete existing statements with the correct subject and predicate from the graph
-    def []=(uri_or_term_property, value)
-      self[uri_or_term_property].set(value)
-    end
-
-    ##
     # Returns an array of values belonging to the property
     # requested. Elements in the array may RdfResource objects or a
     # valid datatype.
     #
-    # Handles two argument patterns. The recommended pattern is:
+    # Handles two argument patterns. The recommended pattern, which accesses
+    # properties directly on this RDFSource, is:
     #    get_values(property)
     #
-    # For backwards compatibility, there is support for explicitly
-    # passing the rdf_subject to be used in th statement:
-    #    get_values(uri, property)
+    # @overload get_values(property) 
+    #   Gets values on the RDFSource for the given property
+    #   @param [String, #to_term] property  the property for the values
+    #
+    # @overload get_values(uri, property)
+    #   For backwards compatibility, explicitly passing the term used as the
+    #   subject {ActiveTriples::Relation#rdf_subject} of the returned relation.
+    #   @param [RDF::Term] uri  the term to use as the subject
+    #   @param [String, #to_term] property  the property for the values
+    #
+    # @return [ActiveTriples::Relation] an array {Relation} containing the 
+    #   values of the property
+    #
+    # @todo should this raise an error when the property argument is not an 
+    #   {RDF::Term} or a registered property key?
     def get_values(*args)
       get_relation(args)
     end
 
     ##
-    # Returns an array of values belonging to the property
-    # requested. Elements in the array may RdfResource objects or a
-    # valid datatype.
-    def [](uri_or_term_property)
-      get_relation([uri_or_term_property])
+    # Returns an array of values belonging to the property requested. Elements
+    # in the array may RdfResource objects or a valid datatype.
+    # 
+    # @param [RDF::Term, :to_s] term_or_property
+    def [](term_or_property)
+      get_relation([term_or_property])
     end
 
+    ##
+    # Adds or updates a property with supplied values.
+    #
+    # @param [RDF::Term, :to_s] term_or_property
+    # @param [Array<RDF::Resource>, RDF::Resource] values  an array of values
+    #   or a single value to set the property to.   
+    #
+    # @note This method will delete existing statements with the correct 
+    #   subject and predicate from the graph
+    def []=(term_or_property, value)
+      self[term_or_property].set(value)
+    end
+
+    ##
+    # @see #get_values
+    # @todo deprecate and remove? this is an alias to `#get_values`
     def get_relation(args)
+      reload if (persistence_strategy.respond_to? :loaded?) && !persistence_strategy.loaded?
       @relation_cache ||= {}
       rel = Relation.new(self, args)
       @relation_cache["#{rel.send(:rdf_subject)}/#{rel.property}/#{rel.rel_args}"] ||= rel
@@ -378,12 +524,6 @@ module ActiveTriples
       end
     end
 
-    def destroy_child(child)
-      statements.each do |statement|
-        delete_statement(statement) if statement.subject == child.rdf_subject || statement.object == child.rdf_subject
-      end
-    end
-
     ##
     # Indicates if the record is 'new' (has not yet been persisted).
     #
@@ -402,11 +542,21 @@ module ActiveTriples
 
     private
 
+      ##
+      # This gives the {RDF::Graph} which represents the current state of this
+      # resource.
+      #  
+      # @return [RDF::Graph] the underlying graph representation of the
+      #   `RDFSource`.
+      #
+      # @see http://www.w3.org/TR/2014/REC-rdf11-concepts-20140225/#change-over-time
+      #   RDF Concepts and Abstract Syntax comment on "RDF source"
       def graph
         @graph
       end
 
       ##
+
       # Lists fields registered as properties on the object.
       #
       # @return [Array<Symbol>] the list of registered properties.
@@ -436,17 +586,19 @@ module ActiveTriples
       #
       # @return [Array<RDF::URI>]
       def unregistered_predicates
-        preds = registered_predicates
-        preds << RDF.type
-        predicates.select { |p| !preds.include? p }
+        registered_preds = registered_predicates
+        registered_preds << RDF.type
+        unregistered_preds = []
+        each_statement { |s,p,o| unregistered_preds << p unless (s != rdf_subject) || (registered_preds.include? p) }
+        unregistered_preds
       end
 
       def default_labels
-        [RDF::SKOS.prefLabel,
-         RDF::DC.title,
+        [RDF::Vocab::SKOS.prefLabel,
+         RDF::Vocab::DC.title,
          RDF::RDFS.label,
-         RDF::SKOS.altLabel,
-         RDF::SKOS.hiddenLabel]
+         RDF::Vocab::SKOS.altLabel,
+         RDF::Vocab::SKOS.hiddenLabel]
       end
 
       ##
@@ -494,7 +646,7 @@ module ActiveTriples
 
       ##
       # Apply a predicate mapping using a given strategy.
-      # 
+      #
       # @param [ActiveTriples::Schema, #properties] schema A schema to apply.
       # @param [#apply!] strategy A strategy for applying. Defaults
       #   to ActiveTriples::ExtensionStrategy
