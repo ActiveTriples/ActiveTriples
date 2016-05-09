@@ -530,13 +530,17 @@ describe ActiveTriples::Relation do
 
       context 'with values' do
         let(:values) { ['Comet in Moominland', 'Finn Family Moomintroll'] }
+
         before do
           values.each do |value|
             subject.parent << [subject.parent.rdf_subject, uri, value]
           end
         end
+
         it "returns joined strings" do
-          expect(subject.join(", ")).to eq "Comet in Moominland, Finn Family Moomintroll"
+          expect(subject.join(", "))
+            .to satisfy { |v| sp = v.split(', ').include?("Comet in Moominland") &&
+                          v.split(', ').include?("Finn Family Moomintroll") }
         end
       end
     end
