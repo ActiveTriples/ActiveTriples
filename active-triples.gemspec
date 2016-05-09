@@ -23,7 +23,7 @@ Gem::Specification.new do |s|
   s.add_development_dependency('rdoc')
   s.add_development_dependency('rspec')
   s.add_development_dependency('coveralls')
-  s.add_development_dependency('guard-rspec')
+  s.add_development_dependency('guard-rspec') unless ENV['CI']
   s.add_development_dependency('webmock')
   s.add_development_dependency('nokogiri')
   s.add_development_dependency('pragmatic_context', '~> 0.1.2')
