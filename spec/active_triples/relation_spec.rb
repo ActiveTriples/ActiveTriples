@@ -475,8 +475,13 @@ describe ActiveTriples::Relation do
             subject.parent << [subject.parent.rdf_subject, uri, value]
           end
         end
+
         it "returns the size of the result" do
           expect(subject.size).to eq 2
+        end
+
+        it 'is aliased by #length' do
+          expect(subject.length).to eq 2
         end
       end
     end

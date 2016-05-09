@@ -34,7 +34,7 @@ module ActiveTriples
     attr_reader :reflections
 
     delegate :<=>, :==, :===, :[], :each, :empty?, :equal, :inspect, :last,
-       :to_a, :to_ary, :size, :join, :to => :result
+       :to_a, :to_ary, :size, :join, :length, :to => :result
 
     ##
     # @param [ActiveTriples::RDFSource] parent_source
