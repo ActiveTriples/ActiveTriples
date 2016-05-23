@@ -1,3 +1,7 @@
+0.9.0
+-----
+ - Upgrade to RDF.rb 2.0
+
 0.8.3
 -----
  - Do not include all predicates from other subjects in unregistered_predicates

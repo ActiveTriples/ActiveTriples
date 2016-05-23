@@ -34,7 +34,7 @@ module ActiveTriples
     attr_reader :reflections
 
     delegate :<=>, :==, :===, :[], :each, :empty?, :equal, :inspect, :last,
-       :to_a, :to_ary, :size, :join, :to => :result
+       :to_a, :to_ary, :size, :join, :length, :to => :result
 
     ##
     # @param [ActiveTriples::RDFSource] parent_source
@@ -241,7 +241,7 @@ module ActiveTriples
     def delete?(value)
       value = RDF::Literal(value) if value.is_a? Symbol
 
-      return nil if parent.query([rdf_subject, predicate, value]).empty?
+      return nil if parent.query([rdf_subject, predicate, value]).nil?
 
       delete(value)
       value
