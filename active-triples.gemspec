@@ -12,7 +12,7 @@ Gem::Specification.new do |s|
   s.summary     = %q{RDF graphs in ActiveModel wrappers.}
   s.description = %q{ActiveTriples provides tools for modeling RDF as discrete resources.}
   s.license     = "APACHE2"
-  s.required_ruby_version     = '>= 2.0.0'
+  s.required_ruby_version = '>= 2.1.0'
 
   s.add_dependency 'rdf',           '~> 2.0'
   s.add_dependency 'linkeddata',    '~> 2.0'
