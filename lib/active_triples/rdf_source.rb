@@ -91,6 +91,7 @@ module ActiveTriples
     # @todo move this logic out to a Builder?
     def initialize(*args, &block)
       resource_uri = args.shift unless args.first.is_a?(Hash)
+      @rdf_subject = get_uri(resource_uri) if resource_uri
       unless args.first.is_a?(Hash) || args.empty?
         set_persistence_strategy(ParentStrategy)
         persistence_strategy.parent = args.shift
@@ -98,7 +99,6 @@ module ActiveTriples
         set_persistence_strategy(RepositoryStrategy)
       end
       @graph = RDF::Graph.new(*args, &block)
-      set_subject!(resource_uri) if resource_uri
 
       reload
 
