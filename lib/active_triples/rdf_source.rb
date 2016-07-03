@@ -586,7 +586,12 @@ module ActiveTriples
         registered_preds = registered_predicates
         registered_preds << RDF.type
         unregistered_preds = []
-        each_statement { |s,p,o| unregistered_preds << p unless (s != rdf_subject) || (registered_preds.include? p) }
+        
+        query(subject: rdf_subject) do |stmt| 
+          unregistered_preds << stmt.predicate unless
+            registered_preds.include? stmt.predicate
+        end
+
         unregistered_preds
       end
 
