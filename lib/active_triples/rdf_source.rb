@@ -92,14 +92,15 @@ module ActiveTriples
     def initialize(*args, &block)
       resource_uri = args.shift unless args.first.is_a?(Hash)
       @rdf_subject = get_uri(resource_uri) if resource_uri
+
       unless args.first.is_a?(Hash) || args.empty?
         set_persistence_strategy(ParentStrategy)
         persistence_strategy.parent = args.shift
       else
         set_persistence_strategy(RepositoryStrategy)
       end
-      @graph = RDF::Graph.new(*args, &block)
 
+      @graph = RDF::Graph.new(*args, &block)
       reload
 
       # Append type to graph if necessary.
@@ -513,13 +514,21 @@ module ActiveTriples
       old_subject = rdf_subject
       @rdf_subject = get_uri(uri_or_str)
 
-      each_statement do |statement|
-        if statement.subject == old_subject
-          delete(statement)
-          self << RDF::Statement.new(rdf_subject, statement.predicate, statement.object)
-        elsif statement.object == old_subject
-          delete(statement)
-          self << RDF::Statement.new(statement.subject, statement.predicate, rdf_subject)
+
+      graph.transaction(mutable: true) do |tx|
+        tx.query(subject: old_subject).each do |st|
+          tx.delete(st)
+
+          st.subject = rdf_subject
+          st.object  = rdf_subject if st.object == old_subject
+          tx.insert(st)
+        end
+        
+        tx.query(object: old_subject).each do |st|
+          tx.delete(st)
+          
+          st.object = rdf_subject
+          tx.insert(st)
         end
       end
     end
