@@ -497,40 +497,28 @@ module ActiveTriples
     ##
     # Set a new rdf_subject for the resource.
     #
-    # This raises an error if the current subject is not a blank node,
-    # and returns false if it can't figure out how to make a URI from
-    # the param. Otherwise it creates a URI for the resource and
-    # rebuilds the graph with the updated URI.
-    #
     # Will try to build a uri as an extension of the class's base_uri
     # if appropriate.
     #
-    # @param [#to_uri, #to_s] uri_or_str the uri or string to use
+    # @param  [#to_uri, #to_s] uri_or_str the uri or string to use
+    # @return [void]
+    #
+    # @raise if the current subject is not a blank node,
+    #   and returns false if it can't figure out how to make a URI from
+    #   the param. Otherwise it creates a URI for the resource and
+    #   rebuilds the graph with the updated URI.
     def set_subject!(uri_or_str)
-      raise "Refusing update URI when one is already assigned!" unless node? or rdf_subject == RDF::URI(nil)
-      # Refusing set uri to an empty string.
-      return false if uri_or_str.nil? or (uri_or_str.to_s.empty? and not uri_or_str.kind_of? RDF::URI)
-      # raise "Refusing update URI! This object is persisted to a datastream." if persisted?
-      old_subject = rdf_subject
-      @rdf_subject = get_uri(uri_or_str)
-
-
-      graph.transaction(mutable: true) do |tx|
-        tx.query(subject: old_subject).each do |st|
-          tx.delete(st)
-
-          st.subject = rdf_subject
-          st.object  = rdf_subject if st.object == old_subject
-          tx.insert(st)
-        end
+      raise "Refusing update URI when one is already assigned!" unless 
+        node? || rdf_subject == RDF::URI(nil)
         
-        tx.query(object: old_subject).each do |st|
-          tx.delete(st)
-          
-          st.object = rdf_subject
-          tx.insert(st)
-        end
-      end
+      return false if uri_or_str.nil? || 
+                      (uri_or_str.to_s.empty? &&
+                       !uri_or_str.kind_of?(RDF::URI))
+      
+      new_subject = get_uri(uri_or_str)
+      rewrite_statement_uris(rdf_subject, new_subject)
+
+      @rdf_subject = new_subject
     end
 
     ##
@@ -608,6 +596,33 @@ module ActiveTriples
          RDF::RDFS.label,
          RDF::Vocab::SKOS.altLabel,
          RDF::Vocab::SKOS.hiddenLabel]
+      end
+
+      ##
+      # Rewrites the subject and object of each statement containing 
+      # `old_subject` in either position. Used when setting the subject to
+      # remove the placeholder blank node subjects.
+      #
+      # @param [RDF::Term] old_subject
+      # @param [RDF::Term] new_subject
+      # @return [void]
+      def rewrite_statement_uris(old_subject, new_subject)
+        graph.transaction(mutable: true) do |tx|
+          tx.query(subject: old_subject).each do |st|
+            tx.delete(st)
+
+            st.subject = new_subject
+            st.object  = new_subject if st.object == old_subject
+            tx.insert(st)
+          end
+          
+          tx.query(object: old_subject).each do |st|
+            tx.delete(st)
+            
+            st.object = new_subject
+            tx.insert(st)
+          end
+        end
       end
 
       ##
