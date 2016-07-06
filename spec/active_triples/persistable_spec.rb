@@ -10,10 +10,6 @@ describe ActiveTriples::Persistable do
     RDF::Statement(RDF::Node.new, RDF::Vocab::DC.title, 'Moomin')
   end
 
-  it 'raises an error with no #graph implementation' do
-    expect { subject << statement }.to raise_error(NameError, /graph/)
-  end
-
   describe 'method delegation' do
     context 'with a strategy' do
       let(:strategy_class) do

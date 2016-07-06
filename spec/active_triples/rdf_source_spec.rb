@@ -403,7 +403,7 @@ describe ActiveTriples::RDFSource do
                .to(a_collection_containing_exactly(*statements))
       end
 
-      it 'returns the set values in a Relation' do
+      it 'returns the set values in a Relation' do 
         expect(subject.set_value(predicate, value))
           .to be_a_relation_containing(*Array.wrap(value))
       end
@@ -471,11 +471,11 @@ describe ActiveTriples::RDFSource do
       it 'handles setting reciprocally' do
         document.set_value(RDF::Vocab::DC.creator, person)
         person.set_value(RDF::Vocab::FOAF.publications, document)
-
+        
         expect(person.get_values(RDF::Vocab::FOAF.publications))
-          .to contain_exactly(document)
+          .to be_a_relation_containing(document)
         expect(document.get_values(RDF::Vocab::DC.creator))
-          .to contain_exactly(person)
+          .to be_a_relation_containing(person)
       end
 
       it 'handles setting' do
@@ -485,11 +485,11 @@ describe ActiveTriples::RDFSource do
         subject.set_value(RDF::OWL.sameAs, subject)         
 
         expect(subject.get_values(RDF::Vocab::FOAF.publications))
-          .to contain_exactly(document)
+          .to be_a_relation_containing(document)
         expect(subject.get_values(RDF::OWL.sameAs))
-          .to contain_exactly(subject)
+          .to be_a_relation_containing(subject)
         expect(document.get_values(RDF::Vocab::DC.creator))
-          .to contain_exactly(person)
+          .to be_a_relation_containing(person)
       end
 
       it 'handles setting circularly' do
@@ -497,9 +497,9 @@ describe ActiveTriples::RDFSource do
         person.set_value(RDF::Vocab::FOAF.knows, subject)
 
         expect(document.get_values(RDF::Vocab::DC.creator))
-          .to contain_exactly(person, subject)
+          .to be_a_relation_containing(person, subject)
         expect(person.get_values(RDF::Vocab::FOAF.knows))
-          .to contain_exactly subject
+          .to be_a_relation_containing subject
       end
 
       it 'handles setting circularly within ancestor list' do
@@ -510,9 +510,9 @@ describe ActiveTriples::RDFSource do
         person2.set_value(RDF::Vocab::DC.relation, document)
         
         expect(person.get_values(RDF::Vocab::DC.relation))
-          .to contain_exactly person2
+          .to be_a_relation_containing person2
         expect(person2.get_values(RDF::Vocab::DC.relation))
-          .to contain_exactly document
+          .to be_a_relation_containing document
       end
     end
 

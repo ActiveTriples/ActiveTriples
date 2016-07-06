@@ -230,7 +230,9 @@ END
       it "should have to_ary" do
         ary = list.to_ary
         expect(ary.size).to eq 4
-        expect(ary[1].elementValue).to eq ['Relations with Mexican Americans']
+
+        expect(ary[1].elementValue)
+          .to contain_exactly 'Relations with Mexican Americans'
       end
 
       it "should have size" do
@@ -243,12 +245,18 @@ END
           list[3].elementValue = ["1900s"]
           doc = Nokogiri::XML(subject.dump :rdfxml)
           ns = {rdf: "http://www.w3.org/1999/02/22-rdf-syntax-ns#", mads: "http://www.loc.gov/mads/rdf/v1#"}
-          expect(doc.xpath('/rdf:RDF/mads:ComplexSubject/@rdf:about', ns).map(&:value)).to eq ["http://example.org/foo"]
-          expect(doc.xpath('//mads:ComplexSubject/mads:elementList/@rdf:parseType', ns).map(&:value)).to eq ["Collection"]
-          expect(doc.xpath('//mads:ComplexSubject/mads:elementList/*[position() = 1]/@rdf:about', ns).map(&:value)).to eq ["http://library.ucsd.edu/ark:/20775/bbXXXXXXX6"]
-          expect(doc.xpath('//mads:ComplexSubject/mads:elementList/*[position() = 2]/mads:elementValue', ns).map(&:text)).to eq ["Relations with Mexican Americans"]
-          expect(doc.xpath('//mads:ComplexSubject/mads:elementList/*[position() = 3]/@rdf:about', ns).map(&:value)).to eq ["http://library.ucsd.edu/ark:/20775/bbXXXXXXX4"]
-          expect(doc.xpath('//mads:ComplexSubject/mads:elementList/*[position() = 4]/mads:elementValue', ns).map(&:text)).to eq ["1900s"]
+          expect(doc.xpath('/rdf:RDF/mads:ComplexSubject/@rdf:about', ns).map(&:value))
+            .to contain_exactly "http://example.org/foo"
+          expect(doc.xpath('//mads:ComplexSubject/mads:elementList/@rdf:parseType', ns).map(&:value))
+            .to contain_exactly "Collection"
+          expect(doc.xpath('//mads:ComplexSubject/mads:elementList/*[position() = 1]/@rdf:about', ns).map(&:value))
+            .to contain_exactly "http://library.ucsd.edu/ark:/20775/bbXXXXXXX6"
+          expect(doc.xpath('//mads:ComplexSubject/mads:elementList/*[position() = 2]/mads:elementValue', ns).map(&:text))
+            .to contain_exactly "Relations with Mexican Americans"
+          expect(doc.xpath('//mads:ComplexSubject/mads:elementList/*[position() = 3]/@rdf:about', ns).map(&:value))
+            .to contain_exactly "http://library.ucsd.edu/ark:/20775/bbXXXXXXX4"
+          expect(doc.xpath('//mads:ComplexSubject/mads:elementList/*[position() = 4]/mads:elementValue', ns).map(&:text))
+            .to contain_exactly "1900s"
           expect(RDF::List.new(subject: list.rdf_subject, graph: subject)).to be_valid
         end
 

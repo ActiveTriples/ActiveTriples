@@ -177,24 +177,26 @@ describe "nesting attribute behavior" do
       context "for an existing B-nodes" do
         before do
           subject.attributes = { parts_attributes: [
-                                    {label: 'Alternator'},
-                                    {label: 'Distributor'},
-                                    {label: 'Transmission'},
-                                    {label: 'Fuel Filter'}]}
+                                   {label: 'Alternator'},
+                                   {label: 'Distributor'},
+                                   {label: 'Transmission'},
+                                   {label: 'Fuel Filter'}]}
           subject.parts_attributes = new_attributes
         end
 
         context "that allows destroy" do
-          let(:args) { [:parts, allow_destroy: true] }
+          let(:args)               { [:parts, allow_destroy: true] }
           let (:replace_object_id) { subject.parts[1].rdf_subject.to_s }
-          let (:remove_object_id) { subject.parts[3].rdf_subject.to_s }
+          let (:remove_object_id)  { subject.parts[3].rdf_subject.to_s }
 
-          let(:new_attributes) { [{ id: replace_object_id, label: "Universal Joint" },
-                                  { label:"Oil Pump" },
-                                  { id: remove_object_id, _destroy: '1', label: "bar1 uno" }] }
+          let(:new_attributes) do
+            [{ id: replace_object_id, label: "Universal Joint" },
+             { label:"Oil Pump" },
+             { id: remove_object_id, _destroy: '1', label: "bar1 uno" }]
+          end
 
           it "should update nested objects" do
-            expect(subject.parts.map{|p| p.label.first})
+            expect(subject.parts.map { |p| p.label.first })
               .to contain_exactly 'Universal Joint', 'Oil Pump', 
                                   an_instance_of(String), an_instance_of(String)
           end

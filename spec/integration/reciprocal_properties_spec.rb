@@ -28,13 +28,13 @@ describe 'reciprocal properties' do
 
       a.has_resource = b
       expect(a.has_resource).to eq [b]
-      expect(a.label).to eq ['resource A']
-      expect(b.label).to eq ['resource B']
+      expect(a.label).to be_a_relation_containing('resource A')
+      expect(b.label).to be_a_relation_containing('resource B')
 
       b.in_resource = a
       expect(b.in_resource).to eq [a]
-      expect(a.label).to eq ['resource A']
-      expect(b.label).to eq ['resource B']
+      expect(a.label).to be_a_relation_containing('resource A')
+      expect(b.label).to be_a_relation_containing('resource B')
     end
   end
 
@@ -46,7 +46,7 @@ describe 'reciprocal properties' do
     end
 
     let (:b) do
-      p = DummyResourceB.new(RDF::URI('http://example.com/b'),a)
+      p = DummyResourceB.new(RDF::URI('http://example.com/b'), a)
       p.label = 'resource B'
       p
     end
@@ -57,13 +57,13 @@ describe 'reciprocal properties' do
 
       a.has_resource = b
       expect(a.has_resource).to eq [b]
-      expect(a.label).to eq ['resource A']
-      expect(b.label).to eq ['resource B']
+      expect(a.label).to be_a_relation_containing('resource A')
+      expect(b.label).to be_a_relation_containing('resource B')
 
       b.in_resource = a
       expect(b.in_resource).to eq [a]
-      expect(a.label).to eq ['resource A']
-      expect(b.label).to eq ['resource B']
+      expect(a.label).to be_a_relation_containing('resource A')
+      expect(b.label).to be_a_relation_containing('resource B')
     end
   end
 end

@@ -15,6 +15,19 @@ module ActiveTriples
     include RDF::Mutable
 
     ##
+    # This gives the {RDF::Graph} which represents the current state of this
+    # resource.
+    #
+    # @return [RDF::Graph] the underlying graph representation of the
+    #   `RDFSource`.
+    #
+    # @see http://www.w3.org/TR/2014/REC-rdf11-concepts-20140225/#change-over-time
+    #   RDF Concepts and Abstract Syntax comment on "RDF source"
+    def graph
+      persistence_strategy.graph
+    end
+
+    ##
     # @see RDF::Enumerable.each
     def each(*args)
       graph.each(*args)

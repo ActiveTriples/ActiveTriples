@@ -24,7 +24,7 @@ module ActiveTriples
     # @return [Boolean] true if the resource was sucessfully destroyed
     def destroy(&block)
       yield if block_given?
-      
+
       persist!
       @destroyed = true
     end
@@ -55,6 +55,19 @@ module ActiveTriples
     # @return [true] true if the save did not error
     def persist!
       raise NotImplementedError, 'Abstract method #persist! is unimplemented'
+    end
+
+    ##
+    # @param graph [RDF::Graph]
+    # @return [RDF::Graph]
+    def graph=(graph)
+      @graph = graph
+    end
+
+    ##
+    # @return [RDF::Graph]
+    def graph
+      @graph ||= RDF::Graph.new
     end
 
     ##
