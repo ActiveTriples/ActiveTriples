@@ -34,7 +34,7 @@ module ActiveTriples
     attr_reader :reflections
 
     delegate :<=>, :==, :===, :[], :each, :empty?, :equal, :inspect, :last,
-       :to_a, :to_ary, :size, :join, :length, :to => :result
+       :to_a, :to_ary, :size, :join, :length, :+, :to => :result
 
     ##
     # @param [ActiveTriples::RDFSource] parent_source
@@ -354,15 +354,15 @@ module ActiveTriples
       end
 
       def set_value(val)
-        val = value_to_node(val.respond_to?(:resource) ? val.resource : val)
-        if val.kind_of? RDFSource
-          node_cache[val.rdf_subject] = nil
-          add_child_node(val)
+        resource = value_to_node(val.respond_to?(:resource) ? val.resource : val)
+        if resource.kind_of? RDFSource
+          node_cache[resource.rdf_subject] = nil
+          add_child_node(val, resource)
           return
         end
-        val = val.to_uri if val.respond_to? :to_uri
-        raise ValueError, val unless val.kind_of? RDF::Term
-        parent.insert [rdf_subject, predicate, val]
+        resource = resource.to_uri if resource.respond_to? :to_uri
+        raise ValueError, resource unless resource.kind_of? RDF::Term
+        parent.insert [rdf_subject, predicate, resource]
       end
 
       def type_property
@@ -373,19 +373,21 @@ module ActiveTriples
         valid_datatype?(val) ? RDF::Literal(val) : val
       end
 
-      def add_child_node(resource)
+      def add_child_node(object, resource)
         parent.insert [rdf_subject, predicate, resource.rdf_subject]
+        resource = resource.respond_to?(:resource) ? resource.resource : resource
 
-        resource = resource.dup
-        unless resource == parent ||
+        new_resource = resource.dup unless object.respond_to?(:resource) && object.resource == resource
+        new_resource ||= resource
+        unless new_resource == parent ||
                (parent.persistence_strategy.is_a?(ParentStrategy) &&
-                parent.persistence_strategy.ancestors.find { |a| a == resource })
-          resource.set_persistence_strategy(ParentStrategy)
-          resource.parent = parent
+                parent.persistence_strategy.ancestors.find { |a| a == new_resource })
+          new_resource.set_persistence_strategy(ParentStrategy)
+          new_resource.parent = parent
         end
 
-        self.node_cache[resource.rdf_subject] = resource
-        resource.persist! if resource.persistence_strategy.is_a? ParentStrategy
+        self.node_cache[resource.rdf_subject] = (resource == object ? new_resource : object)
+        new_resource.persist! if new_resource.persistence_strategy.is_a? ParentStrategy
       end
 
       def valid_datatype?(val)

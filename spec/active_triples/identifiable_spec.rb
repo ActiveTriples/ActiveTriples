@@ -155,5 +155,15 @@ describe ActiveTriples::Identifiable do
         expect(subject.rdf_subject).to eq 'http://example.org/ns/123'
       end
     end
+
+    describe "adding it as a property for an AT Resource" do
+      include_context 'with data'
+      it "returns the same in-memory object added" do
+        resource = MyResource.new
+        resource.relation = subject
+
+        expect(resource.relation).to eq [subject]
+      end
+    end
   end
 end
