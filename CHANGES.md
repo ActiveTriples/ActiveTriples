@@ -1,3 +1,10 @@
+0.10.0
+----
+  - Fix Identifiable for ActiveFedora [Trey Pendragon]
+  - Upgrade to RDF.rb 2.0.2 [Tom Johnson]
+  - Avoid touching each_statement on initialization [Tom Johnson]
+  - Drop support for Ruby 2.0
+
 0.9.0
 -----
  - Upgrade to RDF.rb 2.0
