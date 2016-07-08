@@ -95,6 +95,7 @@ module ActiveTriples
     #
     # @return [true] true if the save did not error
     def persist!
+      return false if final_parent.frozen?
       erase_old_resource
       final_parent << source
       @persisted = true
@@ -105,6 +106,7 @@ module ActiveTriples
     #
     # @return [Boolean]
     def reload
+      return false if source.frozen?
       if loaded? || !persisted?
         source << final_parent.query(subject: source.rdf_subject)
       else
