@@ -14,7 +14,7 @@ Gem::Specification.new do |s|
   s.license     = "APACHE2"
   s.required_ruby_version = '>= 2.1.0'
 
-  s.add_dependency 'rdf',           '~> 2.0'
+  s.add_dependency 'rdf',           '~> 2.0', '>= 2.0.2'
   s.add_dependency 'linkeddata',    '~> 2.0'
   s.add_dependency 'activemodel',   '>= 3.0.0'
   s.add_dependency 'deprecation',   '~> 1.0'
