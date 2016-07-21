@@ -1,5 +1,4 @@
 # frozen_string_literal: true
-require 'deprecation'
 require 'active_support/core_ext/array/wrap'
 
 module ActiveTriples
@@ -15,7 +14,6 @@ module ActiveTriples
   #
   # Available properties are base_uri, rdf_label, type, and repository
   module Configurable
-    extend Deprecation
     def base_uri
       configuration[:base_uri]
     end
