@@ -17,7 +17,6 @@ Gem::Specification.new do |s|
   s.add_dependency 'rdf',           '~> 2.0', '>= 2.0.2'
   s.add_dependency 'rdf-vocab'
   s.add_dependency 'activemodel',   '>= 3.0.0'
-  s.add_dependency 'deprecation',   '~> 1.0'
   s.add_dependency 'activesupport', '>= 3.0.0'
 
   s.add_development_dependency 'rdoc'

@@ -1,6 +1,4 @@
 # frozen_string_literal: true
-require 'deprecation'
-
 module ActiveTriples
   ##
   # Defines a generic RDF `Resource` as an `ActiveTriples::Entity`. This
