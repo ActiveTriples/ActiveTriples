@@ -60,9 +60,7 @@ describe ActiveTriples::BufferedTransaction do
     end
   end
 
-  shared_examples 'an optimist' do
-    
-  end
+  shared_examples 'an optimist' do; end
 
   # @see lib/rdf/spec/transaction.rb in rdf-spec
   it_behaves_like 'an RDF::Transaction', ActiveTriples::BufferedTransaction

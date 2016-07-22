@@ -1,11 +1,8 @@
+require 'active_triples/util/extended_bounded_description'
+
 module ActiveTriples
   ##
   # A buffered trasaction for use with `ActiveTriples::ParentStrategy`.
-  #
-  # Reads are projected onto a specialized "Extended Bounded Description" 
-  # subgraph. Compare to Concise Bounded Description 
-  # (https://www.w3.org/Submission/CBD/), the common subgraph scope used for 
-  # SPARQL DESCRIBE queries.
   #
   # If an `ActiveTriples::RDFSource` instance is passed as the underlying 
   # repository, this transaction will try to find an existing 
@@ -15,7 +12,13 @@ module ActiveTriples
   #
   # If a `RDF::Transaction::TransactionError` is raised on commit, this 
   # transaction optimistically attempts to replay the changes.
-  class BufferedTransaction < RDF::Repository::Implementation::SerializedTransaction
+  #
+  # Reads are projected onto a specialized "Extended Bounded Description" 
+  # subgraph. 
+  #
+  # @see ActiveTriples::Util::ExtendedBoundedDescription
+  class BufferedTransaction < 
+        RDF::Repository::Implementation::SerializedTransaction
     # @!attribute snapshot [r]
     #   @return RDF::Dataset
     # @!attribute subject [r]
@@ -117,38 +120,7 @@ module ActiveTriples
     
     def read_target
       return super unless subject
-      extended_bounded_description(super, subject, ancestors.dup)
-    end
-
-    ##
-    # By analogy to Concise Bounded Description.
-    #
-    # Include in the subgraph:
-    #  1. All statements in the source graph where the subject of the statement 
-    #     is the starting node.
-    #  2. Recursively, for all statements already in the subgraph, include in 
-    #     the subgraph the Extended Bounded Description for each object node, 
-    #     unless the object is in the ancestor's list.
-    #
-    # @param target    [RDF::Queryable]
-    # @param subject   [RDF::Term]
-    # @param ancestors [Array<RDF::Term>]
-    #
-    # @return [RDF::Enumerable, RDF::Queryable]
-    def extended_bounded_description(target, subject, ancestors)
-      statements = RDF::Repository.new << target.query(subject: subject)
-
-      ancestors ||= []
-      ancestors << subject
-
-      statements.each_object do |object|
-        next if object.literal?  || ancestors.include?(object)
-
-        statements << extended_bounded_description(target, object, ancestors)
-        ancestors  << object
-      end
-
-      statements
+      ExtendedBoundedDescription.new(super, subject, ancestors)
     end
   end
 end
