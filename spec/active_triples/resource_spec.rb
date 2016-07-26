@@ -94,7 +94,7 @@ describe ActiveTriples::Resource do
 
       it 'should not be settable' do
         expect{ subject.set_subject! RDF::URI('http://example.org/moomin2') }
-          .to raise_error 'Refusing update URI when one is already assigned!'
+          .to raise_error 'Refusing to update URI when one is already assigned!'
       end
     end
 
