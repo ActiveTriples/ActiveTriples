@@ -51,41 +51,16 @@ module ActiveTriples
     end
 
     ##
-    # Empties the `Relation`, deleting any associated triples from `parent`.
+    # Adds values to the result set
     #
-    # @return [Relation] self; a now empty relation
-    def clear
-      parent.delete([rdf_subject, predicate, nil])
-
-      self
-    end
-
-    ##
-    # Adds values to the relation
-    #
-    # @param [Array<RDF::Resource>, RDF::Resource] values  an array of values
-    #   or a single value. If not an {RDF::Resource}, the values will be
-    #   coerced to an {RDF::Literal} or {RDF::Node} by {RDF::Statement}
+    # @param values [Object, Array<Object>] values to add
     #
     # @return [Relation] a relation containing the set values; i.e. `self`
-    #
-    # @raise [ActiveTriples::UndefinedPropertyError] if the property is not
-    #   already an {RDF::Term} and is not defined in `#property_config`
-    #
-    # @see http://www.rubydoc.info/github/ruby-rdf/rdf/RDF/Statement For
-    #   documentation on {RDF::Statement} and the handling of
-    #   non-{RDF::Resource} values.
-    def set(values)
-      raise UndefinedPropertyError.new(property, reflections) if predicate.nil?
-      values = values.to_a if values.is_a? Relation
-      values = [values].compact unless values.kind_of?(Array)
-
-      clear
-      values.each { |val| set_value(val) }
-
-      parent.persist! if parent.persistence_strategy.is_a? ParentStrategy
-      self
+    def <<(values)
+      values = Array.wrap(result) | Array.wrap(values)
+      self.set(values)
     end
+    alias_method :push, :<<
 
     ##
     # Builds a node with the given attributes, adding it to the relation.
@@ -148,6 +123,16 @@ module ActiveTriples
     end
 
     ##
+    # Empties the `Relation`, deleting any associated triples from `parent`.
+    #
+    # @return [Relation] self; a now empty relation
+    def clear
+      parent.delete([rdf_subject, predicate, nil])
+
+      self
+    end
+
+    ##
     # @note this method behaves somewhat differently from `Array#delete`. 
     #   It succeeds on deletion of non-existing values, always returning
     #   `self` unless an error is raised. There is no option to pass a block 
@@ -201,6 +186,56 @@ module ActiveTriples
     end
 
     ##
+    # Gives the predicate used by the Relation. Values of this object are
+    # those that match the pattern `<rdf_subject> <predicate> [value] .`
+    #
+    # @return [RDF::Term, nil] the predicate for this relation; nil if
+    #   no predicate can be found
+    #
+    # @see #property
+    def predicate
+      return property if property.is_a?(RDF::Term)
+      property_config[:predicate] if is_property?
+    end
+
+    ##
+    # Returns the property for the Relation. This may be a registered
+    # property key or an {RDF::URI}.
+    #
+    # @return [Symbol, RDF::URI]  the property for this Relation.
+    # @see #predicate
+    def property
+      value_arguments.last
+    end
+
+    ##
+    # Adds values to the relation
+    #
+    # @param [Array<RDF::Resource>, RDF::Resource] values  an array of values
+    #   or a single value. If not an {RDF::Resource}, the values will be
+    #   coerced to an {RDF::Literal} or {RDF::Node} by {RDF::Statement}
+    #
+    # @return [Relation] a relation containing the set values; i.e. `self`
+    #
+    # @raise [ActiveTriples::UndefinedPropertyError] if the property is not
+    #   already an {RDF::Term} and is not defined in `#property_config`
+    #
+    # @see http://www.rubydoc.info/github/ruby-rdf/rdf/RDF/Statement For
+    #   documentation on {RDF::Statement} and the handling of
+    #   non-{RDF::Resource} values.
+    def set(values)
+      raise UndefinedPropertyError.new(property, reflections) if predicate.nil?
+      values = values.to_a if values.is_a? Relation
+      values = [values].compact unless values.kind_of?(Array)
+
+      clear
+      values.each { |val| set_value(val) }
+
+      parent.persist! if parent.persistence_strategy.is_a? ParentStrategy
+      self
+    end
+
+    ##
     # @overload subtract(enum)
     #   Deletes objects in the enumerable from the relation
     #   @param values [Enumerable] an enumerable of objects to delete
@@ -234,41 +269,6 @@ module ActiveTriples
     # @return [Relation] self
     def swap(swap_out, swap_in)
       self.<<(swap_in) if delete?(swap_out)
-    end
-
-    ##
-    # Adds values to the result set
-    #
-    # @param values [Object, Array<Object>] values to add
-    #
-    # @return [Relation] a relation containing the set values; i.e. `self`
-    def <<(values)
-      values = Array.wrap(result) | Array.wrap(values)
-      self.set(values)
-    end
-    alias_method :push, :<<
-
-    ##
-    # Returns the property for the Relation. This may be a registered
-    # property key or an {RDF::URI}.
-    #
-    # @return [Symbol, RDF::URI]  the property for this Relation.
-    # @see #predicate
-    def property
-      value_arguments.last
-    end
-
-    ##
-    # Gives the predicate used by the Relation. Values of this object are
-    # those that match the pattern `<rdf_subject> <predicate> [value] .`
-    #
-    # @return [RDF::Term, nil] the predicate for this relation; nil if
-    #   no predicate can be found
-    #
-    # @see #property
-    def predicate
-      return property if property.is_a?(RDF::Term)
-      property_config[:predicate] if is_property?
     end
 
     protected
