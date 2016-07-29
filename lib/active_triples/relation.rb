@@ -21,6 +21,7 @@ module ActiveTriples
   # @see RDF::Term
   class Relation
     include Enumerable
+    include Comparable
 
     # @!attribute [rw] parent
     #   @return [RDFSource] the resource that is the domain of this relation
@@ -33,8 +34,8 @@ module ActiveTriples
     attr_accessor :parent, :value_arguments, :rel_args
     attr_reader :reflections
 
-    delegate :<=>, :==, :===, :[], :each, :empty?, :equal, :inspect, :last,
-       :to_a, :to_ary, :size, :join, :length, :+, :to => :result
+    delegate :+, :<=>, :[], :empty?, :inspect, :last, :size, :join, :length, 
+       :to => :to_a
 
     ##
     # @param [ActiveTriples::RDFSource] parent_source
@@ -57,7 +58,7 @@ module ActiveTriples
     #
     # @return [Relation] a relation containing the set values; i.e. `self`
     def <<(values)
-      values = Array.wrap(result) | Array.wrap(values)
+      values = to_a | Array.wrap(values)
       self.set(values)
     end
     alias_method :push, :<<
@@ -133,17 +134,17 @@ module ActiveTriples
     end
 
     ##
-    # @note this method behaves somewhat differently from `Array#delete`. 
+    # @note this method behaves somewhat differently from `Array#delete`.
     #   It succeeds on deletion of non-existing values, always returning
-    #   `self` unless an error is raised. There is no option to pass a block 
-    #   to evaluate if the value is not present. This is because access for 
+    #   `self` unless an error is raised. There is no option to pass a block
+    #   to evaluate if the value is not present. This is because access for
     #   `value` depends on query time. i.e. the `Relation` set does not have an
     #   underlying efficient data structure allowing a reliably cheap existence
     #   check.
     #
-    # @note symbols are treated as RDF::Nodes by default in 
+    # @note symbols are treated as RDF::Nodes by default in
     #   `RDF::Mutable#delete`, but may also represent tokens in statements.
-    #   This casts symbols to a literals, which gets us symmetric behavior 
+    #   This casts symbols to a literals, which gets us symmetric behavior
     #   between `#set(:sym)` and `#delete(:sym)`.
     #
     # @example deleting a value
@@ -157,7 +158,7 @@ module ActiveTriples
     #   resource.title = 'moomin'
     #   resource.title.delete('valley') # => ["moomin"]
     #   resource.title # => ['moomin']
-    # 
+    #
     # @param value [Object] the value to delete from the relation
     # @return [ActiveTriples::Relation] self
     def delete(value)
@@ -168,12 +169,12 @@ module ActiveTriples
     end
 
     ##
-    # A variation on `#delete`. This queries the relation for matching 
+    # A variation on `#delete`. This queries the relation for matching
     # values before running the deletion, returning `nil` if it does not exist.
     #
     # @param value [Object] the value to delete from the relation
     #
-    # @return [Object, nil] `nil` if the value doesn't exist; the value 
+    # @return [Object, nil] `nil` if the value doesn't exist; the value
     #   otherwise
     # @see #delete
     def delete?(value)
@@ -183,6 +184,58 @@ module ActiveTriples
 
       delete(value)
       value
+    end
+
+    ##
+    # Gives a result set for the `Relation`.
+    #
+    # By default, `RDF::URI` and `RDF::Node` results are cast to `RDFSource`.
+    # `Literal` results are given as their `#object` representations (e.g.
+    # `String`, `Date`.
+    #
+    # @example results with default casting
+    #   parent << [parent.rdf_subject, predicate, 'my value']
+    #   parent << [parent.rdf_subject, predicate, Date.today]
+    #   parent << [parent.rdf_subject, predicate, RDF::URI('http://ex.org/#me')]
+    #   parent << [parent.rdf_subject, predicate, RDF::Node.new]
+    #   relation.to_a
+    #   # => ["my_value",
+    #   #     Fri, 25 Sep 2015,
+    #   #     #<ActiveTriples::Resource:0x3f8...>,
+    #   #     #<ActiveTriples::Resource:0x3f8...>]
+    #
+    # When `cast?` is `false`, `RDF::Resource` values are left in their raw
+    # form. Similarly, when `#return_literals?` is `true`, literals are
+    # returned in their `RDF::Literal` form, preserving language tags,
+    # datatype, and value.
+    #
+    # @example results with `cast?` set to `false`
+    #   relation.to_a
+    #   # => ["my_value",
+    #   #     Fri, 25 Sep 2015,
+    #   #     #<RDF::URI:0x3f8... URI:http://ex.org/#me>,
+    #   #     #<RDF::Node:0x3f8...(_:g69843536054680)>]
+    #
+    # @example results with `return_literals?` set to `true`
+    #   relation.to_a
+    #   # => [#<RDF::Literal:0x3f8...("my_value")>,
+    #   #     #<RDF::Literal::Date:0x3f8...("2015-09-25"^^<http://www.w3.org/2001/XMLSchema#date>)>,
+    #   #     #<ActiveTriples::Resource:0x3f8...>,
+    #   #     #<ActiveTriples::Resource:0x3f8...>]
+    #
+    # @return [Enumerator<Object>] the result set
+    def each
+      return [] if predicate.nil?
+
+      if block_given?
+        parent.query(:subject => rdf_subject,
+                     :predicate => predicate).each do |x|
+          converted_object = convert_object(x.object)
+          yield converted_object unless converted_object.nil?
+        end
+      end
+      
+      to_enum
     end
 
     ##
@@ -245,7 +298,7 @@ module ActiveTriples
     #
     # @return [Relation] self
     #
-    # @note This casts symbols to a literals, which gets us symmetric behavior 
+    # @note This casts symbols to a literals, which gets us symmetric behavior
     #   with `#set(:sym)`.
     # @see #delete
     def subtract(*values)
@@ -254,18 +307,18 @@ module ActiveTriples
         value = RDF::Literal(value) if value.is_a? Symbol
         [rdf_subject, predicate, value]
       end
-      
+
       parent.delete(*statements)
       self
     end
 
     ##
-    # Replaces the first argument with the second as a value within the 
+    # Replaces the first argument with the second as a value within the
     # relation.
     #
     # @param swap_out [Object] the value to delete
     # @param swap_in  [Object] the replacement value
-    # 
+    #
     # @return [Relation] self
     def swap(swap_out, swap_in)
       self.<<(swap_in) if delete?(swap_out)
@@ -298,58 +351,8 @@ module ActiveTriples
       # @return [Hash<Symbol, ]
       def property_config
         return type_property if is_type?
-        
-        reflections.reflect_on_property(property)
-      end
 
-      ##
-      # @private
-      #
-      # Gives an {Array} containing the result set for the {Relation}.
-      #
-      # By default, {RDF::URI} and {RDF::Node} results are cast to `RDFSource`.
-      # {Literal} results are given as their `#object` representations (e.g.
-      # {String}, {Date}.
-      #
-      # @example results with default casting
-      #   parent << [parent.rdf_subject, predicate, 'my value']
-      #   parent << [parent.rdf_subject, predicate, Date.today]
-      #   parent << [parent.rdf_subject, predicate, RDF::URI('http://ex.org/#me')]
-      #   parent << [parent.rdf_subject, predicate, RDF::Node.new]
-      #   relation.result
-      #   # => ["my_value",
-      #   #     Fri, 25 Sep 2015,
-      #   #     #<ActiveTriples::Resource:0x3f8...>,
-      #   #     #<ActiveTriples::Resource:0x3f8...>]
-      #
-      # When `cast?` is `false`, {RDF::Resource} values are left in their raw
-      # form. Similarly, when `#return_literals?` is `true`, literals are
-      # returned in their {RDF::Literal} form, preserving language tags,
-      # datatype, and value.
-      #
-      # @example results with `cast?` set to `false`
-      #   relation.result
-      #   # => ["my_value",
-      #   #     Fri, 25 Sep 2015,
-      #   #     #<RDF::URI:0x3f8... URI:http://ex.org/#me>,
-      #   #     #<RDF::Node:0x3f8...(_:g69843536054680)>]
-      #
-      # @example results with `return_literals?` set to `true`
-      #   relation.result
-      #   # => [#<RDF::Literal:0x3f8...("my_value")>,
-      #   #     #<RDF::Literal::Date:0x3f8...("2015-09-25"^^<http://www.w3.org/2001/XMLSchema#date>)>,
-      #   #     #<ActiveTriples::Resource:0x3f8...>,
-      #   #     #<ActiveTriples::Resource:0x3f8...>]
-      #
-      # @return [Array<Object>] the result set
-      def result
-        return [] if predicate.nil?
-        statements = parent.query(:subject => rdf_subject,
-                                  :predicate => predicate)
-        statements.each_with_object([]) do |x, collector|
-          converted_object = convert_object(x.object)
-          collector << converted_object unless converted_object.nil?
-        end
+        reflections.reflect_on_property(property)
       end
 
       ##
@@ -408,7 +411,7 @@ module ActiveTriples
 
       ##
       # Converts an object to the appropriate class.
-      # 
+      #
       # @private
       def convert_object(value)
         case value
@@ -436,7 +439,7 @@ module ActiveTriples
         value = RDF::Node.new if value.nil?
         node = node_cache[value] if node_cache[value]
         node ||= klass.from_uri(value,parent)
-        node.set_persistence_strategy(property_config[:persist_to]) if 
+        node.set_persistence_strategy(property_config[:persist_to]) if
           is_property? && property_config[:persist_to]
         return nil if (is_property? && property_config[:class_name]) && (class_for_value(value) != class_for_property)
         self.node_cache[value] ||= node
