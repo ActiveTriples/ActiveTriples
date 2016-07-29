@@ -23,6 +23,8 @@ module ActiveTriples
     include Enumerable
     include Comparable
 
+    TYPE_PROPERTY = { predicate: RDF.type, cast: false }.freeze
+
     # @!attribute [rw] parent
     #   @return [RDFSource] the resource that is the domain of this relation
     # @!attribute [rw] value_arguments
@@ -34,7 +36,7 @@ module ActiveTriples
     attr_accessor :parent, :value_arguments, :rel_args
     attr_reader :reflections
 
-    delegate :+, :<=>, :[], :empty?, :inspect, :last, :size, :join, :length, 
+    delegate :<=>, :+, :[], :empty?, :inspect, :last, :size, :join, :length, 
        :to => :to_a
 
     ##
@@ -362,7 +364,7 @@ module ActiveTriples
       # @private
       # @return [Hash<Symbol, ]
       def property_config
-        return type_property if is_type?
+        return TYPE_PROPERTY if is_type?
 
         reflections.reflect_on_property(property)
       end
@@ -379,12 +381,6 @@ module ActiveTriples
         resource = resource.to_uri if resource.respond_to? :to_uri
         raise ValueError, resource unless resource.kind_of? RDF::Term
         parent.insert [rdf_subject, predicate, resource]
-      end
-
-      ##
-      # @private
-      def type_property
-        { :predicate => RDF.type, :cast => false }
       end
 
       ##
