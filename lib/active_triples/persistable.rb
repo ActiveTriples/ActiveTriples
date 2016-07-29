@@ -77,19 +77,16 @@ module ActiveTriples
     end
 
     ##
-    # Sends a persistence message to the persistence_startegy, saving the
-    # RDFSource.
+    # Sends a persistence message to the `persistence_startegy`, saving the
+    # `Persistable`.
     #
     # @return [Boolean]
     def persist!(opts={})
-      return if @persisting
       result = false
       return result if opts[:validate] && !valid?
-      @persisting = true
       run_callbacks :persist do
         result = persistence_strategy.persist!
       end
-      @persisting = false
       result
     end
 
