@@ -27,13 +27,6 @@ module ActiveTriples
       persistence_strategy.graph
     end
 
-    ##
-    # @see RDF::Enumerable.each
-    def each(*args)
-      graph.each(*args)
-    end
-
-    ##
     # @see RDF::Writable.insert_statement
     def insert_statement(*args)
       graph.send(:insert_statement, *args)
