@@ -221,7 +221,7 @@ describe ActiveTriples::Relation do
 
       it 'clears the relation' do
         expect { subject.clear }
-          .to change { subject.result }
+          .to change { subject.to_a }
           .from(['moomin']).to(be_empty)
       end
 
@@ -308,39 +308,12 @@ describe ActiveTriples::Relation do
     end
   end
 
-  describe '#first_or_create' do
-    let(:parent_resource) { ActiveTriples::Resource.new }
-
-    context 'with symbol' do
-      include_context 'with symbol property'
-
-      it 'creates a new node' do
-        expect { subject.first_or_create }.to change { subject.count }.by(1)
-      end
-
-      it 'returns existing node if present' do
-        node = subject.build
-        expect(subject.first_or_create).to eq node
-      end
-
-      it 'does not create a new node when one exists' do
-        subject.build
-        expect { subject.first_or_create }.not_to change { subject.count }
-      end
-
-      it 'returns literal value if appropriate' do
-        subject << literal = 'moomin'
-        expect(subject.first_or_create).to eq literal
-      end
-    end
-  end
-
   describe '#result' do
     context 'with nil predicate' do
       include_context 'with unregistered property'
 
       it 'is empty' do
-        expect(subject.result).to be_empty
+        expect(subject.send(:result)).to be_empty
       end
     end
 
@@ -350,7 +323,7 @@ describe ActiveTriples::Relation do
       end
 
       it 'is empty' do
-        expect(subject.result).to be_empty
+        expect(subject.send(:result)).to be_empty
       end
 
       context 'with values' do
@@ -364,7 +337,7 @@ describe ActiveTriples::Relation do
         let(:node)   { RDF::Node.new }
 
         it 'contain values' do
-          expect(subject.result).to contain_exactly(*values)
+          expect(subject.send(:result)).to contain_exactly(*values)
         end
 
         context 'with castable values' do
@@ -373,14 +346,14 @@ describe ActiveTriples::Relation do
           end
 
           it 'casts Resource values' do
-            expect(subject.result)
+            expect(subject.send(:result))
               .to contain_exactly(a_kind_of(ActiveTriples::Resource),
                                   a_kind_of(ActiveTriples::Resource),
                                   a_kind_of(ActiveTriples::Resource))
           end
 
           it 'cast values have correct URI' do
-            expect(subject.result.map(&:rdf_subject))
+            expect(subject.send(:result).map(&:rdf_subject))
               .to contain_exactly(*values)
           end
 
@@ -393,7 +366,7 @@ describe ActiveTriples::Relation do
             end
 
             it 'assigns persistence strategy' do
-              subject.result.each do |node|
+              subject.send(:result).each do |node|
                 expect(node.persistence_strategy)
                   .to be_a ActiveTriples::RepositoryStrategy
               end
@@ -408,7 +381,7 @@ describe ActiveTriples::Relation do
 
             it 'does not cast results' do
               allow(subject).to receive(:cast?).and_return(false)
-              expect(subject.result).to contain_exactly(*values)
+              expect(subject.send(:result)).to contain_exactly(*values)
             end
           end
 
@@ -420,7 +393,7 @@ describe ActiveTriples::Relation do
             it 'does not cast results' do
               allow(subject).to receive(:return_literals?).and_return(true)
 
-              expect(subject.result).to contain_exactly(*values)
+              expect(subject.send(:result)).to contain_exactly(*values)
             end
           end
         end

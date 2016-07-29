@@ -61,54 +61,6 @@ module ActiveTriples
     end
 
     ##
-    # Gives an {Array} containing the result set for the {Relation}.
-    #
-    # By default, {RDF::URI} and {RDF::Node} results are cast to `RDFSource`.
-    # {Literal} results are given as their `#object` representations (e.g.
-    # {String}, {Date}.
-    #
-    # @example results with default casting
-    #   parent << [parent.rdf_subject, predicate, 'my value']
-    #   parent << [parent.rdf_subject, predicate, Date.today]
-    #   parent << [parent.rdf_subject, predicate, RDF::URI('http://ex.org/#me')]
-    #   parent << [parent.rdf_subject, predicate, RDF::Node.new]
-    #   relation.result
-    #   # => ["my_value",
-    #   #     Fri, 25 Sep 2015,
-    #   #     #<ActiveTriples::Resource:0x3f8...>,
-    #   #     #<ActiveTriples::Resource:0x3f8...>]
-    #
-    # When `cast?` is `false`, {RDF::Resource} values are left in their raw
-    # form. Similarly, when `#return_literals?` is `true`, literals are
-    # returned in their {RDF::Literal} form, preserving language tags,
-    # datatype, and value.
-    #
-    # @example results with `cast?` set to `false`
-    #   relation.result
-    #   # => ["my_value",
-    #   #     Fri, 25 Sep 2015,
-    #   #     #<RDF::URI:0x3f8... URI:http://ex.org/#me>,
-    #   #     #<RDF::Node:0x3f8...(_:g69843536054680)>]
-    #
-    # @example results with `return_literals?` set to `true`
-    #   relation.result
-    #   # => [#<RDF::Literal:0x3f8...("my_value")>,
-    #   #     #<RDF::Literal::Date:0x3f8...("2015-09-25"^^<http://www.w3.org/2001/XMLSchema#date>)>,
-    #   #     #<ActiveTriples::Resource:0x3f8...>,
-    #   #     #<ActiveTriples::Resource:0x3f8...>]
-    #
-    # @return [Array<Object>] the result set
-    def result
-      return [] if predicate.nil?
-      statements = parent.query(:subject => rdf_subject,
-                                :predicate => predicate)
-      statements.each_with_object([]) do |x, collector|
-        converted_object = convert_object(x.object)
-        collector << converted_object unless converted_object.nil?
-      end
-    end
-
-    ##
     # Adds values to the relation
     #
     # @param [Array<RDF::Resource>, RDF::Resource] values  an array of values
@@ -276,23 +228,12 @@ module ActiveTriples
     # Replaces the first argument with the second as a value within the 
     # relation.
     #
-    # @example
-    #   
-    #
     # @param swap_out [Object] the value to delete
     # @param swap_in  [Object] the replacement value
     # 
     # @return [Relation] self
     def swap(swap_out, swap_in)
       self.<<(swap_in) if delete?(swap_out)
-    end
-
-    ##
-    # @return [Object] the first result, if present; else a newly built node
-    #
-    # @see #build
-    def first_or_create(attributes={})
-      result.first || build(attributes)
     end
 
     ##
@@ -306,15 +247,6 @@ module ActiveTriples
       self.set(values)
     end
     alias_method :push, :<<
-
-    ##
-    # @return [Hash<Symbol, ]
-    # @todo find a way to simplify this?
-    def property_config
-      return type_property if is_type?
-      
-      reflections.reflect_on_property(property)
-    end
 
     ##
     # Returns the property for the Relation. This may be a registered
@@ -341,19 +273,87 @@ module ActiveTriples
 
     protected
 
+      ##
+      # @private
       def node_cache
         @node_cache ||= {}
       end
 
+    private
+      ##
+      # @private
       def is_property?
         reflections.has_property?(property) || is_type?
       end
 
+      ##
+      # @private
       def is_type?
         (property == RDF.type || property.to_s == "type") &&
         (!reflections.kind_of?(RDFSource) || !is_property?)
       end
 
+      ##
+      # @private
+      # @return [Hash<Symbol, ]
+      def property_config
+        return type_property if is_type?
+        
+        reflections.reflect_on_property(property)
+      end
+
+      ##
+      # @private
+      #
+      # Gives an {Array} containing the result set for the {Relation}.
+      #
+      # By default, {RDF::URI} and {RDF::Node} results are cast to `RDFSource`.
+      # {Literal} results are given as their `#object` representations (e.g.
+      # {String}, {Date}.
+      #
+      # @example results with default casting
+      #   parent << [parent.rdf_subject, predicate, 'my value']
+      #   parent << [parent.rdf_subject, predicate, Date.today]
+      #   parent << [parent.rdf_subject, predicate, RDF::URI('http://ex.org/#me')]
+      #   parent << [parent.rdf_subject, predicate, RDF::Node.new]
+      #   relation.result
+      #   # => ["my_value",
+      #   #     Fri, 25 Sep 2015,
+      #   #     #<ActiveTriples::Resource:0x3f8...>,
+      #   #     #<ActiveTriples::Resource:0x3f8...>]
+      #
+      # When `cast?` is `false`, {RDF::Resource} values are left in their raw
+      # form. Similarly, when `#return_literals?` is `true`, literals are
+      # returned in their {RDF::Literal} form, preserving language tags,
+      # datatype, and value.
+      #
+      # @example results with `cast?` set to `false`
+      #   relation.result
+      #   # => ["my_value",
+      #   #     Fri, 25 Sep 2015,
+      #   #     #<RDF::URI:0x3f8... URI:http://ex.org/#me>,
+      #   #     #<RDF::Node:0x3f8...(_:g69843536054680)>]
+      #
+      # @example results with `return_literals?` set to `true`
+      #   relation.result
+      #   # => [#<RDF::Literal:0x3f8...("my_value")>,
+      #   #     #<RDF::Literal::Date:0x3f8...("2015-09-25"^^<http://www.w3.org/2001/XMLSchema#date>)>,
+      #   #     #<ActiveTriples::Resource:0x3f8...>,
+      #   #     #<ActiveTriples::Resource:0x3f8...>]
+      #
+      # @return [Array<Object>] the result set
+      def result
+        return [] if predicate.nil?
+        statements = parent.query(:subject => rdf_subject,
+                                  :predicate => predicate)
+        statements.each_with_object([]) do |x, collector|
+          converted_object = convert_object(x.object)
+          collector << converted_object unless converted_object.nil?
+        end
+      end
+
+      ##
+      # @private
       def set_value(val)
         resource = value_to_node(val.respond_to?(:resource) ? val.resource : val)
         if resource.kind_of? RDFSource
@@ -366,14 +366,20 @@ module ActiveTriples
         parent.insert [rdf_subject, predicate, resource]
       end
 
+      ##
+      # @private
       def type_property
         { :predicate => RDF.type, :cast => false }
       end
 
+      ##
+      # @private
       def value_to_node(val)
         valid_datatype?(val) ? RDF::Literal(val) : val
       end
 
+      ##
+      # @private
       def add_child_node(object, resource)
         parent.insert [rdf_subject, predicate, resource.rdf_subject]
         resource = resource.respond_to?(:resource) ? resource.resource : resource
@@ -391,6 +397,8 @@ module ActiveTriples
         self.node_cache[resource.rdf_subject] = (resource == object ? new_resource : object)
       end
 
+      ##
+      # @private
       def valid_datatype?(val)
         case val
         when String, Date, Time, Numeric, Symbol, TrueClass, FalseClass then true
@@ -398,7 +406,10 @@ module ActiveTriples
         end
       end
 
+      ##
       # Converts an object to the appropriate class.
+      # 
+      # @private
       def convert_object(value)
         case value
         when RDFSource
@@ -417,6 +428,8 @@ module ActiveTriples
       #
       # Builds the resource from the class_name specified for the
       # property.
+      #
+      # @private
       def make_node(value)
         return value unless cast?
         klass = class_for_value(value)
@@ -430,16 +443,22 @@ module ActiveTriples
         node
       end
 
+      ##
+      # @private
       def cast?
         return true unless is_property? || (rel_args && rel_args[:cast])
         return rel_args[:cast] if rel_args.has_key?(:cast)
         !!property_config[:cast]
       end
 
+      ##
+      # @private
       def return_literals?
         rel_args && rel_args[:literal]
       end
 
+      ##
+      # @private
       def final_parent
         @final_parent ||= begin
           parent = self.parent
@@ -451,16 +470,22 @@ module ActiveTriples
         end
       end
 
+      ##
+      # @private
       def class_for_value(v)
         uri_class(v) || class_for_property
       end
 
+      ##
+      # @private
       def uri_class(v)
         v = RDF::URI.new(v) if v.kind_of? String
         type_uri = parent.query([v, RDF.type, nil]).to_a.first.try(:object)
         Resource.type_registry[type_uri]
       end
 
+      ##
+      # @private
       def class_for_property
         klass = property_config[:class_name] if is_property?
         klass ||= Resource
@@ -470,6 +495,7 @@ module ActiveTriples
       end
 
       ##
+      # @private
       # @return [RDF::Term] the subject of the relation
       def rdf_subject
         if value_arguments.length < 1 || value_arguments.length > 2
