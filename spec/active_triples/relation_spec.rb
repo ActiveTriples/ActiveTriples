@@ -3,38 +3,43 @@ require 'spec_helper'
 require 'rdf/isomorphic'
 
 describe ActiveTriples::Relation do
-  let(:parent_resource) { double("parent resource", reflections: {}) }
-  let(:value_args) { double("value args", last: {}) }
+  let(:parent_resource) { double('parent resource', reflections: {}) }
+  let(:value_args)      { double('value args', last: {}) }
 
   let(:uri) { RDF::URI('http://example.org/moomin') }
 
-  subject { described_class.new(parent_resource,  value_args) }
+  subject { described_class.new(parent_resource, value_args) }
 
   shared_context 'with URI property' do
-    subject { described_class.new(parent_resource, [property] ) }
+    subject { described_class.new(parent_resource, [property]) }
+
     let(:property) { uri }
   end
 
   shared_context 'with symbol property' do
-    subject { described_class.new(parent_resource, [property] ) }
+    subject { described_class.new(parent_resource, [property]) }
+
     let(:property) { :moomin }
-    let(:reflections) do 
+
+    let(:reflections) do
       Class.new do
         include ActiveTriples::RDFSource
+
         property :moomin, predicate: RDF::URI('http://example.org/moomin')
       end
     end
-    
+
     before do
       allow(parent_resource).to receive(:reflections).and_return(reflections)
     end
   end
 
   shared_context 'with unregistered property' do
-    subject { described_class.new(parent_resource, [property] ) }
-    let(:property) { :moomin }
+    subject { described_class.new(parent_resource, [property]) }
+
+    let(:property)    { :moomin }
     let(:reflections) { Class.new { include ActiveTriples::RDFSource } }
-    
+
     before do
       allow(parent_resource).to receive(:reflections).and_return(reflections)
     end
@@ -61,15 +66,16 @@ describe ActiveTriples::Relation do
       uri = 'http://example.com/moomin'
       expect(subject.build(id: uri)).to be_uri
     end
-    
+
     context 'with configured properties' do
       include_context 'with symbol property' do
-        before do 
+        before do
           reflections.property :moomin,
                                predicate:  RDF::Vocab::DC.relation,
                                class_name: 'WithTitle'
           class WithTitle
             include ActiveTriples::RDFSource
+
             property :title, predicate: RDF::Vocab::DC.title
           end
         end
@@ -79,7 +85,7 @@ describe ActiveTriples::Relation do
 
       it 'sets attributes for built node' do
         attributes = { title: 'moomin' }
-        
+
         expect(subject.build(attributes))
           .to have_attributes(title: ['moomin'])
       end
@@ -109,28 +115,28 @@ describe ActiveTriples::Relation do
       it 'deletes a matched value' do
         expect { subject.delete(values.first) }
           .to change { subject.to_a }
-               .to contain_exactly(*values[1..-1])
+          .to contain_exactly(*values[1..-1])
       end
 
       it 'deletes a URI value' do
         values.delete(uri)
         expect { subject.delete(uri) }
           .to change { subject.to_a }
-               .to contain_exactly(*values)
+          .to contain_exactly(*values)
       end
 
       it 'deletes a node value' do
         values.delete(node)
         expect { subject.delete(node) }
           .to change { subject.to_a }
-               .to contain_exactly(*values)
+          .to contain_exactly(*values)
       end
 
       it 'deletes a token value' do
         values.delete(:one)
         expect { subject.delete(:one) }
           .to change { subject.to_a }
-               .to contain_exactly(*values)
+          .to contain_exactly(*values)
       end
     end
   end
@@ -160,16 +166,16 @@ describe ActiveTriples::Relation do
     include_context 'with symbol property'
 
     let(:parent_resource) { ActiveTriples::Resource.new }
-    
+
     it 'subtracts values as arguments' do
-      subject.set([1,2,3])
-      expect { subject.subtract(2,3) }
+      subject.set([1, 2, 3])
+      expect { subject.subtract(2, 3) }
         .to change { subject.to_a }.to contain_exactly(1)
     end
 
     it 'subtracts values as an enumerable' do
-      subject.set([1,2,3])
-      expect { subject.subtract([2,3]) }
+      subject.set([1, 2, 3])
+      expect { subject.subtract([2, 3]) }
         .to change { subject.to_a }.to contain_exactly(1)
     end
 
@@ -184,7 +190,7 @@ describe ActiveTriples::Relation do
     include_context 'with symbol property'
 
     let(:parent_resource) { ActiveTriples::Resource.new }
-    
+
     it 'returns nil when the value is not present' do
       expect(subject.swap(1, 2)).to be_nil
     end
@@ -203,18 +209,20 @@ describe ActiveTriples::Relation do
 
   describe '#clear' do
     include_context 'with symbol property'
+
     let(:parent_resource) { ActiveTriples::Resource.new }
 
     context 'with values' do
       before do
-        subject.parent << [subject.parent.rdf_subject, 
-                           subject.predicate, 
+        subject.parent << [subject.parent.rdf_subject,
+                           subject.predicate,
                            'moomin']
-      end        
+      end
 
       it 'clears the relation' do
-        expect { subject.clear }.to change { subject.result }
-                                     .from(['moomin']).to([])
+        expect { subject.clear }
+          .to change { subject.result }
+          .from(['moomin']).to(be_empty)
       end
 
       it 'deletes statements from parent' do
@@ -224,7 +232,7 @@ describe ActiveTriples::Relation do
           .to change { subject.parent.query(query_pattern) }.to([])
       end
     end
-    
+
     it 'is a no-op when relation is empty' do
       subject.parent << [subject.parent.rdf_subject, RDF.type, 'moomin']
       expect { subject.clear }.not_to change { subject.parent.statements.to_a }
@@ -233,8 +241,9 @@ describe ActiveTriples::Relation do
 
   describe '#<<' do
     include_context 'with symbol property'
+
     let(:parent_resource) { ActiveTriples::Resource.new }
-    
+
     it 'adds a value' do
       expect { subject << :moomin }
         .to change { subject.to_a }.to contain_exactly(:moomin)
@@ -247,7 +256,7 @@ describe ActiveTriples::Relation do
     end
   end
 
-  describe "#predicate" do
+  describe '#predicate' do
     context 'when the property is an RDF::Term' do
       include_context 'with URI property'
 
@@ -266,13 +275,14 @@ describe ActiveTriples::Relation do
 
     context 'when the symbol property is unregistered' do
       include_context 'with unregistered property'
+
       it 'returns nil' do
         expect(subject.predicate).to be_nil
       end
     end
   end
-  
-  describe "#property" do
+
+  describe '#property' do
     context 'when the property is an RDF::Term' do
       include_context 'with URI property'
 
@@ -303,7 +313,7 @@ describe ActiveTriples::Relation do
 
     context 'with symbol' do
       include_context 'with symbol property'
-      
+
       it 'creates a new node' do
         expect { subject.first_or_create }.to change { subject.count }.by(1)
       end
@@ -328,19 +338,19 @@ describe ActiveTriples::Relation do
   describe '#result' do
     context 'with nil predicate' do
       include_context 'with unregistered property'
-      
+
       it 'is empty' do
-        expect(subject.result).to contain_exactly()
+        expect(subject.result).to be_empty
       end
     end
-    
+
     context 'with predicate' do
       include_context 'with symbol property' do
         let(:parent_resource) { ActiveTriples::Resource.new }
       end
 
       it 'is empty' do
-        expect(subject.result).to contain_exactly()
+        expect(subject.result).to be_empty
       end
 
       context 'with values' do
@@ -351,7 +361,7 @@ describe ActiveTriples::Relation do
         end
 
         let(:values) { ['Comet in Moominland', 'Finn Family Moomintroll'] }
-        let(:node) { RDF::Node.new }
+        let(:node)   { RDF::Node.new }
 
         it 'contain values' do
           expect(subject.result).to contain_exactly(*values)
@@ -377,11 +387,11 @@ describe ActiveTriples::Relation do
           context 'and persistence_strategy is configured' do
             before do
               reflections
-                .property :moomin, 
-                          predicate: RDF::URI('http://example.org/moomin'), 
+                .property :moomin,
+                          predicate: RDF::URI('http://example.org/moomin'),
                           persist_to: ActiveTriples::RepositoryStrategy
             end
-            
+
             it 'assigns persistence strategy' do
               subject.result.each do |node|
                 expect(node.persistence_strategy)
@@ -389,11 +399,11 @@ describe ActiveTriples::Relation do
               end
             end
           end
-          
+
           context 'and #cast? is false' do
             let(:values) do
               [uri, RDF::URI('http://ex.org/too-ticky'), RDF::Node.new,
-              'moomin', Date.today]
+               'moomin', Date.today]
             end
 
             it 'does not cast results' do
@@ -409,6 +419,7 @@ describe ActiveTriples::Relation do
 
             it 'does not cast results' do
               allow(subject).to receive(:return_literals?).and_return(true)
+
               expect(subject.result).to contain_exactly(*values)
             end
           end
@@ -417,46 +428,46 @@ describe ActiveTriples::Relation do
     end
   end
 
-  describe "#rdf_subject" do
-    let(:parent_resource) { double("parent resource", reflections: {}) }
+  describe '#rdf_subject' do
+    let(:parent_resource) { double('parent resource', reflections: {}) }
 
-    subject { described_class.new(parent_resource, double("value args") ) }
+    subject { described_class.new(parent_resource, double('value args')) }
 
-    context "when relation has 0 value arguments" do
+    context 'when relation has 0 value arguments' do
       before { subject.value_arguments = double(length: 0) }
 
-      it "should raise an error" do
+      it 'should raise an error' do
         expect { subject.send(:rdf_subject) }.to raise_error ArgumentError
       end
     end
 
-    context "when term has 1 value argument" do
+    context 'when term has 1 value argument' do
       before do
-        allow(subject.parent).to receive(:rdf_subject) { "parent subject" }
+        allow(subject.parent).to receive(:rdf_subject) { 'parent subject' }
         subject.value_arguments = double(length: 1)
       end
 
       it "should call `rdf_subject' on the parent" do
-        expect(subject.send(:rdf_subject) ).to eq "parent subject"
+        expect(subject.send(:rdf_subject)).to eq 'parent subject'
       end
 
-      it " is a private method" do
+      it 'is a private method' do
         expect { subject.rdf_subject }.to raise_error NoMethodError
       end
     end
 
-    context "when relation has 2 value arguments" do
-      before { subject.value_arguments = double(length: 2, first: "first") }
+    context 'when relation has 2 value arguments' do
+      before { subject.value_arguments = double(length: 2, first: 'first') }
 
-      it "should return the first value argument" do
-        expect(subject.send(:rdf_subject) ).to eq "first"
+      it 'should return the first value argument' do
+        expect(subject.send(:rdf_subject)).to eq 'first'
       end
     end
 
-    context "when relation has 3 value arguments" do
+    context 'when relation has 3 value arguments' do
       before { subject.value_arguments = double(length: 3) }
 
-      it "should raise an error" do
+      it 'should raise an error' do
         expect { subject.send(:rdf_subject) }.to raise_error ArgumentError
       end
     end
@@ -476,7 +487,7 @@ describe ActiveTriples::Relation do
           end
         end
 
-        it "returns the size of the result" do
+        it 'returns the size of the result' do
           expect(subject.size).to eq 2
         end
 
@@ -489,7 +500,7 @@ describe ActiveTriples::Relation do
 
   describe '#set' do
     include_context 'with unregistered property'
-    
+
     it 'raises UndefinedPropertyError' do
       expect { subject.set('x') }
         .to raise_error ActiveTriples::UndefinedPropertyError
@@ -514,14 +525,16 @@ describe ActiveTriples::Relation do
       context 'and persistence config' do
         before do
           reflections
-            .property :moomin, 
-                      predicate: RDF::URI('http://example.org/moomin'), 
+            .property :moomin,
+                      predicate: RDF::URI('http://example.org/moomin'),
                       persist_to: ActiveTriples::RepositoryStrategy
         end
 
         it 'returns values with persistence strategy set' do
           expect(subject.set(RDF::Node.new).map(&:persistence_strategy))
-            .to contain_exactly(an_instance_of(ActiveTriples::RepositoryStrategy))
+            .to contain_exactly(
+              an_instance_of(ActiveTriples::RepositoryStrategy)
+            )
         end
       end
     end
@@ -542,70 +555,88 @@ describe ActiveTriples::Relation do
           end
         end
 
-        it "returns joined strings" do
-          expect(subject.join(", "))
-            .to satisfy { |v| sp = v.split(', ').include?("Comet in Moominland") &&
-                          v.split(', ').include?("Finn Family Moomintroll") }
+        it 'returns joined strings' do
+          expect(subject.join(', ')).to satisfy do |v|
+            v.split(', ').include?('Comet in Moominland') &&
+              v.split(', ').include?('Finn Family Moomintroll')
+          end
         end
       end
     end
   end
 
-  describe "#valid_datatype?" do
-    subject { described_class.new(double("parent", reflections: []), "value" ) }
-    before { allow(subject.parent).to receive(:rdf_subject) { "parent subject" } }
-    context "the value is not a Resource" do
-      it "should be true if value is a String" do
-        expect(subject.send(:valid_datatype?, "foo")).to be true
+  describe '#valid_datatype?' do
+    before do
+      allow(subject.parent).to receive(:rdf_subject) { 'parent subject' }
+    end
+
+    subject { described_class.new(double('parent', reflections: []), 'value') }
+
+    context 'the value is not a Resource' do
+      it 'should be true if value is a String' do
+        expect(subject.send(:valid_datatype?, 'foo')).to be true
       end
-      it "should be true if value is a Symbol" do
+
+      it 'should be true if value is a Symbol' do
         expect(subject.send(:valid_datatype?, :foo)).to be true
       end
-      it "should be true if the value is a Numeric" do
-        expect(subject.send(:valid_datatype?, 1)).to be true
+
+      it 'should be true if the value is a Numeric' do
+        expect(subject.send(:valid_datatype?, 1)).to   be true
         expect(subject.send(:valid_datatype?, 0.1)).to be true
       end
-      it "should be true if the value is a Date" do
+
+      it 'should be true if the value is a Date' do
         expect(subject.send(:valid_datatype?, Date.today)).to be true
       end
-      it "should be true if the value is a Time" do
+
+      it 'should be true if the value is a Time' do
         expect(subject.send(:valid_datatype?, Time.now)).to be true
       end
-      it "should be true if the value is a boolean" do
+
+      it 'should be true if the value is a boolean' do
         expect(subject.send(:valid_datatype?, false)).to be true
-        expect(subject.send(:valid_datatype?, true)).to be true
+        expect(subject.send(:valid_datatype?, true)).to  be true
       end
     end
 
-    context "the value is a Resource" do
+    context 'the value is a Resource' do
       after { Object.send(:remove_const, :DummyResource) }
+
       let(:resource) { DummyResource.new }
-      context "and the resource class does not include RDF::Isomorphic" do
+
+      context 'and the resource class does not include RDF::Isomorphic' do
         before { class DummyResource; include ActiveTriples::RDFSource; end }
-        it "should be false" do
+
+        it 'should be false' do
           expect(subject.send(:valid_datatype?, resource)).to be false
         end
       end
-      context "and the resource class includes RDF:Isomorphic" do
+
+      context 'and the resource class includes RDF:Isomorphic' do
         before do
           class DummyResource
             include ActiveTriples::RDFSource
             include RDF::Isomorphic
           end
         end
-        it "should be false" do
+
+        it 'should be false' do
           expect(subject.send(:valid_datatype?, resource)).to be false
         end
       end
-      context "and the resource class includes RDF::Isomorphic and aliases :== to :isomorphic_with?" do
+
+      context 'and aliases #== to #isomorphic_with?' do
         before do
           class DummyResource
             include ActiveTriples::RDFSource
             include RDF::Isomorphic
-            alias_method :==, :isomorphic_with?
+
+            alias == isomorphic_with?
           end
         end
-        it "should be false" do
+
+        it 'should be false' do
           expect(subject.send(:valid_datatype?, resource)).to be false
         end
       end
