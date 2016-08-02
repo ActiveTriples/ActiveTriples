@@ -1,4 +1,6 @@
 # frozen_string_literal: true
+require 'active_triples/util/buffered_transaction'
+
 module ActiveTriples
   ##
   # Persistence strategy for projecting `RDFSource`s onto the graph of an owning
@@ -17,7 +19,29 @@ module ActiveTriples
     # @param source [RDFSource, RDF::Enumerable] the `RDFSource` (or other
     #   `RDF::Enumerable` to persist with the strategy.
     def initialize(source)
+      @graph  = source.graph
       @source = source
+    end
+
+    ##
+    # @see PeristenceStrategy#graph=
+    def graph=(graph)
+      final_parent.insert(graph || source.to_a)
+      @graph = BufferedTransaction.begin(parent, 
+                                         mutable:   true,
+                                         subject:   source.to_term)
+    end
+
+    ##
+    # @return [ActiveTriples::BufferedTransaction] a transaction on parent with 
+    #   buffered changes, with reads projected against an "Extended Bounded 
+    #   Description" of the strategy's `#source`.
+    #
+    # @see ActiveTriples::ExtendedBoundedDescription
+    def graph
+      @graph ||= BufferedTransaction.begin(parent, 
+                                           mutable:   true,
+                                           subject:   source.to_term)
     end
 
     ##
@@ -30,40 +54,22 @@ module ActiveTriples
     end
 
     ##
-    # Indicates if the resource has been loaded from the repository (used for lazy load)
-    #
-    # @return [Boolean] true if loaded; else false.
-    def loaded?
-      @loaded ||= false
-    end
-
-    ##
     # Destroys the resource by removing it graph and references from the
     # parent.
     #
     # @see PersistenceStrategy#destroy
     def destroy
-      final_parent.delete(source.statements)
-
-      parent.statements.each do |statement|
-        parent.delete_statement(statement) if
-          statement.subject == source.rdf_subject || 
-          statement.object == source.rdf_subject
+      super do
+        graph.delete  [source.to_term, nil, nil]
+        parent.delete [parent, nil, source.to_term]
       end
-
-      super { source.clear }
     end
 
     ##
     # @abstract Clear out any old assertions in the datastore / repository 
-    # about this node  or statement thus preparing to receive the updated 
+    # about this node or statement thus preparing to receive the updated 
     # assertions.
-    def erase_old_resource
-      final_parent.statements.each do |statement|
-        final_parent.send(:delete_statement, statement) if
-          statement.subject == source.rdf_subject
-      end
-    end
+    def erase_old_resource; end # noop
 
     ##
     # @return [Enumerator<RDFSource>]
@@ -87,7 +93,9 @@ module ActiveTriples
     def parent=(parent)
       raise UnmutableParentError unless parent.is_a? RDF::Mutable
       raise UnmutableParentError unless parent.mutable?
+
       @parent = parent
+      reload
     end
 
     ##
@@ -95,9 +103,16 @@ module ActiveTriples
     #
     # @return [true] true if the save did not error
     def persist!
+      raise NilParentError unless parent
       return false if final_parent.frozen?
-      erase_old_resource
-      final_parent << source
+
+      graph.execute
+
+      parent.persist! if 
+        ancestors.find { |a| a.is_a?(ActiveTriples::List::ListResource) }
+
+      reload
+
       @persisted = true
     end
 
@@ -107,14 +122,12 @@ module ActiveTriples
     # @return [Boolean]
     def reload
       return false if source.frozen?
-      if loaded? || !persisted?
-        source << final_parent.query(subject: source.rdf_subject)
-      else
-        RepositoryStrategy.new(source).reload
-        source.persist!
-        @loaded=true
-      end
-      @persisted = true unless source.empty?
+
+      final_parent.persistence_strategy.class.new(source).reload
+      self.graph = source.to_a
+
+      @persisted = true unless graph.empty?
+
       true
     end
 
@@ -132,7 +145,7 @@ module ActiveTriples
       def initialize(source)
         @source = source
       end
-      
+
       ##
       # @yield [RDFSource] gives each ancestor to the block
       # @return [Enumerator<RDFSource>]

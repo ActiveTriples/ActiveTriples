@@ -44,8 +44,9 @@ module ActiveTriples
       self.parent = parent_source
       @reflections = parent_source.reflections
       self.rel_args ||= {}
-      self.rel_args = value_arguments.pop if value_arguments.is_a?(Array) &&
-                                             value_arguments.last.is_a?(Hash)
+      self.rel_args = value_arguments.pop if 
+        value_arguments.is_a?(Array) && value_arguments.last.is_a?(Hash)
+
       self.value_arguments = value_arguments
     end
 
@@ -384,10 +385,10 @@ module ActiveTriples
                 parent.persistence_strategy.ancestors.find { |a| a == new_resource })
           new_resource.set_persistence_strategy(ParentStrategy)
           new_resource.parent = parent
+          new_resource.persist!
         end
 
         self.node_cache[resource.rdf_subject] = (resource == object ? new_resource : object)
-        new_resource.persist! if new_resource.persistence_strategy.is_a? ParentStrategy
       end
 
       def valid_datatype?(val)

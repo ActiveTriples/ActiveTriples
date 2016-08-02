@@ -64,10 +64,7 @@ module ActiveTriples
     # appropriate.
     def each(&block)
       return super unless block_given?
-
-      super do |value|
-        block.call(node_from_value(value))
-      end
+      super { |value| yield node_from_value(value) }
     end
 
     ##

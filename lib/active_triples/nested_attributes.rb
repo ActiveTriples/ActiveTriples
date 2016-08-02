@@ -37,15 +37,15 @@ module ActiveTriples
     #     { name: 'John' },
     #     { id: '2', _destroy: true }
     #   ])
-    def assign_nested_attributes_for_collection_association(association_name, attributes_collection)
+    def assign_nested_attributes_for_collection_association(association_name, 
+                                                            attributes_collection)
       options = self.nested_attributes_options[association_name]
 
       # TODO
       #check_record_limit!(options[:limit], attributes_collection)
 
-      if attributes_collection.is_a?(Hash)
-        attributes_collection = attributes_collection.values
-      end
+      attributes_collection = attributes_collection.values if 
+        attributes_collection.is_a?(Hash)
 
       association = self.send(association_name)
 
@@ -53,8 +53,9 @@ module ActiveTriples
         attributes = attributes.with_indifferent_access
 
         if !call_reject_if(association_name, attributes)
-          if attributes['id'] && existing_record = association.detect { |record| record.rdf_subject.to_s == attributes['id'].to_s }
-              assign_to_or_mark_for_destruction(existing_record, attributes, options[:allow_destroy])
+          if attributes['id'] && 
+             existing_record = association.detect { |record| record.rdf_subject.to_s == attributes['id'].to_s }
+            assign_to_or_mark_for_destruction(existing_record, attributes, options[:allow_destroy])
           else
             association.build(attributes.except(*UNASSIGNABLE_KEYS))
           end
@@ -66,7 +67,9 @@ module ActiveTriples
     # +allow_destroy+ is +true+ and has_destroy_flag? returns +true+.
     def assign_to_or_mark_for_destruction(record, attributes, allow_destroy)
       record.attributes = attributes.except(*UNASSIGNABLE_KEYS)
-      record.mark_for_destruction if has_destroy_flag?(attributes) && allow_destroy
+
+      record.mark_for_destruction if has_destroy_flag?(attributes) && 
+                                     allow_destroy
     end
 
     def call_reject_if(association_name, attributes)

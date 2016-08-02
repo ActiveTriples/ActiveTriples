@@ -6,11 +6,10 @@ describe ActiveTriples::ParentStrategy do
   let(:rdf_source) { BasicPersistable.new }
   
   shared_context 'with a parent' do
+    subject      { rdf_source.persistence_strategy }
     let(:parent) { BasicPersistable.new }
 
     before do
-      subject.parent = parent
-
       rdf_source.set_persistence_strategy(described_class)
       rdf_source.persistence_strategy.parent = parent
     end
@@ -54,8 +53,7 @@ describe ActiveTriples::ParentStrategy do
     
     let(:statements) do
       [RDF::Statement(subject.source.rdf_subject, RDF::Vocab::DC.title, 'moomin'),
-       RDF::Statement(:node, RDF::Vocab::DC.relation, subject.source.rdf_subject),
-       RDF::Statement(:node, RDF::Vocab::DC.relation, :other_node)]
+       RDF::Statement(subject.parent, RDF::Vocab::DC.relation, subject.source.rdf_subject)]
     end
 
     it 'removes graph from the parent' do
@@ -176,12 +174,61 @@ describe ActiveTriples::ParentStrategy do
     context 'with parent' do
       include_context 'with a parent'
 
-      it 'writes to #final_parent graph' do
-        rdf_source << [RDF::Node.new, RDF::Vocab::DC.title, 'moomin']
+      let(:parent_st) { RDF::Statement(parent,     RDF::URI(:p), rdf_source) }
+      let(:child_st)  { RDF::Statement(rdf_source, RDF::URI(:p), 'chld') }
 
-        subject.persist!
-        expect(subject.final_parent.statements)
-          .to contain_exactly *rdf_source.statements
+      it 'writes to #parent graph' do
+        rdf_source << child_st
+
+        expect { subject.persist! }
+          .to change { subject.parent.statements }
+               .to contain_exactly *rdf_source.statements
+      end
+
+      it 'writes to #parent graph when parent changes while child is live' do
+        parent.insert(parent_st)
+        parent.persist!
+
+        rdf_source.insert(child_st)
+
+        expect { subject.persist! }
+          .to change { parent.statements }
+               .from(contain_exactly(parent_st))
+               .to(contain_exactly(parent_st, child_st))
+      end
+
+      context 'with nested parents' do
+        let(:last) { BasicPersistable.new }
+
+        before do
+          parent.set_persistence_strategy(ActiveTriples::ParentStrategy)
+          parent.persistence_strategy.parent = last
+          rdf_source.reload
+        end
+        
+        it 'writes to #parent graph when parent changes while child is live' do
+          parent.insert(parent_st)
+          parent.persist!
+
+          rdf_source.insert(child_st)
+
+          expect { subject.persist! }
+            .to change { parent.statements }
+                 .from(contain_exactly(parent_st))
+                 .to(contain_exactly(parent_st, child_st))
+        end
+
+        it 'writes to #last graph when persisting' do
+          parent.insert(parent_st)
+          parent.persist!
+
+          rdf_source.insert(child_st)
+
+          expect { subject.persist!; parent.persist! }
+            .to change { last.statements }
+                 .from(contain_exactly(parent_st))
+                 .to(contain_exactly(parent_st, child_st))
+        end
       end
     end
   end
@@ -200,7 +247,7 @@ describe ActiveTriples::ParentStrategy::Ancestors do
 
     context 'with parents' do
       let(:parent) { BasicPersistable.new }
-      let(:last) { BasicPersistable.new }
+      let(:last)   { BasicPersistable.new }
       
       before do
         parent.set_persistence_strategy(ActiveTriples::ParentStrategy)

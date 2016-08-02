@@ -100,7 +100,7 @@ module ActiveTriples
         persistence_strategy.parent = args.shift
       end
 
-      @graph = RDF::Graph.new(*args, &block)
+      persistence_strategy.graph = RDF::Graph.new(*args, &block)
       reload
 
       # Append type to graph if necessary.
@@ -144,7 +144,7 @@ module ActiveTriples
     #
     #   resource.creator.build
     #   resource.title << ['Comet in Moominland', 'Christmas in Moominvalley']
-
+    #
     #   resource.attributes
     #   # => {"id"=>"g47123700054720",
     #   #     "title"=>["Comet in Moominland", "Christmas in Moominvalley"],
@@ -171,15 +171,16 @@ module ActiveTriples
     def attributes=(values)
       raise(ArgumentError, "values must be a Hash. Got: #{values.class}") unless
         values.is_a? Hash
+
       values = values.with_indifferent_access
       id = values.delete(:id)
-      set_subject!(id) if node?
+      set_subject!(id) if node? && id && get_uri(id).uri?
+
       values.each do |key, value|
         if reflections.has_property?(key)
-          set_value(rdf_subject, key, value)
+          set_value(key, value)
         elsif nested_attributes_options
-              .keys
-              .map { |k| "#{k}_attributes" }.include?(key)
+               .keys.find { |k| key == "#{k}_attributes" }
           send("#{key}=".to_sym, value)
         else
           raise ArgumentError, "No association found for name `#{key}'. " \
@@ -492,8 +493,6 @@ module ActiveTriples
     # @see #get_values
     # @todo deprecate and remove? this is an alias to `#get_values`
     def get_relation(args)
-      reload if (persistence_strategy.respond_to? :loaded?) &&
-                !persistence_strategy.loaded?
       @relation_cache ||= {}
       rel = Relation.new(self, args)
       @relation_cache["#{rel.send(:rdf_subject)}/#{rel.property}/#{rel.rel_args}"] ||= rel
@@ -543,19 +542,6 @@ module ActiveTriples
     end
 
     private
-
-    ##
-    # This gives the {RDF::Graph} which represents the current state of this
-    # resource.
-    #
-    # @return [RDF::Graph] the underlying graph representation of the
-    #   `RDFSource`.
-    #
-    # @see http://www.w3.org/TR/2014/REC-rdf11-concepts-20140225/#change-over-time
-    #   RDF Concepts and Abstract Syntax comment on "RDF source"
-    def graph
-      @graph
-    end
 
     ##
     # Lists fields registered as properties on the object.
@@ -618,21 +604,19 @@ module ActiveTriples
     # @param [RDF::Term] new_subject
     # @return [void]
     def rewrite_statement_uris(old_subject, new_subject)
-      graph.transaction(mutable: true) do |tx|
-        tx.query(subject: old_subject).each do |st|
-          tx.delete(st)
+      graph.query(subject: old_subject).each do |st|
+        graph.delete(st)
 
-          st.subject = new_subject
-          st.object  = new_subject if st.object == old_subject
-          tx.insert(st)
-        end
+        st.subject = new_subject
+        st.object  = new_subject if st.object == old_subject
+        graph.insert(st)
+      end
 
-        tx.query(object: old_subject).each do |st|
-          tx.delete(st)
+      graph.query(object: old_subject).each do |st|
+        graph.delete(st)
 
-          st.object = new_subject
-          tx.insert(st)
-        end
+        st.object = new_subject
+        graph.insert(st)
       end
     end
 
