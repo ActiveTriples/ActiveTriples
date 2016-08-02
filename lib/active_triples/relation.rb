@@ -541,7 +541,6 @@ module ActiveTriples
                 parent.persistence_strategy.ancestors.find { |a| a == new_resource })
           new_resource.set_persistence_strategy(ParentStrategy)
           new_resource.parent = parent
-          new_resource.persist!
         end
 
         self.node_cache[resource.rdf_subject] = (resource == object ? new_resource : object)
