@@ -239,6 +239,18 @@ module ActiveTriples
     end
 
     ##
+    # @deprecated for removal in 1.0.0. Use `first || build({})`,
+    #   `build({}) if empty?` or similar logic.
+    #
+    # @return [Object] the first result, if present; else a newly built node
+    #
+    # @see #build
+    def first_or_create(attributes={})
+      warn 'DEPRECATION: #first_or_create is deprecated for removal in 1.0.0.'
+      first || build(attributes)
+    end
+
+    ##
     # Gives the predicate used by the Relation. Values of this object are
     # those that match the pattern `<rdf_subject> <predicate> [value] .`
     #
