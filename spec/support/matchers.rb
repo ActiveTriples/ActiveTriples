@@ -13,3 +13,11 @@ RSpec::Matchers.define :be_a_relation_containing do |*expected|
   end
 end
 
+RSpec::Matchers.define :have_rdf_subject do |expected|
+  match do |actual|
+    expect(actual).to be_a ActiveTriples::RDFSource
+    expect(actual.to_term).to eq expected.to_term
+    true
+  end
+end
+

@@ -45,6 +45,147 @@ describe ActiveTriples::Relation do
     end
   end
 
+  shared_context 'with other relation' do
+    let(:other_class) do
+      Class.new do
+        include ActiveTriples::RDFSource
+        property :snork, predicate: RDF::URI('http://example.org/snork')
+      end
+    end
+
+    let(:other)          { described_class.new(other_parent, other_args) }
+    let(:other_args)     { [other_property] }
+    let(:other_parent)   { other_class.new }
+    let(:other_property) { :snork }
+  end
+
+  [:&, :|, :+].each do |array_method|
+    describe "#{array_method}" do
+      shared_examples 'array method behavior' do
+        it "behaves like `Array##{array_method}`" do
+          expect(subject.send(array_method.to_sym, other_array))
+            .to contain_exactly(*subject.to_a.send(array_method.to_sym,
+                                                   other_array.to_a))
+        end
+      end
+
+      context 'with #to_ary as argument' do
+        include_context 'with symbol property'
+
+        let(:parent_resource) { ActiveTriples::Resource.new }
+
+        context 'when empty' do
+          context 'with empty other' do
+            it_behaves_like 'array method behavior' do
+              let(:other_array) { [] }
+            end
+          end
+
+          context 'with values in other' do
+            it_behaves_like 'array method behavior' do
+              let(:other_array) { [1, 'two', RDF::URI('uri'), RDF::Node.new] }
+            end
+          end
+        end
+
+        context 'with values' do
+          before { subject << [RDF::Node.new, 'two', 3] }
+
+          context 'with empty other' do
+            it_behaves_like 'array method behavior' do
+              let(:other_array) { [] }
+            end
+          end
+
+          context 'with values in other' do
+            it_behaves_like 'array method behavior' do
+              let(:other_array) { [1, 'two', RDF::URI('uri'), RDF::Node.new] }
+            end
+          end
+        end
+      end
+    end
+  end
+
+  describe '#&' do
+    context 'with relation as argument' do
+      include_context 'with symbol property'
+      let(:parent_resource) { ActiveTriples::Resource.new }
+
+      include_context 'with other relation'
+
+      it { expect(subject & other).to be_empty }
+
+      it 'handles node equality' do
+        node = RDF::Node.new
+
+        subject << [1, node]
+        other   << [2, node]
+
+        expect(subject & other).to contain_exactly(have_rdf_subject(node))
+      end
+
+      it 'handles literal equality' do
+        literal      = RDF::Literal('mummi')
+        lang_literal = RDF::Literal('mummi', language: :fi)
+        
+        subject << [1, literal]
+        other   << [2, lang_literal]
+        
+        expect(subject & other).to be_empty
+        
+        subject << [1, lang_literal]
+        expect(subject & other).to contain_exactly 'mummi'
+      end
+    end
+  end
+
+  describe '#|' do
+    context 'with relation as argument' do
+      include_context 'with symbol property'
+      let(:parent_resource) { ActiveTriples::Resource.new }
+
+      include_context 'with other relation'
+    
+      it 'handles node equality' do
+        node = RDF::Node.new
+
+        subject << [1, node]
+        other   << [2, node]
+
+        expect(subject | other).to contain_exactly(1, 2, have_rdf_subject(node))
+      end
+
+      it 'handles literal equality' do
+        literal      = RDF::Literal('mummi')
+        lang_literal = RDF::Literal('mummi', language: :fi)
+        
+        subject << [1, literal]
+        other   << [2, lang_literal]
+
+        expect(subject | other).to contain_exactly('mummi', 'mummi', 1, 2)
+      end
+    end
+  end
+
+  describe '#+' do
+    context 'with relation as argument' do
+      include_context 'with symbol property'
+      let(:parent_resource) { ActiveTriples::Resource.new }
+
+      include_context 'with other relation'
+      
+      it 'still implements as ' do
+        subject << [RDF::Node.new, RDF::Node.new, 
+                    RDF::Literal('mummi'), RDF::Literal('mummi', language: :fi)]
+        other   << [RDF::Node.new, RDF::Node.new,
+                    RDF::Literal('mummi'), RDF::Literal('mummi', language: :fi)]
+
+        expect(subject + other).to contain_exactly(*(subject.to_a + other.to_a))
+      end
+    end
+  end
+
   describe '#<=>' do
     include_context 'with symbol property'
 
@@ -101,27 +242,17 @@ describe ActiveTriples::Relation do
       end
     end
 
-    context 'when other is a Resource' do
-      let(:other_class) do
-        Class.new do
-          include ActiveTriples::RDFSource
-          property :snork, predicate: RDF::URI('http://example.org/snork')
-        end
-      end
-
-      let(:other_parent) { other_class.new }
-      let(:other_args)   { [:snork] }
-      let(:other)        { described_class.new(other_parent, other_args) }
-
+    context 'when other is a Relation' do
+      include_context 'with other relation'
       it_behaves_like 'a comparable relation'
 
       context 'and without cast' do
-        let(:other_args)   { [:snork, cast: false] }
+        let(:other_args)   { [other_property, cast: false] }
         it_behaves_like 'a comparable relation'
       end
 
       context 'and with return_literals' do
-        let(:other_args)   { [:snork, return_literals: true] }
+        let(:other_args)   { [other_property, return_literals: true] }
         it_behaves_like 'a comparable relation'
       end
     end

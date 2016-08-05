@@ -36,7 +36,7 @@ module ActiveTriples
     attr_accessor :parent, :value_arguments, :rel_args
     attr_reader :reflections
 
-    delegate :+, :[], :inspect, :last, :size, :join, to: :to_a
+    delegate :[], :inspect, :last, :size, :join, to: :to_a
 
     ##
     # @param [ActiveTriples::RDFSource] parent_source
@@ -53,8 +53,50 @@ module ActiveTriples
     end
 
     ##
-    # Mimics `Set#<=>`, returning `0` when set membership is equivalent, and
-    # `nil` (as non-comparable) otherwise. Unlike `Set#<=>`, uses `#==` for
+    # @param array [#to_ary, ActiveTriples::Relation]
+    # @return [Array]
+    #
+    # @note simply passes to `Array#&` unless argument is a `Relation`
+    #
+    # @see Array#&
+    def &(array)
+      return to_a & array unless array.is_a? Relation
+
+      (objects.to_a & array.objects.to_a)
+        .map { |object| convert_object(object) }
+    end
+    
+    ##
+    # @param array [#to_ary, ActiveTriples::Relation]
+    # @return [Array]
+    #
+    # @note simply passes to `Array#|` unless argument is a `Relation`
+    #
+    # @see Array#|
+    def |(array)
+      return to_a | array unless array.is_a? Relation
+      
+      (objects.to_a | array.objects.to_a)
+        .map { |object| convert_object(object) }
+    end
+
+    ##
+    # @param array [#to_ary, ActiveTriples::Relation]
+    # @return [Array]
+    #
+    # @note simply passes to `Array#+` unless argument is a `Relation`
+    #
+    # @see Array#+
+    def +(array)
+      return to_a + array unless array.is_a? Relation
+
+      (objects.to_a + array.objects.to_a)
+        .map { |object| convert_object(object) }
+    end
+
+    ##
+    # Mimics `Set#<=>`, returning `0` when set membership is equivalent, and 
+    # `nil` (as non-comparable) otherwise. Unlike `Set#<=>`, uses `#==` for 
     # member comparisons.
     #
     # @param [Object] other
