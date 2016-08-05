@@ -36,8 +36,7 @@ module ActiveTriples
     attr_accessor :parent, :value_arguments, :rel_args
     attr_reader :reflections
 
-    delegate :<=>, :+, :[], :empty?, :inspect, :last, :size, :join, :length, 
-       :to => :to_a
+    delegate :+, :[], :inspect, :last, :size, :join, to: :to_a
 
     ##
     # @param [ActiveTriples::RDFSource] parent_source
@@ -47,10 +46,46 @@ module ActiveTriples
       self.parent = parent_source
       @reflections = parent_source.reflections
       self.rel_args ||= {}
-      self.rel_args = value_arguments.pop if 
+      self.rel_args = value_arguments.pop if
         value_arguments.is_a?(Array) && value_arguments.last.is_a?(Hash)
 
       self.value_arguments = value_arguments
+    end
+
+    ##
+    # Mimics `Set#<=>`, returning `0` when set membership is equivalent, and
+    # `nil` (as non-comparable) otherwise. Unlike `Set#<=>`, uses `#==` for
+    # member comparisons.
+    #
+    # @param [Object] other
+    #
+    # @see Set#<=>
+    def <=>(other)
+      return nil unless other.respond_to?(:each)
+
+      if empty?
+        return 0 if other.each.first.nil?
+        return nil
+      end
+
+      # We'll need to traverse `other` repeatedly, so we get a stable `Array`
+      # representation. This avoids any repeated query cost if `other` is a
+      # `Relation`.
+      length = 0
+      other  = other.to_a
+      this   = each
+
+      loop do
+        begin
+          cur = this.next
+        rescue StopIteration
+          return other.length == length ? 0 : nil
+        end
+
+        length += 1
+
+        return nil if other.length < length || !other.include?(cur)
+      end
     end
 
     ##
@@ -227,17 +262,22 @@ module ActiveTriples
     #
     # @return [Enumerator<Object>] the result set
     def each
-      return [] if predicate.nil?
+      return [].to_enum if predicate.nil?
 
       if block_given?
-        parent.query(:subject => rdf_subject,
-                     :predicate => predicate).each do |x|
-          converted_object = convert_object(x.object)
+        objects do |object|
+          converted_object = convert_object(object)
           yield converted_object unless converted_object.nil?
         end
       end
-      
+
       to_enum
+    end
+
+    ##
+    # @return [Boolean] true if the results are empty.
+    def empty?
+      objects.empty?
     end
 
     ##
@@ -250,6 +290,12 @@ module ActiveTriples
     def first_or_create(attributes={})
       warn 'DEPRECATION: #first_or_create is deprecated for removal in 1.0.0.'
       first || build(attributes)
+    end
+
+    ##
+    # @return [Integer]
+    def length
+      objects.to_a.length
     end
 
     ##
@@ -344,6 +390,15 @@ module ActiveTriples
       # @private
       def node_cache
         @node_cache ||= {}
+      end
+
+      ##
+      # @private
+      def objects(&block)
+        solutions = parent.query(subject: rdf_subject, predicate: predicate)
+        solutions.extend(RDF::Enumerable) unless solutions.respond_to?(:each_object)
+        
+        solutions.each_object(&block)
       end
 
     private

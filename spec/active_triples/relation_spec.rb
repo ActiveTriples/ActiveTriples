@@ -45,6 +45,94 @@ describe ActiveTriples::Relation do
     end
   end
 
+  describe '#<=>' do
+    include_context 'with symbol property'
+
+    let(:parent_resource) { ActiveTriples::Resource.new }
+
+    shared_examples 'a comparable relation' do
+      it 'gives 0 when both are empty' do
+        expect(subject <=> other).to eq 0
+      end
+
+      it 'gives nil when not comparable' do
+        subject << 1
+        expect(subject <=> other).to be_nil
+      end
+
+      types = { numeric: [0, 1, 2, 3_000_000_000],
+                string:  ['moomin', 'snork', 'snufkin'],
+                date:    [Date.today, Date.today - 1],
+                uri:     [RDF::URI('one'), RDF::URI('two'), RDF::URI('three')],
+                node:    [RDF::Node.new, RDF::Node.new],
+              }
+
+      types.each do |type, values|
+        it "gives 0 when containing the same #{type} elements" do
+          subject << 1
+          other   << 1
+          expect(subject <=> other).to eq 0
+        end
+      end
+
+      context 'with varied elements' do
+        before do
+          types.each do |_, values|
+            values.each do |value|
+              subject << value
+              other   << value
+            end
+          end
+        end
+
+        it "gives 0 when containing the same varied elements" do
+          expect(subject <=> other).to eq 0
+        end
+
+        it "gives nil when other contains a subset of varied elements" do
+          subject << 'extra'
+          expect(subject <=> other).to be_nil
+        end
+
+        it "gives nil when other contains a superset of varied elements" do
+          other << 'extra'
+          expect(subject <=> other).to be_nil
+        end
+      end
+    end
+
+    context 'when other is a Resource' do
+      let(:other_class) do
+        Class.new do
+          include ActiveTriples::RDFSource
+          property :snork, predicate: RDF::URI('http://example.org/snork')
+        end
+      end
+
+      let(:other_parent) { other_class.new }
+      let(:other_args)   { [:snork] }
+      let(:other)        { described_class.new(other_parent, other_args) }
+
+      it_behaves_like 'a comparable relation'
+
+      context 'and without cast' do
+        let(:other_args)   { [:snork, cast: false] }
+        it_behaves_like 'a comparable relation'
+      end
+
+      context 'and with return_literals' do
+        let(:other_args)   { [:snork, return_literals: true] }
+        it_behaves_like 'a comparable relation'
+      end
+    end
+
+    context 'when other is an Array' do
+      let(:other) { [] }
+
+      it_behaves_like 'a comparable relation'
+    end
+  end
+
   describe '#build' do
     include_context 'with symbol property'
 
