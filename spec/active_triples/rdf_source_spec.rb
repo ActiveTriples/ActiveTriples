@@ -32,7 +32,7 @@ describe ActiveTriples::RDFSource do
       SourceWithCreator
     end
 
-    let(:predicate) { RDF::Vocab::DC.creator }
+    let(:predicate)     { RDF::Vocab::DC.creator }
     let(:property_name) { :creator }
   end
 
@@ -41,14 +41,12 @@ describe ActiveTriples::RDFSource do
     it { is_expected.to be_queryable }
     it { is_expected.to be_countable }
     it { is_expected.to be_a_value }
-    # it { is_expected.to be_a_term }
-    # it { is_expected.to be_a_resource }
 
     let(:enumerable) { source_class.new }
     it_behaves_like 'an RDF::Enumerable'
 
     let(:queryable) { enumerable }
-    # it_behaves_like 'an RDF::Queryable'
+    it_behaves_like 'an RDF::Queryable'
 
     let(:countable) { enumerable }
     it_behaves_like 'an RDF::Countable'
