@@ -385,8 +385,10 @@ module ActiveTriples
 
       clear
       values.each { |val| set_value(val) }
+      
+      parent.persist! if parent.persistence_strategy.respond_to?(:ancestors) &&
+                         parent.persistence_strategy.ancestors.any? { |r| r.is_a?(ActiveTriples::List::ListResource) }
 
-      parent.persist! if parent.persistence_strategy.is_a? ParentStrategy
       self
     end
 
