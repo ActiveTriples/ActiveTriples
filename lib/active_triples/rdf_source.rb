@@ -180,7 +180,7 @@ module ActiveTriples
         if reflections.has_property?(key)
           set_value(key, value)
         elsif nested_attributes_options
-               .keys.find { |k| key == "#{k}_attributes" }
+              .keys.any? { |k| key == "#{k}_attributes" }
           send("#{key}=".to_sym, value)
         else
           raise ArgumentError, "No association found for name `#{key}'. " \
@@ -249,7 +249,7 @@ module ActiveTriples
     def rdf_subject
       @rdf_subject ||= RDF::Node.new
     end
-    alias_method :to_term, :rdf_subject
+    alias to_term rdf_subject
 
     ##
     # Returns `nil` as the `graph_name`. This behavior mimics an `RDF::Graph`
@@ -366,7 +366,7 @@ module ActiveTriples
           yield(self)
         else
           raise "#{self} is a blank node; " \
-                "Cannot fetch a resource without a URI" if node?
+                'Cannot fetch a resource without a URI' if node?
           raise e
         end
       end
@@ -639,11 +639,14 @@ module ActiveTriples
     # @raise [RuntimeError] no valid RDF term could be built
     def get_uri(uri_or_str)
       return uri_or_str.to_term if uri_or_str.respond_to? :to_term
-      return uri_or_str if uri_or_str.is_a? RDF::Node
+
       uri_or_node = RDF::Resource.new(uri_or_str)
       return uri_or_node if uri_or_node.valid?
+
       uri_or_str = uri_or_str.to_s
-      return RDF::URI(base_uri.to_s) / uri_or_str if base_uri && !uri_or_str.start_with?(base_uri.to_s)
+      return RDF::URI(base_uri.to_s) / uri_or_str if
+        base_uri && !uri_or_str.start_with?(base_uri.to_s)
+
       raise "could not make a valid RDF::URI from #{uri_or_str}"
     end
 
