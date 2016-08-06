@@ -454,7 +454,7 @@ module ActiveTriples
             value
           end
         when RDF::Resource
-          make_node(value)
+          cast? ? make_node(value) : value
         else
           value
         end
@@ -564,13 +564,19 @@ module ActiveTriples
       #
       # @private
       def make_node(value)
-        return value unless cast?
         klass = class_for_value(value)
         value = RDF::Node.new if value.nil?
-        node = node_cache[value] if node_cache[value]
-        node ||= klass.from_uri(value,parent)
-        node.set_persistence_strategy(property_config[:persist_to]) if
-          is_property? && property_config[:persist_to]
+
+        return node_cache[value] if node_cache[value]
+
+        node = klass.from_uri(value, parent)
+
+        if is_property? && property_config[:persist_to]
+          node.set_persistence_strategy(property_config[:persist_to])
+
+          node.persistence_strategy.parent = parent if
+            node.persistence_strategy.is_a?(ParentStrategy)
+        end
 
         self.node_cache[value] ||= node
       end
@@ -607,7 +613,7 @@ module ActiveTriples
       def uri_class(v)
         v = RDF::URI.intern(v) if v.kind_of? String
         type_uri = parent.query([v, RDF.type, nil]).to_a.first.try(:object)
-        Resource.type_registry[type_uri]
+        RDFSource.type_registry[type_uri]
       end
 
       ##
