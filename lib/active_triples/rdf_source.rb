@@ -436,7 +436,7 @@ module ActiveTriples
               "wrong number of arguments (#{args.length} for 2-3)"
       end
       values = args.pop
-      get_relation(args).set(values)
+      get_values(*args).set(values)
     end
 
     ##
@@ -464,7 +464,10 @@ module ActiveTriples
     # @todo should this raise an error when the property argument is not an
     #   {RDF::Term} or a registered property key?
     def get_values(*args)
-      get_relation(args)
+      @relation_cache ||= {}
+      rel = Relation.new(self, args)
+      @relation_cache["#{rel.send(:rdf_subject)}/#{rel.property}/#{rel.rel_args}"] ||= rel
+      @relation_cache["#{rel.send(:rdf_subject)}/#{rel.property}/#{rel.rel_args}"]
     end
 
     ##
@@ -473,7 +476,7 @@ module ActiveTriples
     #
     # @param [RDF::Term, :to_s] term_or_property
     def [](term_or_property)
-      get_relation([term_or_property])
+      get_values(term_or_property)
     end
 
     ##
@@ -490,13 +493,12 @@ module ActiveTriples
     end
 
     ##
+    # @deprecated for removal in 1.0; use `#get_values` instead.
     # @see #get_values
-    # @todo deprecate and remove? this is an alias to `#get_values`
     def get_relation(args)
-      @relation_cache ||= {}
-      rel = Relation.new(self, args)
-      @relation_cache["#{rel.send(:rdf_subject)}/#{rel.property}/#{rel.rel_args}"] ||= rel
-      @relation_cache["#{rel.send(:rdf_subject)}/#{rel.property}/#{rel.rel_args}"]
+      warn 'DEPRECATION: `ActiveTriples::RDFSource#get_relation` will be' \
+           'removed in 1.0; use `#get_values` instead.'
+      get_values(*args)
     end
 
     ##
