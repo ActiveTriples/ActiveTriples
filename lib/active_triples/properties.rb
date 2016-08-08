@@ -54,9 +54,15 @@ module ActiveTriples
       #
       # @return [Array<RDF::URI>]
       def unregistered_predicates
-        preds = registered_predicates
-        preds << RDF.type
-        predicates.select { |p| !preds.include? p }
+        registered_preds   = registered_predicates << RDF.type
+        unregistered_preds = []
+
+        query(subject: rdf_subject) do |stmt|
+          unregistered_preds << stmt.predicate unless
+            registered_preds.include? stmt.predicate
+        end
+
+        unregistered_preds
       end
 
     public

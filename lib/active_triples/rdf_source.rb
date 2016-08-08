@@ -544,48 +544,6 @@ module ActiveTriples
     private
 
     ##
-    # Lists fields registered as properties on the object.
-    #
-    # @return [Array<Symbol>] the list of registered properties.
-    def fields
-      properties.keys.map(&:to_sym).reject { |x| x == :type }
-    end
-
-    ##
-    # Returns the properties registered and their configurations.
-    #
-    # @return [ActiveSupport::HashWithIndifferentAccess{String, NodeConfig}]
-    def properties
-      _active_triples_config
-    end
-
-    ##
-    # List of RDF predicates registered as properties on the object.
-    #
-    # @return [Array<RDF::URI>]
-    def registered_predicates
-      properties.values.map(&:predicate)
-    end
-
-    ##
-    # List of RDF predicates used in the Resource's triples, but not
-    # mapped to any property or accessor methods.
-    #
-    # @return [Array<RDF::URI>]
-    def unregistered_predicates
-      registered_preds = registered_predicates
-      registered_preds << RDF.type
-      unregistered_preds = []
-
-      query(subject: rdf_subject) do |stmt|
-        unregistered_preds << stmt.predicate unless
-          registered_preds.include? stmt.predicate
-      end
-
-      unregistered_preds
-    end
-
-    ##
     # @return [Array<RDF::URI>] a group of properties to use for default labels.
     def default_labels
       [RDF::Vocab::SKOS.prefLabel,
