@@ -41,14 +41,12 @@ describe ActiveTriples::RDFSource do
     it { is_expected.to be_queryable }
     it { is_expected.to be_countable }
     it { is_expected.to be_a_value }
-    # it { is_expected.to be_a_term }
-    # it { is_expected.to be_a_resource }
 
     let(:enumerable) { source_class.new }
     it_behaves_like 'an RDF::Enumerable'
 
     let(:queryable) { enumerable }
-    # it_behaves_like 'an RDF::Queryable'
+    it_behaves_like 'an RDF::Queryable'
 
     let(:countable) { enumerable }
     it_behaves_like 'an RDF::Countable'
@@ -152,7 +150,7 @@ describe ActiveTriples::RDFSource do
       subject.creator = 'moomin'
       expect(subject.attributes['creator']).to contain_exactly 'moomin'
     end
-    
+
     it 'has unregistered properties' do
       predicate = RDF::OWL.sameAs
       subject << [subject, predicate, 'moomin']
@@ -174,10 +172,13 @@ describe ActiveTriples::RDFSource do
 
     context 'with statements for other subjects' do
       before do
-        subject << RDF::Statement(RDF::URI('http://example.org/OTHER_SUBJECT'), RDF::URI('http://example.org/ontology/OTHER_PRED'), 'OTHER_OBJECT')
+        subject << 
+          RDF::Statement(RDF::URI('http://example.org/OTHER_SUBJECT'),
+                         RDF::URI('http://example.org/ontology/OTHER_PRED'), 
+                         'OTHER_OBJECT')
       end
 
-      it "should not include predicate-values for statements with rdf_subject != this object's rdf_subject" do
+      it 'excludes values for statements not matching rdf_subject' do
         expect(subject.attributes.keys).not_to include 'http://example.org/ontology/OTHER_PRED'
         expect(subject.attributes.values).not_to include ['OTHER_OBJECT']
       end
@@ -195,7 +196,7 @@ describe ActiveTriples::RDFSource do
       subject { source_class.new(uri) }
 
       context 'with a bad link' do
-        before { stub_request(:get, uri).to_return(:status => 404) }
+        before { stub_request(:get, uri).to_return(status: 404) }
 
         it 'raises an error if no block is given' do
           expect { subject.fetch }.to raise_error IOError
@@ -208,8 +209,7 @@ describe ActiveTriples::RDFSource do
 
       context 'with a working link' do
         before do
-          stub_request(:get, uri).to_return(:status => 200,
-                                            :body => graph.dump(:ttl))
+          stub_request(:get, uri).to_return(status: 200, body: graph.dump(:ttl))
         end
 
         let(:graph) { RDF::Graph.new << statement }
@@ -221,8 +221,8 @@ describe ActiveTriples::RDFSource do
         it 'loads retrieved graph into its own' do
           expect { subject.fetch }
             .to change { subject.statements.to_a }
-                 .from(a_collection_containing_exactly())
-                 .to(a_collection_containing_exactly(statement))
+            .from(a_collection_containing_exactly)
+            .to(a_collection_containing_exactly(statement))
         end
 
         it 'merges retrieved graph into its own' do
@@ -231,15 +231,18 @@ describe ActiveTriples::RDFSource do
 
           expect { subject.fetch }
             .to change { subject.statements.to_a }
-                 .from(a_collection_containing_exactly(existing))
-                 .to(a_collection_containing_exactly(statement, existing))
+            .from(a_collection_containing_exactly(existing))
+            .to(a_collection_containing_exactly(statement, existing))
         end
 
-        it "passes extra arguments to RDF::Reader" do
-          expect(RDF::Reader).to receive(:open).with(subject.rdf_subject,
-                                                     { base_uri: subject.rdf_subject,
-                                                       headers: { Accept: 'x-humans/as-they-are' } })
-          subject.fetch(headers: { Accept: 'x-humans/as-they-are' })
+        it 'passes extra arguments to RDF::Reader' do
+          mime = 'x-humans/as-they-are'
+
+          expect(RDF::Reader)
+            .to receive(:open).with(subject.rdf_subject,
+                                    base_uri: subject.rdf_subject,
+                                    headers: { Accept: mime })
+          subject.fetch(headers: { Accept: mime })
         end
       end
     end
@@ -309,14 +312,14 @@ describe ActiveTriples::RDFSource do
     context 'with no matching property' do
       it 'is empty' do
         expect(subject.get_values(:not_a_predicate))
-          .to be_a_relation_containing()
+          .to be_a_relation_containing
       end
     end
 
     context 'with an empty predicate' do
       it 'is empty' do
         expect(subject.get_values(RDF::URI('http://example.org/empty')))
-          .to be_a_relation_containing()
+          .to be_a_relation_containing
       end
     end
 
@@ -348,24 +351,24 @@ describe ActiveTriples::RDFSource do
 
     context 'when given an unregistered property name' do
       it 'raises an error' do
-        expect { subject.set_value(:not_a_property, '') }.to raise_error do |err|
-          expect(err).to be_a ActiveTriples::UndefinedPropertyError
-          expect(err.klass).to eq subject.class
-          expect(err.property).to eq :not_a_property
+        expect { subject.set_value(:not_a_property, '') }.to raise_error do |e|
+          expect(e).to be_a ActiveTriples::UndefinedPropertyError
+          expect(e.klass).to eq subject.class
+          expect(e.property).to eq :not_a_property
         end
       end
-      
+
       it 'is a no-op' do
         subject << RDF::Statement(subject, RDF::Vocab::DC.title, 'Moomin')
         expect { subject.set_value(:not_a_property, '') rescue nil }
           .not_to change { subject.triples.to_a }
       end
     end
-    
+
     shared_examples 'setting values' do
       include_context 'with properties'
       after do
-        Object.send(:remove_const, 'SourceWithCreator') if 
+        Object.send(:remove_const, 'SourceWithCreator') if
           defined? SourceWithCreator
       end
 
@@ -381,34 +384,34 @@ describe ActiveTriples::RDFSource do
       it 'sets a value' do
         expect { subject.set_value(predicate, value) }
           .to change { subject.statements }
-               .to(a_collection_containing_exactly(*statements))
+          .to(a_collection_containing_exactly(*statements))
       end
 
       it 'sets a value with a property name' do
         expect { subject.set_value(property_name, value) }
           .to change { subject.statements }
-               .to(a_collection_containing_exactly(*statements))
+          .to(a_collection_containing_exactly(*statements))
       end
 
       it 'overwrites existing values' do
-        old_vals = ['old value', 
-                    RDF::Node.new, 
-                    RDF::Vocab::DC.type, 
+        old_vals = ['old value',
+                    RDF::Node.new,
+                    RDF::Vocab::DC.type,
                     RDF::URI('----')]
 
         subject.set_value(predicate, old_vals)
 
         expect { subject.set_value(predicate, value) }
           .to change { subject.statements }
-               .to(a_collection_containing_exactly(*statements))
+          .to(a_collection_containing_exactly(*statements))
       end
 
-      it 'returns the set values in a Relation' do 
+      it 'returns the set values in a Relation' do
         expect(subject.set_value(predicate, value))
           .to be_a_relation_containing(*Array.wrap(value))
       end
     end
-    
+
     context 'with string literal' do
       include_examples 'setting values' do
         let(:value) { 'moomin' }
@@ -417,7 +420,7 @@ describe ActiveTriples::RDFSource do
 
     context 'with multiple values' do
       include_examples 'setting values' do
-        let(:value) { ['moominpapa', 'moominmama'] }
+        let(:value) { %w('moominpapa moominmama') }
       end
     end
 
@@ -454,11 +457,11 @@ describe ActiveTriples::RDFSource do
     context 'with mixed values' do
       include_examples 'setting values' do
         let(:value) do
-          ['moomin', 
-           Date.today, 
-           RDF::Node.new, 
-           source_class.new, 
-           source_class.new(uri), 
+          ['moomin',
+           Date.today,
+           RDF::Node.new,
+           source_class.new,
+           source_class.new(uri),
            subject]
         end
       end
@@ -471,7 +474,7 @@ describe ActiveTriples::RDFSource do
       it 'handles setting reciprocally' do
         document.set_value(RDF::Vocab::DC.creator, person)
         person.set_value(RDF::Vocab::FOAF.publications, document)
-        
+
         expect(person.get_values(RDF::Vocab::FOAF.publications))
           .to be_a_relation_containing(document)
         expect(document.get_values(RDF::Vocab::DC.creator))
@@ -479,10 +482,10 @@ describe ActiveTriples::RDFSource do
       end
 
       it 'handles setting' do
-        document.set_value(RDF::Vocab::DC.creator, person) 
-        person.set_value(RDF::Vocab::FOAF.knows, subject) 
-        subject.set_value(RDF::Vocab::FOAF.publications, document) 
-        subject.set_value(RDF::OWL.sameAs, subject)         
+        document.set_value(RDF::Vocab::DC.creator, person)
+        person.set_value(RDF::Vocab::FOAF.knows, subject)
+        subject.set_value(RDF::Vocab::FOAF.publications, document)
+        subject.set_value(RDF::OWL.sameAs, subject)
 
         expect(subject.get_values(RDF::Vocab::FOAF.publications))
           .to be_a_relation_containing(document)
@@ -508,7 +511,7 @@ describe ActiveTriples::RDFSource do
         document.set_value(RDF::Vocab::DC.relation, person)
         person.set_value(RDF::Vocab::DC.relation, person2)
         person2.set_value(RDF::Vocab::DC.relation, document)
-        
+
         expect(person.get_values(RDF::Vocab::DC.relation))
           .to be_a_relation_containing person2
         expect(person2.get_values(RDF::Vocab::DC.relation))
@@ -521,19 +524,21 @@ describe ActiveTriples::RDFSource do
 
       it 'adds child node data to own graph' do
         other << RDF::Statement(:s, RDF::URI('p'), 'o')
+
         expect { subject.set_value(RDF::OWL.sameAs, other) }
-          .to change { subject.statements.to_a }.to include(*other.statements.to_a)
+          .to change { subject.statements.to_a }
+          .to include(*other.statements.to_a)
       end
 
       it 'does not change persistence strategy of added node' do
         expect { subject.set_value(RDF::OWL.sameAs, other) }
           .not_to change { other.persistence_strategy }
       end
-      
+
       it 'does not capture a child node when it already persists to a parent' do
         third = source_class.new
         third.set_value(RDF::OWL.sameAs, other)
-        
+
         child_other = third.get_values(RDF::OWL.sameAs).first
         expect { subject.set_value(RDF::OWL.sameAs, child_other) }
           .not_to change { child_other.persistence_strategy.parent }
@@ -578,8 +583,8 @@ describe ActiveTriples::RDFSource do
       it 'adds error message' do
         expect { subject.valid? }
           .to change { subject.errors.messages }
-               .from({})
-               .to({ base: ["The underlying graph must be valid"] })
+          .from({})
+          .to(base: ['The underlying graph must be valid'])
       end
     end
 
@@ -604,8 +609,8 @@ describe ActiveTriples::RDFSource do
         it 'has errors' do
           expect { subject.valid? }
             .to change { subject.errors.messages }
-                 .from({})
-                 .to({ title: ["can't be blank"] })
+            .from({})
+            .to(title: ["can't be blank"])
         end
       end
 
@@ -622,45 +627,53 @@ describe ActiveTriples::RDFSource do
           it 'has errors' do
             expect { subject.valid? }
               .to change { subject.errors.messages }
-                   .from({})
-                   .to(include({ base: ["The underlying graph must be valid"] }))
+              .from({})
+              .to(include(base: ['The underlying graph must be valid']))
           end
         end
       end
     end
   end
 
-  describe ".apply_schema" do
+  describe '.apply_schema' do
     let(:dummy_source) { Class.new { include ActiveTriples::RDFSource } }
 
     before do
       class MyDataModel < ActiveTriples::Schema
-        property :test_title, :predicate => RDF::Vocab::DC.title
+        property :test_title, predicate: RDF::Vocab::DC.title
       end
     end
 
-    after do
-      Object.send(:remove_const, "MyDataModel")
-    end
-    it "should apply the schema" do
+    after { Object.send(:remove_const, 'MyDataModel') }
+
+    it 'should apply the schema' do
       dummy_source.apply_schema MyDataModel
 
-      expect{dummy_source.new.test_title}.not_to raise_error
+      expect { dummy_source.new.test_title }.not_to raise_error
     end
   end
 
   describe 'sources with properties with class_name defined' do
     before(:context) do
       class DummyChapter < ActiveTriples::Resource
-        configure repository: :default, type: RDF::URI('http://www.example.com/type/Chapter')
-        property :title, predicate: RDF::URI('http://www.example.com/ontology/title')
-        property :subtitle, predicate: RDF::URI('http://www.example.com/ontology/subtitle')
+        ontology = RDF::URI('http://www.example.com/ontology')
+        type     = RDF::URI('http://www.example.com/type')
+
+        configure repository: :default, type: type / 'Chapter'
+
+        property :title,    predicate: ontology / 'title'
+        property :subtitle, predicate: ontology / 'subtitle'
       end
 
       class DummyBook < ActiveTriples::Resource
-        configure repository: :default, type: RDF::URI('http://www.example.com/type/Book')
-        property :title, predicate: RDF::URI('http://www.example.com/ontology/title')
-        property :has_chapter, predicate: RDF::URI('http://www.example.com/ontology/hasChapter'), class_name: DummyChapter  # Explicit Link
+        ontology = RDF::URI('http://www.example.com/ontology')
+        type     = RDF::URI('http://www.example.com/type')
+
+        configure repository: :default, type: type / 'Book'
+
+        property :title,       predicate: ontology / 'title'
+        property :has_chapter, predicate: ontology / 'hasChapter',
+                               class_name: DummyChapter
       end
     end
 
@@ -673,11 +686,11 @@ describe ActiveTriples::RDFSource do
         @book_title = 'Example Book.'
         @chapter_title = 'Chapter 1'
         ttl = "<#{@book_url}> a <http://www.example.com/type/Book>;
-                   <http://www.example.com/ontology/hasChapter> [
-                     a <http://www.example.com/type/Chapter>;
-                     <http://www.example.com/ontology/title> \"#{@chapter_title}\"
-                   ];
-                 <http://www.example.com/ontology/title> \"#{@book_title}\" ."
+                 <http://www.example.com/ontology/hasChapter> [
+                   a <http://www.example.com/type/Chapter>;
+                   <http://www.example.com/ontology/title> \"#{@chapter_title}\"
+                 ];
+               <http://www.example.com/ontology/title> \"#{@book_title}\" ."
         book_graph = ::RDF::Graph.new.from_ttl ttl
         r = ActiveTriples::Repositories.repositories[:default]
         r << book_graph
@@ -688,7 +701,8 @@ describe ActiveTriples::RDFSource do
       it 'populates DummyBook properly' do
         expect(@book.rdf_subject.to_s).to eq @book_url
         expect(@book).to be_a DummyBook
-        expect(@book.type).to include(RDF::URI.new('http://www.example.com/type/Book'))
+        expect(@book.type)
+          .to include(RDF::URI.new('http://www.example.com/type/Book'))
         expect(@book.title.first).to eq @book_title
       end
 
@@ -696,10 +710,10 @@ describe ActiveTriples::RDFSource do
         chapter = @book.has_chapter.first
         expect(chapter).to be_a DummyChapter
         expect(chapter.title.first).to eq @chapter_title
-        expect(chapter.type).to include(RDF::URI.new('http://www.example.com/type/Chapter'))
+        expect(chapter.type)
+          .to include(RDF::URI.new('http://www.example.com/type/Chapter'))
       end
     end
-
 
     context 'when loading models through properties' do
       before(:context) do
@@ -720,20 +734,25 @@ describe ActiveTriples::RDFSource do
       end
 
       it 'populates DummyBook (resumed resource) properly' do
-        expect(@bk1.type.first).to eq RDF::URI('http://www.example.com/type/Book')
-        expect(@bk1.title.first).to eq 'Learning about Explicit Links in ActiveTriples'
+        expect(@bk1.type.first)
+          .to eq RDF::URI('http://www.example.com/type/Book')
+        expect(@bk1.title.first)
+          .to eq 'Learning about Explicit Links in ActiveTriples'
       end
-
 
       it 'populates DummyChapter (property resource) properly' do
         ch1 = @bk1.has_chapter.first
-        expect(ch1.type.first).to eq RDF::URI('http://www.example.com/type/Chapter')
-        expect(ch1.title.first).to eq 'Defining a source with an Explicit Link'
+        expect(ch1.type.first)
+          .to eq RDF::URI('http://www.example.com/type/Chapter')
+        expect(ch1.title.first)
+          .to eq 'Defining a source with an Explicit Link'
       end
 
       it 'populates DummyChapter (directly from repository) properly' do
-        expect(@ch1.type.first).to eq RDF::URI('http://www.example.com/type/Chapter')
-        expect(@ch1.title.first).to eq 'Defining a source with an Explicit Link'
+        expect(@ch1.type.first)
+          .to eq RDF::URI('http://www.example.com/type/Chapter')
+        expect(@ch1.title.first)
+          .to eq 'Defining a source with an Explicit Link'
       end
 
       it 'does not reload from repository twice' do
