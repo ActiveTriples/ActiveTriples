@@ -18,8 +18,9 @@ describe ActiveTriples::RDFSource do
   end
 
   before { @enumerable = subject }
+
   let(:source_class) { Class.new { include ActiveTriples::RDFSource } }
-  let(:uri) { RDF::URI('http://example.org/moomin') }
+  let(:uri)          { RDF::URI('http://example.org/moomin') }
 
   subject { source_class.new }
 
@@ -376,6 +377,7 @@ describe ActiveTriples::RDFSource do
 
     shared_examples 'setting values' do
       include_context 'with properties'
+
       after do
         Object.send(:remove_const, 'SourceWithCreator') if
           defined? SourceWithCreator
@@ -473,6 +475,39 @@ describe ActiveTriples::RDFSource do
            source_class.new(uri),
            subject]
         end
+      end
+    end
+
+    describe 'on child nodes' do
+      let(:parent)  { source_class.new }
+      let(:subject) { source_class.new(uri, parent) }
+      
+      include_examples 'setting values' do
+        let(:value) do
+          ['moomin', 
+           Date.today, 
+           RDF::Node.new, 
+           source_class.new, 
+           source_class.new(uri / 'new'), 
+           subject]
+        end
+      end
+
+      it 'does not change parent' do
+        property = RDF::Vocab::DC.title
+
+        expect { subject.set_value(property, 'Comet in Moominland') }
+          .not_to change { parent.to_a }
+      end
+
+      it 'persists to parent' do
+        property = RDF::Vocab::DC.title
+        
+        subject.set_value(property, 'Comet in Moominland')
+
+        expect { subject.persist! }
+          .to change { parent.to_a }
+          .to include RDF::Statement(subject, property, 'Comet in Moominland')
       end
     end
 
