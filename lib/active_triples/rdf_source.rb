@@ -101,7 +101,6 @@ module ActiveTriples
       end
 
       persistence_strategy.graph = RDF::Graph.new(*args, &block)
-      reload
 
       # Append type to graph if necessary.
       Array.wrap(self.class.type).each do |type|
