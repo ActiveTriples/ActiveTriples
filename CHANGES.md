@@ -1,3 +1,7 @@
+0.10.1
+----
+  - Remove dependency on the `linkeddata` metagem
+  
 0.10.0
 ----
   - Fix Identifiable for ActiveFedora [Trey Pendragon]
