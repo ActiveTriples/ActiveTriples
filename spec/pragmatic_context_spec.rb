@@ -1,5 +1,6 @@
 require 'spec_helper'
 require 'pragmatic_context'
+require 'json/ld'
 
 describe 'PragmaticContext integration' do
   before do
