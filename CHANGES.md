@@ -1,3 +1,12 @@
+0.10.2
+----
+  - Backports several performance optimizations from the upcoming 0.11.x
+  release series.
+    - Uses `#query` to find unregistered predicates, avoiding iterating through
+    all statements.
+    - Uses a transaction to batch commit changes when calling `#set_subject!`
+  - Removes the `deprecation` gem as a runtime dependency
+
 0.10.1
 ----
   - Remove dependency on the `linkeddata` metagem
