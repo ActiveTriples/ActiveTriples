@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 require 'spec_helper'
 require 'nokogiri'
-require 'linkeddata'
+require 'rdf/rdfxml'
 
 describe ActiveTriples::List do
   subject { ActiveTriples::List.new }
