@@ -15,13 +15,18 @@ Gem::Specification.new do |s|
   s.required_ruby_version     = '>= 1.9.3'
   
   s.add_dependency('rdf', '~> 1.1')
-  s.add_dependency('linkeddata', '~> 1.1')
+  s.add_dependency('rdf-vocab', '~> 0.8')
   s.add_dependency('activemodel', '>= 3.0.0')
   s.add_dependency('deprecation', '~> 0.1')
   s.add_dependency('activesupport', '>= 3.0.0')
 
   s.add_development_dependency('rdoc')
   s.add_development_dependency('rspec')
+  s.add_development_dependency('rdf-spec',   '~> 1.99')
+  s.add_development_dependency('rdf-rdfxml', '>= 1.1.5', '~> 1.1')
+  s.add_development_dependency('rdf-turtle', '~> 1.99')
+  s.add_development_dependency('rdf-isomorphic', '~> 1.99')
+  s.add_development_dependency('json-ld',    '~> 1.99')
   s.add_development_dependency('guard-rspec')
   s.add_development_dependency('webmock')
   s.add_development_dependency('nokogiri')
