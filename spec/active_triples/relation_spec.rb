@@ -45,6 +45,225 @@ describe ActiveTriples::Relation do
     end
   end
 
+  shared_context 'with other relation' do
+    let(:other_class) do
+      Class.new do
+        include ActiveTriples::RDFSource
+        property :snork, predicate: RDF::URI('http://example.org/snork')
+      end
+    end
+
+    let(:other)          { described_class.new(other_parent, other_args) }
+    let(:other_args)     { [other_property] }
+    let(:other_parent)   { other_class.new }
+    let(:other_property) { :snork }
+  end
+
+  [:&, :|, :+].each do |array_method|
+    describe "#{array_method}" do
+      shared_examples 'array method behavior' do
+        it "behaves like `Array##{array_method}`" do
+          expect(subject.send(array_method.to_sym, other_array))
+            .to contain_exactly(*subject.to_a.send(array_method.to_sym,
+                                                   other_array.to_a))
+        end
+      end
+
+      context 'with #to_ary as argument' do
+        include_context 'with symbol property'
+
+        let(:parent_resource) { ActiveTriples::Resource.new }
+
+        context 'when empty' do
+          context 'with empty other' do
+            it_behaves_like 'array method behavior' do
+              let(:other_array) { [] }
+            end
+          end
+
+          context 'with values in other' do
+            it_behaves_like 'array method behavior' do
+              let(:other_array) { [1, 'two', RDF::URI('uri'), RDF::Node.new] }
+            end
+          end
+        end
+
+        context 'with values' do
+          before { subject << [RDF::Node.new, 'two', 3] }
+
+          context 'with empty other' do
+            it_behaves_like 'array method behavior' do
+              let(:other_array) { [] }
+            end
+          end
+
+          context 'with values in other' do
+            it_behaves_like 'array method behavior' do
+              let(:other_array) { [1, 'two', RDF::URI('uri'), RDF::Node.new] }
+            end
+          end
+        end
+      end
+    end
+  end
+
+  describe '#&' do
+    context 'with relation as argument' do
+      include_context 'with symbol property'
+      let(:parent_resource) { ActiveTriples::Resource.new }
+
+      include_context 'with other relation'
+
+      it { expect(subject & other).to be_empty }
+
+      it 'handles node equality' do
+        node = RDF::Node.new
+
+        subject << [1, node]
+        other   << [2, node]
+
+        expect(subject & other).to contain_exactly(have_rdf_subject(node))
+      end
+
+      it 'handles literal equality' do
+        literal      = RDF::Literal('mummi')
+        lang_literal = RDF::Literal('mummi', language: :fi)
+        
+        subject << [1, literal]
+        other   << [2, lang_literal]
+        
+        expect(subject & other).to be_empty
+        
+        subject << [1, lang_literal]
+        expect(subject & other).to contain_exactly 'mummi'
+      end
+    end
+  end
+
+  describe '#|' do
+    context 'with relation as argument' do
+      include_context 'with symbol property'
+      let(:parent_resource) { ActiveTriples::Resource.new }
+
+      include_context 'with other relation'
+    
+      it 'handles node equality' do
+        node = RDF::Node.new
+
+        subject << [1, node]
+        other   << [2, node]
+
+        expect(subject | other).to contain_exactly(1, 2, have_rdf_subject(node))
+      end
+
+      it 'handles literal equality' do
+        literal      = RDF::Literal('mummi')
+        lang_literal = RDF::Literal('mummi', language: :fi)
+        
+        subject << [1, literal]
+        other   << [2, lang_literal]
+
+        expect(subject | other).to contain_exactly('mummi', 'mummi', 1, 2)
+      end
+    end
+  end
+
+  describe '#+' do
+    context 'with relation as argument' do
+      include_context 'with symbol property'
+      let(:parent_resource) { ActiveTriples::Resource.new }
+
+      include_context 'with other relation'
+      
+      it 'still implements as ' do
+        subject << [RDF::Node.new, RDF::Node.new, 
+                    RDF::Literal('mummi'), RDF::Literal('mummi', language: :fi)]
+        other   << [RDF::Node.new, RDF::Node.new,
+                    RDF::Literal('mummi'), RDF::Literal('mummi', language: :fi)]
+
+        expect(subject + other).to contain_exactly(*(subject.to_a + other.to_a))
+      end
+    end
+  end
+
+  describe '#<=>' do
+    include_context 'with symbol property'
+
+    let(:parent_resource) { ActiveTriples::Resource.new }
+
+    shared_examples 'a comparable relation' do
+      it 'gives 0 when both are empty' do
+        expect(subject <=> other).to eq 0
+      end
+
+      it 'gives nil when not comparable' do
+        subject << 1
+        expect(subject <=> other).to be_nil
+      end
+
+      types = { numeric: [0, 1, 2, 3_000_000_000],
+                string:  ['moomin', 'snork', 'snufkin'],
+                date:    [Date.today, Date.today - 1],
+                uri:     [RDF::URI('one'), RDF::URI('two'), RDF::URI('three')],
+                node:    [RDF::Node.new, RDF::Node.new],
+              }
+
+      types.each do |type, values|
+        it "gives 0 when containing the same #{type} elements" do
+          subject << 1
+          other   << 1
+          expect(subject <=> other).to eq 0
+        end
+      end
+
+      context 'with varied elements' do
+        before do
+          types.each do |_, values|
+            values.each do |value|
+              subject << value
+              other   << value
+            end
+          end
+        end
+
+        it "gives 0 when containing the same varied elements" do
+          expect(subject <=> other).to eq 0
+        end
+
+        it "gives nil when other contains a subset of varied elements" do
+          subject << 'extra'
+          expect(subject <=> other).to be_nil
+        end
+
+        it "gives nil when other contains a superset of varied elements" do
+          other << 'extra'
+          expect(subject <=> other).to be_nil
+        end
+      end
+    end
+
+    context 'when other is a Relation' do
+      include_context 'with other relation'
+      it_behaves_like 'a comparable relation'
+
+      context 'and without cast' do
+        let(:other_args)   { [other_property, cast: false] }
+        it_behaves_like 'a comparable relation'
+      end
+
+      context 'and with return_literals' do
+        let(:other_args)   { [other_property, return_literals: true] }
+        it_behaves_like 'a comparable relation'
+      end
+    end
+
+    context 'when other is an Array' do
+      let(:other) { [] }
+
+      it_behaves_like 'a comparable relation'
+    end
+  end
+
   describe '#build' do
     include_context 'with symbol property'
 
@@ -221,7 +440,7 @@ describe ActiveTriples::Relation do
 
       it 'clears the relation' do
         expect { subject.clear }
-          .to change { subject.result }
+          .to change { subject.to_a }
           .from(['moomin']).to(be_empty)
       end
 
@@ -308,39 +527,12 @@ describe ActiveTriples::Relation do
     end
   end
 
-  describe '#first_or_create' do
-    let(:parent_resource) { ActiveTriples::Resource.new }
-
-    context 'with symbol' do
-      include_context 'with symbol property'
-
-      it 'creates a new node' do
-        expect { subject.first_or_create }.to change { subject.count }.by(1)
-      end
-
-      it 'returns existing node if present' do
-        node = subject.build
-        expect(subject.first_or_create).to eq node
-      end
-
-      it 'does not create a new node when one exists' do
-        subject.build
-        expect { subject.first_or_create }.not_to change { subject.count }
-      end
-
-      it 'returns literal value if appropriate' do
-        subject << literal = 'moomin'
-        expect(subject.first_or_create).to eq literal
-      end
-    end
-  end
-
-  describe '#result' do
+  describe '#each' do
     context 'with nil predicate' do
       include_context 'with unregistered property'
 
       it 'is empty' do
-        expect(subject.result).to be_empty
+        expect(subject.each.to_a).to be_empty
       end
     end
 
@@ -350,7 +542,7 @@ describe ActiveTriples::Relation do
       end
 
       it 'is empty' do
-        expect(subject.result).to be_empty
+        expect(subject.each.to_a).to be_empty
       end
 
       context 'with values' do
@@ -364,7 +556,7 @@ describe ActiveTriples::Relation do
         let(:node)   { RDF::Node.new }
 
         it 'contain values' do
-          expect(subject.result).to contain_exactly(*values)
+          expect(subject.each).to contain_exactly(*values)
         end
 
         context 'with castable values' do
@@ -373,14 +565,14 @@ describe ActiveTriples::Relation do
           end
 
           it 'casts Resource values' do
-            expect(subject.result)
+            expect(subject.each)
               .to contain_exactly(a_kind_of(ActiveTriples::Resource),
                                   a_kind_of(ActiveTriples::Resource),
                                   a_kind_of(ActiveTriples::Resource))
           end
 
           it 'cast values have correct URI' do
-            expect(subject.result.map(&:rdf_subject))
+            expect(subject.each.map(&:rdf_subject))
               .to contain_exactly(*values)
           end
 
@@ -393,7 +585,7 @@ describe ActiveTriples::Relation do
             end
 
             it 'assigns persistence strategy' do
-              subject.result.each do |node|
+              subject.each.each do |node|
                 expect(node.persistence_strategy)
                   .to be_a ActiveTriples::RepositoryStrategy
               end
@@ -408,7 +600,7 @@ describe ActiveTriples::Relation do
 
             it 'does not cast results' do
               allow(subject).to receive(:cast?).and_return(false)
-              expect(subject.result).to contain_exactly(*values)
+              expect(subject.each).to contain_exactly(*values)
             end
           end
 
@@ -420,7 +612,7 @@ describe ActiveTriples::Relation do
             it 'does not cast results' do
               allow(subject).to receive(:return_literals?).and_return(true)
 
-              expect(subject.result).to contain_exactly(*values)
+              expect(subject.each).to contain_exactly(*values)
             end
           end
         end
