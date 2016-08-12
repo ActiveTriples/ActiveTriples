@@ -1,5 +1,4 @@
 # frozen_string_literal: true
-require 'active_support/core_ext/module/delegation'
 
 module ActiveTriples
   ##
@@ -20,10 +19,13 @@ module ActiveTriples
   #
   # @see RDF::Term
   class Relation
+    extend  Forwardable
     include Enumerable
     include Comparable
 
     TYPE_PROPERTY = { predicate: RDF.type, cast: false }.freeze
+
+    def_delegators :to_a, :[], :inspect, :last, :size, :join
 
     # @!attribute [rw] parent
     #   @return [RDFSource] the resource that is the domain of this relation
@@ -35,8 +37,6 @@ module ActiveTriples
     #   @return [Class]
     attr_accessor :parent, :value_arguments, :rel_args
     attr_reader :reflections
-
-    delegate :[], :inspect, :last, :size, :join, to: :to_a
 
     ##
     # @param [ActiveTriples::RDFSource] parent_source
