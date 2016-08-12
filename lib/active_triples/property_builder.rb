@@ -42,7 +42,7 @@ module ActiveTriples
       raise ArgumentError, "property names must be a Symbol" unless
         name.kind_of?(Symbol)
 
-      options[:predicate] = RDF::URI.new(options[:predicate])
+      options[:predicate] = RDF::URI.intern(options[:predicate])
       raise ArgumentError, "must provide an RDF::URI to :predicate" unless
         options[:predicate].valid?
 
