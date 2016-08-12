@@ -144,6 +144,16 @@ describe ActiveTriples::Identifiable do
       end
     end
 
+    describe '#parent=' do
+      before { class MyResource; include ActiveTriples::RDFSource; end }
+      let(:parent) { MyResource.new }
+
+      it 'sets parent' do
+        expect { subject.parent = parent }
+          .to change { subject.parent }.from(nil).to(parent)
+      end
+    end
+
     describe '#rdf_subject' do
       it 'has a subject' do
         expect(subject.rdf_subject).to eq 'http://example.org/ns/123'
