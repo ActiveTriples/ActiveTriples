@@ -185,6 +185,12 @@ describe ActiveTriples::RDFSource do
     end
   end
 
+  describe '#attributes=' do
+    it 'raises an error when not passed a hash' do
+      expect { subject.attributes = true }.to raise_error ArgumentError
+    end
+  end
+
   describe '#fetch' do
     it 'raises an error when it is a node' do
       expect { subject.fetch }
