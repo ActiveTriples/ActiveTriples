@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 require 'active_support'
-require 'active_support/core_ext/module/delegation'
 
 module ActiveTriples::Identifiable
   extend ActiveSupport::Concern
+  extend Forwardable
 
-  delegate :rdf_subject, :type, to: :resource
+  def_delegators :resource, :rdf_subject, :type
 
   ##
   # @return [ActiveTriples::Resource] a resource that contains this object's

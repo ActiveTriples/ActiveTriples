@@ -7,12 +7,15 @@ module ActiveTriples
   # rdf:List concept in your data. The community may pursue other
   # options for ordered sets.
   class List < RDF::List
-    include ActiveTriples::NestedAttributes
     extend Configurable
+    extend Forwardable
+
+    include ActiveTriples::NestedAttributes
     include Properties
     include Reflection
 
-    delegate :rdf_subject, :mark_for_destruction, :marked_for_destruction?, :set_value, :get_values, :parent, :persist, :persist!, :type, :dump, :attributes=, to: :resource
+    def_delegators :resource, :rdf_subject, :mark_for_destruction, :marked_for_destruction?, :set_value, :get_values, :parent, :persist, :persist!, :type, :dump, :attributes=
+    
     alias_method :to_ary, :to_a
 
     class << self

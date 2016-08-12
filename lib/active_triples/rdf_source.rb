@@ -43,6 +43,7 @@ module ActiveTriples
   # @see RDF::Queryable
   module RDFSource
     extend ActiveSupport::Concern
+    extend Forwardable
 
     include NestedAttributes
     include Persistable
@@ -75,8 +76,8 @@ module ActiveTriples
       define_model_callbacks :persist
     end
 
-    delegate :query, :each, :load!, :count, :has_statement?, to: :graph
-    delegate :to_base, :term?, :escape, to: :to_term
+    def_delegators :graph, :query, :each, :load!, :count, :has_statement?
+    def_delegators :to_term, :to_base, :term?, :escape
 
     ##
     # Initialize an instance of this resource class. Defaults to a
