@@ -58,12 +58,6 @@ describe ActiveTriples::Identifiable do
         attr_accessor :id
         configure base_uri: 'http://example.org/ns/'
 
-        def self.from_uri(uri, *args)
-          item = self.new
-          item.parent = args.first unless args.empty? or args.first.is_a?(Hash)
-          item
-        end
-
         def self.property(*args)
           prop = args.first
 
