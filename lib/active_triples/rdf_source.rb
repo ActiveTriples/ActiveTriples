@@ -604,7 +604,7 @@ module ActiveTriples
       return uri_or_node if uri_or_node.valid?
 
       uri_or_str = uri_or_str.to_s
-      return RDF::URI(base_uri.to_s) / uri_or_str if
+      return RDF::URI.intern(base_uri.to_s) / uri_or_str if
         base_uri && !uri_or_str.start_with?(base_uri.to_s)
 
       raise "could not make a valid RDF::URI from #{uri_or_str}"
@@ -649,6 +649,7 @@ module ActiveTriples
       #          a window of opportunity for an ID clash.
       def id_persisted?(test_id)
         rdf_subject = new(test_id).rdf_subject
+
         ActiveTriples::Repositories.has_subject?(rdf_subject)
       end
 
@@ -664,8 +665,9 @@ module ActiveTriples
       #          persisted, false will be returned presenting
       #          a window of opportunity for an ID clash.
       def uri_persisted?(test_uri)
-        rdf_subject = test_uri.is_a?(RDF::URI) ? test_uri : RDF::URI(test_uri)
-        ActiveTriples::Repositories.has_subject?(rdf_subject)
+        test_uri = RDF::URI.intern(test_uri) unless test_uri.is_a?(RDF::URI)
+
+        ActiveTriples::Repositories.has_subject?(test_uri)
       end
     end
   end

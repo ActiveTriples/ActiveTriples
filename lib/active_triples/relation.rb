@@ -587,7 +587,7 @@ module ActiveTriples
       ##
       # @private
       def uri_class(v)
-        v = RDF::URI.new(v) if v.kind_of? String
+        v = RDF::URI.intern(v) if v.kind_of? String
         type_uri = parent.query([v, RDF.type, nil]).to_a.first.try(:object)
         Resource.type_registry[type_uri]
       end

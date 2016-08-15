@@ -62,7 +62,7 @@ module ActiveTriples
 
     def transform_type(values)
       Array.wrap(values).map do |value|
-        RDF::URI.new(value).tap do |uri|
+        RDF::URI.intern(value).tap do |uri|
           RDFSource.type_registry[uri] = self
         end
       end
