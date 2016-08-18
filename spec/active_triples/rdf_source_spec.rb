@@ -341,6 +341,15 @@ describe ActiveTriples::RDFSource do
       expect(subject.get_values(other_uri, predicate))
         .to be_a_relation_containing(val)
     end
+
+    context 'when calling getter' do
+      it 'passes arguments through' do
+        subject.creator = 'moomin'
+
+        expect(subject.creator(literal: true).first)
+          .to eq RDF::Literal('moomin')
+      end
+    end
   end
 
   describe '#set_value' do

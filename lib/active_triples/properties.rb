@@ -8,9 +8,18 @@ module ActiveTriples
   # 
   # Collaborates closely with ActiveTriples::Reflection
   #
-  # Define properties at the class level with:
+  # @example define properties at the class level
   #
   #    property :title, predicate: RDF::DC.title, class_name: ResourceClass
+  #
+  # @example using property setters & getters
+  #    resource.property :title, predicate: RDF::DC.title, 
+  #                              class_name: ResourceClass
+  #
+  #    resource.title = 'Comet in Moominland'
+  #
+  #    resource.title                # => ['Comet in Moominland']
+  #    resource.title(literal: true) # => [RDF::Literal('Comet in Moominland')]
   #
   # @see {ActiveTriples::Reflection}
   # @see {ActiveTriples::PropertyBuilder}
