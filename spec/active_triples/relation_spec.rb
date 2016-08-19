@@ -473,6 +473,38 @@ describe ActiveTriples::Relation do
       expect { subject << values }
         .to change { subject.to_a }.to contain_exactly(*values)
     end
+
+    it 'keeps datatypes' do
+      values = [RDF::Literal(Date.today), RDF::Literal(:moomin)]
+
+      expect { values.each { |v| subject << v } }
+        .to change { subject.send(:objects).to_a }
+             .to contain_exactly(*values)
+    end
+
+    it 'keeps languages' do
+      values = [RDF::Literal("Moomin", language: :en), 
+                RDF::Literal("Mummi",  language: :fi)]
+
+      expect { values.each { |v| subject << v } }
+        .to change { subject.send(:objects).to_a }
+             .to contain_exactly(*values)
+    end
+
+    context 'when given a Relation' do
+      it 'keeps datatypes and languages of values' do
+        values = [RDF::Literal(Date.today),
+                  RDF::Literal(:moomin), 
+                  RDF::Literal("Moomin", language: :en),
+                  RDF::Literal("Mummi",  language: :fi)]
+
+        subject.set(values)
+        expect(subject.send(:objects)).to contain_exactly(*values)
+
+        expect { subject << subject }
+          .not_to change { subject.send(:objects).to_a }
+      end
+    end
   end
 
   describe '#predicate' do
@@ -712,6 +744,21 @@ describe ActiveTriples::Relation do
         values = [:moomin, :snork]
         expect { subject.set(values) }
           .to change { subject.to_a }.to contain_exactly(*values)
+      end
+
+      context 'when given a Relation' do
+        it 'keeps datatypes and languages of values' do
+          values = [RDF::Literal(Date.today),
+                    RDF::Literal(:moomin), 
+                    RDF::Literal("Moomin", language: :en),
+                    RDF::Literal("Mummi",  language: :fi)]
+
+          subject.set(values)
+          expect(subject.send(:objects)).to contain_exactly(*values)
+
+          expect { subject.set(subject) }
+            .not_to change { subject.send(:objects).to_a }
+        end
       end
 
       context 'and persistence config' do

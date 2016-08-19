@@ -137,7 +137,8 @@ module ActiveTriples
     #
     # @return [Relation] a relation containing the set values; i.e. `self`
     def <<(values)
-      values = to_a | Array.wrap(values)
+      values = values.objects.to_a if values.is_a?(Relation)
+      values = objects.to_a | Array.wrap(values)
       self.set(values)
     end
     alias_method :push, :<<
@@ -380,7 +381,7 @@ module ActiveTriples
     #   non-{RDF::Resource} values.
     def set(values)
       raise UndefinedPropertyError.new(property, reflections) if predicate.nil?
-      values = values.to_a if values.is_a? Relation
+      values = values.objects.to_a if values.is_a? Relation
       values = [values].compact unless values.kind_of?(Array)
 
       clear
