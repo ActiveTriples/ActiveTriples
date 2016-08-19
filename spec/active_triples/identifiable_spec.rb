@@ -168,6 +168,15 @@ describe ActiveTriples::Identifiable do
 
         expect(resource.relation).to eq [subject]
       end
+      it "can share that object with another resource" do
+        resource = MyResource.new
+        resource_2 = MyResource.new
+
+        resource.relation = subject
+        resource_2.relation = resource.relation
+
+        expect(resource.relation).to eq resource_2.relation
+      end
     end
   end
 end
