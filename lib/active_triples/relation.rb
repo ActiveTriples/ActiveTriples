@@ -137,8 +137,8 @@ module ActiveTriples
     #
     # @return [Relation] a relation containing the set values; i.e. `self`
     def <<(values)
-      values = to_a | Array.wrap(values)
-      self.set(values)
+      values = prepare_relation(values) if values.is_a?(Relation)
+      self.set(objects.to_a | Array.wrap(values))
     end
     alias_method :push, :<<
 
@@ -268,39 +268,42 @@ module ActiveTriples
     ##
     # Gives a result set for the `Relation`.
     #
-    # By default, `RDF::URI` and `RDF::Node` results are cast to `RDFSource`.
-    # `Literal` results are given as their `#object` representations (e.g.
-    # `String`, `Date`.
+    # By default, `RDF::URI` and `RDF::Node` results are cast to `RDFSource`. 
+    # When `cast?` is `false`, `RDF::Resource` values are left in their raw 
+    # form.
+    #
+    # `Literal` results are cast as follows:
+    # 
+    #    - Simple string literals are returned as `String`
+    #    - `rdf:langString` literals are always returned as raw `Literal` objects, 
+    #       retaining their language tags.
+    #    - Typed literals are cast to their Ruby `#object` when their datatype 
+    #      is associated with a `Literal` subclass.
     #
     # @example results with default casting
+    #   datatype = RDF::URI("http://example.com/custom_type")
+    #
     #   parent << [parent.rdf_subject, predicate, 'my value']
+    #   parent << [parent.rdf_subject, predicate, RDF::Literal('my_value',
+    #                                               datatype: datatype)]
     #   parent << [parent.rdf_subject, predicate, Date.today]
     #   parent << [parent.rdf_subject, predicate, RDF::URI('http://ex.org/#me')]
     #   parent << [parent.rdf_subject, predicate, RDF::Node.new]
+    #
     #   relation.to_a
     #   # => ["my_value",
+    #   #     "my_value" R:L:(Literal),
     #   #     Fri, 25 Sep 2015,
     #   #     #<ActiveTriples::Resource:0x3f8...>,
     #   #     #<ActiveTriples::Resource:0x3f8...>]
-    #
-    # When `cast?` is `false`, `RDF::Resource` values are left in their raw
-    # form. Similarly, when `#return_literals?` is `true`, literals are
-    # returned in their `RDF::Literal` form, preserving language tags,
-    # datatype, and value.
     #
     # @example results with `cast?` set to `false`
     #   relation.to_a
     #   # => ["my_value",
+    #   #     "my_value" R:L:(Literal),
     #   #     Fri, 25 Sep 2015,
     #   #     #<RDF::URI:0x3f8... URI:http://ex.org/#me>,
     #   #     #<RDF::Node:0x3f8...(_:g69843536054680)>]
-    #
-    # @example results with `return_literals?` set to `true`
-    #   relation.to_a
-    #   # => [#<RDF::Literal:0x3f8...("my_value")>,
-    #   #     #<RDF::Literal::Date:0x3f8...("2015-09-25"^^<http://www.w3.org/2001/XMLSchema#date>)>,
-    #   #     #<ActiveTriples::Resource:0x3f8...>,
-    #   #     #<ActiveTriples::Resource:0x3f8...>]
     #
     # @return [Enumerator<Object>] the result set
     def each
@@ -380,7 +383,8 @@ module ActiveTriples
     #   non-{RDF::Resource} values.
     def set(values)
       raise UndefinedPropertyError.new(property, reflections) if predicate.nil?
-      values = values.to_a if values.is_a? Relation
+
+      values = prepare_relation(values) if values.is_a?(Relation)
       values = [values].compact unless values.kind_of?(Array)
 
       clear
@@ -427,6 +431,31 @@ module ActiveTriples
     end
 
     protected
+
+      ##
+      # Converts an object to the appropriate class.
+      #
+      # Literals are cast only when the datatype is known.
+      #
+      # @private
+      def convert_object(value)
+        case value
+        when RDFSource
+          value
+        when RDF::Literal
+          if value.simple?
+            value.object
+          elsif value.has_datatype?
+            RDF::Literal.datatyped_class(value.datatype.to_s) ? value.object : value
+          else
+            value
+          end
+        when RDF::Resource
+          make_node(value)
+        else
+          value
+        end
+      end
 
       ##
       # @private
@@ -486,6 +515,16 @@ module ActiveTriples
         valid_datatype?(val) ? RDF::Literal(val) : val
       end
 
+      def prepare_relation(values)
+        values.objects.map do |value|
+          if value.respond_to?(:resource?) && value.resource?
+            values.convert_object(value)
+          else
+            value
+          end  
+        end
+      end
+
       ##
       # @private
       def add_child_node(object, resource)
@@ -515,23 +554,6 @@ module ActiveTriples
       end
 
       ##
-      # Converts an object to the appropriate class.
-      #
-      # @private
-      def convert_object(value)
-        case value
-        when RDFSource
-          value
-        when RDF::Literal
-          return_literals? ? value : value.object
-        when RDF::Resource
-          make_node(value)
-        else
-          value
-        end
-      end
-
-      ##
       # Build a child resource or return it from this object's cache
       #
       # Builds the resource from the class_name specified for the
@@ -557,12 +579,6 @@ module ActiveTriples
         return true unless is_property? || (rel_args && rel_args[:cast])
         return rel_args[:cast] if rel_args.has_key?(:cast)
         !!property_config[:cast]
-      end
-
-      ##
-      # @private
-      def return_literals?
-        rel_args && rel_args[:literal]
       end
 
       ##
