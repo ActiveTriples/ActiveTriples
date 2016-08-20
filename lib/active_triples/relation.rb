@@ -4,19 +4,17 @@ require 'active_support/core_ext/module/delegation'
 module ActiveTriples
   ##
   # A `Relation` represents the values of a specific property/predicate on an
-  # {RDFSource}. Each relation is a set ({Array}) of {RDF::Terms} that are
-  # objects in the of source's triples of the form:
+  # `RDFSource`. Each relation is a set (`Enumerable` of the `RDF::Term`s that 
+  # are objects in the of source's triples of the form:
   #
-  #   <{#parent}> <{#predicate}> [term] .
+  #     <{#parent}> <{#predicate}> [term] .
   #
-  # Relations express a set of binary relationships (on a predicate) between
-  # the parent node and a term.
+  # Relations express a binary relationships (over a predicate) between the 
+  # parent node and a set of terms.
   #
-  # When the term is a URI or Blank Node, it is represented in the results
-  # {Array} as an {RDFSource} with a graph selected as a subgraph of the
-  # parent's. The triples in this subgraph are: (a) those whose subject is the
-  # term; (b) ...
-  #
+  # When the term is a URI or Blank Node, it is represented in the results as an
+  # `RDFSource`. Literal values are cast to strings, Ruby native types, or 
+  # remain as an `RDF::Literal` as documented in `#each`.
   #
   # @see RDF::Term
   class Relation
@@ -29,12 +27,12 @@ module ActiveTriples
     #   @return [RDFSource] the resource that is the domain of this relation
     # @!attribute [rw] value_arguments
     #   @return [Array<Object>]
-    # @!attribute [rw] rel_args
+    # @!attribute [r] rel_args
     #   @return [Hash]
     # @!attribute [r] reflections
     #   @return [Class]
-    attr_accessor :parent, :value_arguments, :rel_args
-    attr_reader :reflections
+    attr_accessor :parent, :value_arguments
+    attr_reader :reflections, :rel_args
 
     delegate :[], :inspect, :last, :size, :join, to: :to_a
 
@@ -45,11 +43,11 @@ module ActiveTriples
     def initialize(parent_source, value_arguments)
       self.parent = parent_source
       @reflections = parent_source.reflections
-      self.rel_args ||= {}
-      self.rel_args = value_arguments.pop if
+      @rel_args ||= {}
+      @rel_args = value_arguments.pop if
         value_arguments.is_a?(Array) && value_arguments.last.is_a?(Hash)
 
-      self.value_arguments = value_arguments
+      @value_arguments = value_arguments
     end
 
     ##
@@ -367,20 +365,20 @@ module ActiveTriples
     end
 
     ##
-    # Adds values to the relation
+    # Set the values of the Relation
     #
     # @param [Array<RDF::Resource>, RDF::Resource] values  an array of values
-    #   or a single value. If not an {RDF::Resource}, the values will be
-    #   coerced to an {RDF::Literal} or {RDF::Node} by {RDF::Statement}
+    #   or a single value. If not an `RDF::Resource`, the values will be
+    #   coerced to an `RDF::Literal` or `RDF::Node` by `RDF::Statement`
     #
     # @return [Relation] a relation containing the set values; i.e. `self`
     #
     # @raise [ActiveTriples::UndefinedPropertyError] if the property is not
-    #   already an {RDF::Term} and is not defined in `#property_config`
+    #   already an `RDF::Term` and is not defined in `#property_config`
     #
     # @see http://www.rubydoc.info/github/ruby-rdf/rdf/RDF/Statement For
-    #   documentation on {RDF::Statement} and the handling of
-    #   non-{RDF::Resource} values.
+    #   documentation on `RDF::Statement` and the handling of
+    #   non-`RDF::Resource` values.
     def set(values)
       raise UndefinedPropertyError.new(property, reflections) if predicate.nil?
 
@@ -569,14 +567,14 @@ module ActiveTriples
         node.set_persistence_strategy(property_config[:persist_to]) if
           is_property? && property_config[:persist_to]
         return nil if (is_property? && property_config[:class_name]) && (class_for_value(value) != class_for_property)
+
         self.node_cache[value] ||= node
-        node
       end
 
       ##
       # @private
       def cast?
-        return true unless is_property? || (rel_args && rel_args[:cast])
+        return true unless is_property? || rel_args[:cast]
         return rel_args[:cast] if rel_args.has_key?(:cast)
         !!property_config[:cast]
       end
