@@ -103,6 +103,7 @@ module ActiveTriples
     def <=>(other)
       return nil unless other.respond_to?(:each)
 
+      # If we're empty, avoid calling `#to_a` on other.
       if empty?
         return 0 if other.each.first.nil?
         return nil
@@ -111,20 +112,24 @@ module ActiveTriples
       # We'll need to traverse `other` repeatedly, so we get a stable `Array`
       # representation. This avoids any repeated query cost if `other` is a
       # `Relation`.
-      length = 0
-      other  = other.to_a
-      this   = each
+      length       = 0
+      other        = other.to_a
+      other_length = other.length
+      this         = each
 
       loop do
         begin
-          cur = this.next
+          current = this.next
         rescue StopIteration
-          return other.length == length ? 0 : nil
+          # If we die, we are equal to other so far, check length and walk away.
+          return other_length == length ? 0 : nil
         end
 
         length += 1
-
-        return nil if other.length < length || !other.include?(cur)
+        
+        # Return as not comparable if we have seen more terms than are in other,
+        # or if other does not include the current term.
+        return nil if other_length < length || !other.include?(current)
       end
     end
 
