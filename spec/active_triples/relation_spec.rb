@@ -203,6 +203,8 @@ describe ActiveTriples::Relation do
 
       types = { numeric: [0, 1, 2, 3_000_000_000],
                 string:  ['moomin', 'snork', 'snufkin'],
+                lang:    [RDF::Literal('Moomin', language: :en), 
+                          RDF::Literal('Mummi', language: :fi)],
                 date:    [Date.today, Date.today - 1],
                 uri:     [RDF::URI('one'), RDF::URI('two'), RDF::URI('three')],
                 node:    [RDF::Node.new, RDF::Node.new],
@@ -237,6 +239,16 @@ describe ActiveTriples::Relation do
 
         it "gives nil when other contains a superset of varied elements" do
           other << 'extra'
+          expect(subject <=> other).to be_nil
+        end
+
+        it "gives nil when other contains a subset by language" do
+          subject << RDF::Literal("Moomin", language: :aa)
+          expect(subject <=> other).to be_nil
+        end
+
+        it "gives nil when other contains a superset by language" do
+          other << RDF::Literal("Moomin", language: :aa)
           expect(subject <=> other).to be_nil
         end
       end
