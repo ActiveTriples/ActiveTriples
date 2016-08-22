@@ -14,6 +14,11 @@ module ActiveTriples
   #
   # Available properties are base_uri, rdf_label, type, and repository
   module Configurable
+    def inherited(child_class)
+      child_class.configure type: self.type
+      super
+    end
+
     def base_uri
       configuration[:base_uri]
     end

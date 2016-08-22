@@ -8,9 +8,7 @@ describe ActiveTriples::Configurable do
     end
   end
 
-  after do
-    Object.send(:remove_const, "DummyConfigurable")
-  end
+  after { Object.send(:remove_const, "DummyConfigurable") }
 
   it "should be okay if not configured" do
     expect(DummyConfigurable.type).to eq nil
@@ -21,9 +19,32 @@ describe ActiveTriples::Configurable do
     expect(DummyConfigurable.type).to eq []
   end
 
+  describe 'configuration inheritance' do
+    before do
+      DummyConfigurable.configure type: type,
+                                  base_uri: base_uri,
+                                  rdf_label: rdf_label,
+                                  repository: repository
+      class ConfigurableSubclass < DummyConfigurable; end
+    end
+
+    let(:type)       { RDF::Vocab::FOAF.Person }
+    let(:base_uri)   { 'http://example.org/moomin' }
+    let(:rdf_label)  { RDF::Vocab::DC.title }
+    let(:repository) { RDF::Repository.new }
+
+    after { Object.send(:remove_const, "ConfigurableSubclass") }
+
+    it 'inherits type from parent' do
+      expect(ConfigurableSubclass.type).to eq DummyConfigurable.type
+    end
+  end
+
   describe '#configure' do
     before do
-      DummyConfigurable.configure base_uri: "http://example.org/base", type: RDF::RDFS.Class, rdf_label: RDF::Vocab::DC.title
+      DummyConfigurable.configure base_uri:  "http://example.org/base",
+                                  type:      RDF::RDFS.Class,
+                                  rdf_label: RDF::Vocab::DC.title
     end
 
     it 'should set a base uri' do
@@ -31,8 +52,13 @@ describe ActiveTriples::Configurable do
     end
 
     it "should be able to set multiple types" do
-      DummyConfigurable.configure type: [RDF::RDFS.Container, RDF::RDFS.ContainerMembershipProperty]
-      expect(DummyConfigurable.type).to contain_exactly(RDF::RDFS.Class, RDF::RDFS.Container, RDF::RDFS.ContainerMembershipProperty)
+      DummyConfigurable.configure type: [RDF::RDFS.Container,
+                                         RDF::RDFS.ContainerMembershipProperty]
+
+      expect(DummyConfigurable.type)
+        .to contain_exactly(RDF::RDFS.Class,
+                            RDF::RDFS.Container,
+                            RDF::RDFS.ContainerMembershipProperty)
     end
 
     it 'should set an rdf_label' do
@@ -45,7 +71,9 @@ describe ActiveTriples::Configurable do
 
     it "should be able to set multiple types" do
       DummyConfigurable.configure type: RDF::RDFS.Container
-      expect(DummyConfigurable.type).to eq [RDF::RDFS.Class, RDF::RDFS.Container]
+
+      expect(DummyConfigurable.type)
+        .to eq [RDF::RDFS.Class, RDF::RDFS.Container]
     end
   end
 end
