@@ -347,15 +347,6 @@ describe ActiveTriples::RDFSource do
       expect(subject.get_values(other_uri, predicate))
         .to be_a_relation_containing(val)
     end
-
-    context 'when calling getter' do
-      it 'passes arguments through' do
-        subject.creator = 'moomin'
-
-        expect(subject.creator(literal: true).first)
-          .to eq RDF::Literal('moomin')
-      end
-    end
   end
 
   describe '#set_value' do
@@ -535,28 +526,43 @@ describe ActiveTriples::RDFSource do
     end
 
     describe 'capturing child nodes' do
-      let(:other) { source_class.new }
+      let(:other)     { source_class.new }
+      let(:predicate) { RDF::OWL.sameAs }
 
       it 'adds child node data to own graph' do
         other << RDF::Statement(:s, RDF::URI('p'), 'o')
 
-        expect { subject.set_value(RDF::OWL.sameAs, other) }
+        expect { subject.set_value(predicate, other) }
           .to change { subject.statements.to_a }
           .to include(*other.statements.to_a)
       end
 
       it 'does not change persistence strategy of added node' do
-        expect { subject.set_value(RDF::OWL.sameAs, other) }
+        expect { subject.set_value(predicate, other) }
           .not_to change { other.persistence_strategy }
       end
 
       it 'does not capture a child node when it already persists to a parent' do
         third = source_class.new
-        third.set_value(RDF::OWL.sameAs, other)
+        third.set_value(predicate, other)
 
-        child_other = third.get_values(RDF::OWL.sameAs).first
-        expect { subject.set_value(RDF::OWL.sameAs, child_other) }
+        child_other = third.get_values(predicate).first
+        expect { subject.set_value(predicate, child_other) }
           .not_to change { child_other.persistence_strategy.parent }
+      end
+      
+      context 'when setting to a relation' do
+        it 'adds child node data to graph' do
+          other << RDF::Statement(other, RDF::URI('p'), 'o')
+          
+          relation_source = source_class.new 
+          relation_source.set_value(predicate, other)
+          relation = relation_source.get_values(predicate)
+          
+          expect { subject.set_value(predicate, relation) }
+            .to change { subject.statements.to_a }
+            .to include(*other.statements.to_a)
+        end
       end
     end
   end

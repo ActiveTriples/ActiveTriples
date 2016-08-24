@@ -571,21 +571,14 @@ describe ActiveTriples::Resource do
     context "literals are set" do
       let(:literal1) { RDF::Literal.new("test", :language => :en) }
       let(:literal2) { RDF::Literal.new("test", :language => :fr) }
+
       before do
         subject.set_value(RDF::Vocab::DC.title, [literal1, literal2])
       end
-      context "and literals are not requested" do
-        it "should return a string" do
-          # Should this de-duplicate?
-          expect(subject.get_values(RDF::Vocab::DC.title))
-            .to contain_exactly "test", "test"
-        end
-      end
-      context "and literals are requested" do
-        it "should return literals" do
-          expect(subject.get_values(RDF::Vocab::DC.title, :literal => true))
-            .to contain_exactly literal1, literal2
-        end
+
+      it "should return literals" do
+        expect(subject.get_values(RDF::Vocab::DC.title, :literal => true))
+          .to contain_exactly literal1, literal2
       end
     end
   end

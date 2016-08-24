@@ -128,14 +128,14 @@ describe ActiveTriples::Relation do
       it 'handles literal equality' do
         literal      = RDF::Literal('mummi')
         lang_literal = RDF::Literal('mummi', language: :fi)
-        
+
         subject << [1, literal]
         other   << [2, lang_literal]
-        
+
         expect(subject & other).to be_empty
-        
+
         subject << [1, lang_literal]
-        expect(subject & other).to contain_exactly 'mummi'
+        expect(subject & other).to contain_exactly lang_literal
       end
     end
   end
@@ -146,7 +146,7 @@ describe ActiveTriples::Relation do
       let(:parent_resource) { ActiveTriples::Resource.new }
 
       include_context 'with other relation'
-    
+
       it 'handles node equality' do
         node = RDF::Node.new
 
@@ -159,11 +159,11 @@ describe ActiveTriples::Relation do
       it 'handles literal equality' do
         literal      = RDF::Literal('mummi')
         lang_literal = RDF::Literal('mummi', language: :fi)
-        
+
         subject << [1, literal]
         other   << [2, lang_literal]
 
-        expect(subject | other).to contain_exactly('mummi', 'mummi', 1, 2)
+        expect(subject | other).to contain_exactly('mummi', lang_literal, 1, 2)
       end
     end
   end
@@ -174,9 +174,9 @@ describe ActiveTriples::Relation do
       let(:parent_resource) { ActiveTriples::Resource.new }
 
       include_context 'with other relation'
-      
+
       it 'still implements as ' do
-        subject << [RDF::Node.new, RDF::Node.new, 
+        subject << [RDF::Node.new, RDF::Node.new,
                     RDF::Literal('mummi'), RDF::Literal('mummi', language: :fi)]
         other   << [RDF::Node.new, RDF::Node.new,
                     RDF::Literal('mummi'), RDF::Literal('mummi', language: :fi)]
@@ -473,6 +473,71 @@ describe ActiveTriples::Relation do
       expect { subject << values }
         .to change { subject.to_a }.to contain_exactly(*values)
     end
+
+    it 'keeps datatypes' do
+      values = [RDF::Literal(Date.today), RDF::Literal(:moomin)]
+
+      expect { values.each { |v| subject << v } }
+        .to change { subject.send(:objects).to_a }
+             .to contain_exactly(*values)
+    end
+
+    it 'keeps languages' do
+      values = [RDF::Literal("Moomin", language: :en),
+                RDF::Literal("Mummi",  language: :fi)]
+
+      expect { values.each { |v| subject << v } }
+        .to change { subject.send(:objects).to_a }
+             .to contain_exactly(*values)
+    end
+
+    context 'when given a Relation' do
+      it 'keeps datatypes and languages of values' do
+        values = [RDF::Literal(Date.today),
+                  RDF::Literal(:moomin),
+                  RDF::Literal("Moomin", language: :en),
+                  RDF::Literal("Mummi",  language: :fi)]
+
+        subject.set(values)
+        expect(subject.send(:objects)).to contain_exactly(*values)
+
+        expect { subject << subject }
+          .not_to change { subject.send(:objects).to_a }
+      end
+
+      it 'retains unknown datatypes' do
+        literal = 
+          RDF::Literal('snowflake', 
+                       datatype: RDF::URI('http://emaple.com/snowflake'))
+
+        subject << literal
+
+        expect { subject << 'snowflake' }
+          .to change { subject.to_a }
+               .to contain_exactly(literal, 'snowflake')
+
+      end
+
+      context 'with a datatyped literal' do
+        before do
+          class DummySnowflake < RDF::Literal
+            DATATYPE = RDF::URI('http://example.com/snowflake').freeze
+          end
+        end
+
+        after { Object.send(:remove_const, :DummySnowflake) }
+
+        it 'retains datatypes' do
+          literal = DummySnowflake.new('special')
+
+          subject << literal
+          
+          expect { subject << 'special' }
+            .to change { subject.send(:objects).to_a }
+                 .to contain_exactly(literal, RDF::Literal('special'))
+        end
+      end
+    end
   end
 
   describe '#predicate' do
@@ -603,18 +668,6 @@ describe ActiveTriples::Relation do
               expect(subject.each).to contain_exactly(*values)
             end
           end
-
-          context 'when #return_literals? is true' do
-            let(:values) do
-              [RDF::Literal('moomin'), RDF::Literal(Date.today)]
-            end
-
-            it 'does not cast results' do
-              allow(subject).to receive(:return_literals?).and_return(true)
-
-              expect(subject.each).to contain_exactly(*values)
-            end
-          end
         end
       end
     end
@@ -712,6 +765,34 @@ describe ActiveTriples::Relation do
         values = [:moomin, :snork]
         expect { subject.set(values) }
           .to change { subject.to_a }.to contain_exactly(*values)
+      end
+
+      context 'when given a Relation' do
+        before do
+          class DummySnowflake < RDF::Literal
+            DATATYPE = RDF::URI('http://example.com/snowflake').freeze
+          end
+        end
+
+        after { Object.send(:remove_const, :DummySnowflake) }
+
+        it 'keeps datatypes and languages of values' do
+          values = [Date.today,
+                    'Moomin',
+                    :moomin,
+                    RDF::Literal("Moomin", language: :en),
+                    RDF::Literal("Mummi",  language: :fi),
+                    RDF::Literal("Moomin", datatype: RDF::URI('custom')),
+                    DummySnowflake.new('Moomin')]
+
+          subject.set(values)
+
+          values[6] = 'Moomin' # cast known datatypes
+          expect(subject.to_a).to contain_exactly(*values)
+
+          expect { subject.set(subject) }
+            .not_to change { subject.send(:objects).to_a }
+        end
       end
 
       context 'and persistence config' do
