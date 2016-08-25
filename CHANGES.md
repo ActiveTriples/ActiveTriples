@@ -1,3 +1,22 @@
+0.11.0
+----
+  - Reworks ParentStrategy to use an Transaction over a well defined
+  "extended bounded description".
+  - Converts Relation to an Enumerable for more efficient access to
+  property values.
+  - Cleans up .Relation equality and added `#|` & `#&` for Set style
+  comparison.
+  - Deprecates `Relation#first_or_create`.
+  - Removes dependency on the `linkeddata` gem. Users should require
+  individual RDF libraries as needed.
+  - Adds inheritance of configured types when subclassing an
+  `RDFSource`.
+  - Uses `URI#intern` to avoid repeated allocations of common URIs.
+  - Changes handling of language and datatyped Literals in
+  `Relation#each` & `#to_a`;
+    - now returns `RDF::Literal` for lanugage tagged strings and
+    for unknown datatypes.
+
 0.10.0
 ----
   - Fix Identifiable for ActiveFedora [Trey Pendragon]
