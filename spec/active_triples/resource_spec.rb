@@ -635,6 +635,121 @@ describe ActiveTriples::Resource do
     end
   end
 
+  describe 'sources with properties with class_name defined' do
+    before(:context) do
+      class DummyChapter < ActiveTriples::Resource
+        ontology = RDF::URI('http://www.example.com/ontology')
+        type     = RDF::URI('http://www.example.com/type')
+
+        configure repository: :default, type: type / 'Chapter'
+
+        property :title,    predicate: ontology / 'title'
+        property :subtitle, predicate: ontology / 'subtitle'
+      end
+
+      class DummyBook < ActiveTriples::Resource
+        ontology = RDF::URI('http://www.example.com/ontology')
+        type     = RDF::URI('http://www.example.com/type')
+
+        configure repository: :default, type: type / 'Book'
+
+        property :title,       predicate: ontology / 'title'
+        property :has_chapter, predicate: ontology / 'hasChapter',
+                               class_name: DummyChapter
+      end
+    end
+
+    context 'when loading models from graph' do
+      before(:context) do
+        r = RDF::Repository.new
+        ActiveTriples::Repositories.repositories[:default] = r
+
+        @book_url = 'http://www.example.com/BOOK_URI'
+        @book_title = 'Example Book.'
+        @chapter_title = 'Chapter 1'
+        ttl = "<#{@book_url}> a <http://www.example.com/type/Book>;
+                 <http://www.example.com/ontology/hasChapter> [
+                   a <http://www.example.com/type/Chapter>;
+                   <http://www.example.com/ontology/title> \"#{@chapter_title}\"
+                 ];
+               <http://www.example.com/ontology/title> \"#{@book_title}\" ."
+        book_graph = ::RDF::Graph.new.from_ttl ttl
+        r = ActiveTriples::Repositories.repositories[:default]
+        r << book_graph
+
+        @book = DummyBook.new(RDF::URI.new(@book_url))
+      end
+
+      it 'populates DummyBook properly' do
+        expect(@book.rdf_subject.to_s).to eq @book_url
+        expect(@book).to be_a DummyBook
+        expect(@book.type)
+          .to include(RDF::URI.new('http://www.example.com/type/Book'))
+        expect(@book.title.first).to eq @book_title
+      end
+
+      it 'populates DummyChapter properly' do
+        chapter = @book.has_chapter.first
+        expect(chapter).to be_a DummyChapter
+        expect(chapter.title.first).to eq @chapter_title
+        expect(chapter.type)
+          .to include(RDF::URI.new('http://www.example.com/type/Chapter'))
+      end
+    end
+
+    context 'when loading models through properties' do
+      before(:context) do
+        r = RDF::Repository.new
+        ActiveTriples::Repositories.repositories[:default] = r
+
+        bk1 = DummyBook.new('http://www.example.com/book1')
+        bk1.title = 'Learning about Explicit Links in ActiveTriples'
+
+        ch1 = DummyChapter.new('http://www.example.com/book1/chapter1')
+        ch1.title = 'Defining a source with an Explicit Link'
+        bk1.has_chapter = ch1
+        ch1.persist!
+        bk1.persist!
+
+        @bk1 = DummyBook.new('http://www.example.com/book1')
+        @ch1 = DummyChapter.new('http://www.example.com/book1/chapter1')
+      end
+
+      it 'populates DummyBook (resumed resource) properly' do
+        expect(@bk1.type.first)
+          .to eq RDF::URI('http://www.example.com/type/Book')
+        expect(@bk1.title.first)
+          .to eq 'Learning about Explicit Links in ActiveTriples'
+      end
+
+      it 'populates DummyChapter (property resource) properly' do
+        ch1 = @bk1.has_chapter.first
+        expect(ch1.type.first)
+          .to eq RDF::URI('http://www.example.com/type/Chapter')
+        expect(ch1.title.first)
+          .to eq 'Defining a source with an Explicit Link'
+      end
+
+      it 'populates DummyChapter (directly from repository) properly' do
+        expect(@ch1.type.first)
+          .to eq RDF::URI('http://www.example.com/type/Chapter')
+        expect(@ch1.title.first)
+          .to eq 'Defining a source with an Explicit Link'
+      end
+
+      it 'does not reload from repository twice' do
+        ch1 = @bk1.has_chapter.first
+        expect(ch1.title.first).to eq 'Defining a source with an Explicit Link'
+
+        @ch1.subtitle = 'Changed after original load'
+        @ch1.persist!
+        expect(@ch1.subtitle).to eq ['Changed after original load']
+
+        expect(ch1.subtitle).to eq []
+      end
+    end
+  end
+
   describe 'big complex graphs' do
     before do
       class DummyPerson
