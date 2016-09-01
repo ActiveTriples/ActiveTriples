@@ -652,6 +652,45 @@ describe ActiveTriples::Relation do
             expect(subject.each.map(&:rdf_subject))
               .to contain_exactly(*values)
           end
+          
+          context 'and a class is configured' do
+            let(:this_type) { RDF::URI('http://example.org/Moomin') }
+            let(:this_class) do
+              Class.new do
+                include ActiveTriples::RDFSource
+                configure type: RDF::URI('http://example.org/Moomin')
+              end
+            end
+
+            let(:other_type) { RDF::URI('http://example.org/Snork') }
+            let(:other_class) do
+              Class.new do
+                include ActiveTriples::RDFSource
+                configure type: RDF::URI('http://example.org/Snork')
+              end
+            end
+
+            before do
+              reflections
+                .property property,
+                          class_name: this_class,
+                          predicate:  RDF::URI('http://example.org/moomin')
+            end
+              
+            it 'casts values with no type to the class' do
+              expect(subject).to contain_exactly(an_instance_of(this_class), 
+                                                 an_instance_of(this_class),
+                                                 an_instance_of(this_class))
+            end
+
+            it 'casts values with other type to the other class' do
+              subject << other_class.new
+              expect(subject).to contain_exactly(an_instance_of(this_class), 
+                                                 an_instance_of(this_class),
+                                                 an_instance_of(this_class),
+                                                 an_instance_of(other_class))
+            end
+          end
 
           context 'and persistence_strategy is configured' do
             before do
