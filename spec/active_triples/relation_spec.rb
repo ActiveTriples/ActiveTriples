@@ -286,7 +286,7 @@ describe ActiveTriples::Relation do
     end
 
     it 'adds new child node to relation' do
-      expect { subject.build }.to change { subject.count }.by(1)
+      expect { subject.build }.to change { subject.count }.by 1
     end
 
     it 'builds child as new blank node by default' do
@@ -296,6 +296,24 @@ describe ActiveTriples::Relation do
     it 'builds child with uri if given' do
       uri = 'http://example.com/moomin'
       expect(subject.build(id: uri)).to be_uri
+    end
+
+    context 'when cast is false' do
+      include_context 'with symbol property' do
+        before do
+          reflections.property :moomin,
+                               cast:       false,
+                               predicate:  RDF::Vocab::DC.relation
+        end
+      end
+
+      it 'still returns as a resource' do
+        expect(subject.build).to be_a ActiveTriples::RDFSource
+      end
+      
+      it 'adds a new child node to the relation' do
+        expect { subject.build }.to change { subject.count }.by 1
+      end        
     end
 
     context 'with configured properties' do
@@ -652,19 +670,82 @@ describe ActiveTriples::Relation do
             expect(subject.each.map(&:rdf_subject))
               .to contain_exactly(*values)
           end
-
-          context 'and persistence_strategy is configured' do
-            before do
-              reflections
-                .property :moomin,
-                          predicate: RDF::URI('http://example.org/moomin'),
-                          persist_to: ActiveTriples::RepositoryStrategy
+          
+          context 'and a class is configured' do
+            let(:this_type) { RDF::URI('http://example.org/Moomin') }
+            let(:this_class) do
+              Class.new do
+                include ActiveTriples::RDFSource
+                configure type: RDF::URI('http://example.org/Moomin')
+              end
             end
 
-            it 'assigns persistence strategy' do
-              subject.each.each do |node|
-                expect(node.persistence_strategy)
-                  .to be_a ActiveTriples::RepositoryStrategy
+            let(:other_type) { RDF::URI('http://example.org/Snork') }
+            let(:other_class) do
+              Class.new do
+                include ActiveTriples::RDFSource
+                configure type: RDF::URI('http://example.org/Snork')
+              end
+            end
+
+            before do
+              reflections
+                .property property,
+                          class_name: this_class,
+                          predicate:  RDF::URI('http://example.org/moomin')
+            end
+              
+            it 'casts values with no type to the class' do
+              expect(subject).to contain_exactly(an_instance_of(this_class), 
+                                                 an_instance_of(this_class),
+                                                 an_instance_of(this_class))
+            end
+
+            it 'casts values with other type to the other class' do
+              subject << other_class.new
+              expect(subject).to contain_exactly(an_instance_of(this_class), 
+                                                 an_instance_of(this_class),
+                                                 an_instance_of(this_class),
+                                                 an_instance_of(other_class))
+            end
+          end
+
+          context 'and persistence_strategy is configured' do
+            context 'as a repository strategy' do
+              before do
+                reflections
+                  .property :moomin,
+                            predicate: RDF::URI('http://example.org/moomin'),
+                            persist_to: ActiveTriples::RepositoryStrategy
+              end
+
+              it 'assigns persistence strategy' do
+                subject.each do |node|
+                  expect(node.persistence_strategy)
+                    .to be_a ActiveTriples::RepositoryStrategy
+                end
+              end
+            end
+
+            context 'as a parent strategy' do
+              before do
+                reflections
+                  .property :moomin,
+                            predicate: RDF::URI('http://example.org/moomin'),
+                            persist_to: ActiveTriples::ParentStrategy
+              end
+
+              it 'assigns persistence strategy' do
+                subject.each do |node|
+                  expect(node.persistence_strategy)
+                    .to be_a ActiveTriples::ParentStrategy
+                end
+              end
+
+              it 'assigns parent' do
+                subject.each do |node|
+                  expect(node.persistence_strategy.parent).to eql subject.parent
+                end
               end
             end
           end
