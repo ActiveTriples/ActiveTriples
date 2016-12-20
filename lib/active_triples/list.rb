@@ -112,7 +112,6 @@ module ActiveTriples
             values.delete key
           end
         end
-        persist!
         super
       end
 
@@ -176,7 +175,6 @@ module ActiveTriples
         resource << value
         value.set_persistence_strategy(ParentStrategy)
         value.persistence_strategy.parent = resource
-        value.persist!
       end
     end
   end

@@ -392,8 +392,10 @@ module ActiveTriples
 
       clear
       values.each { |val| set_value(val) }
+      
+      parent.persist! if parent.persistence_strategy.respond_to?(:ancestors) &&
+                         parent.persistence_strategy.ancestors.any? { |r| r.is_a?(ActiveTriples::List::ListResource) }
 
-      parent.persist! if parent.persistence_strategy.is_a? ParentStrategy
       self
     end
 
@@ -541,7 +543,6 @@ module ActiveTriples
                 parent.persistence_strategy.ancestors.find { |a| a == new_resource })
           new_resource.set_persistence_strategy(ParentStrategy)
           new_resource.parent = parent
-          new_resource.persist!
         end
 
         self.node_cache[resource.rdf_subject] = (resource == object ? new_resource : object)

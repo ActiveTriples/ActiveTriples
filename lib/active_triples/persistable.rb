@@ -27,13 +27,6 @@ module ActiveTriples
       persistence_strategy.graph
     end
 
-    ##
-    # @see RDF::Enumerable.each
-    def each(*args)
-      graph.each(*args)
-    end
-
-    ##
     # @see RDF::Writable.insert_statement
     def insert_statement(*args)
       graph.send(:insert_statement, *args)
@@ -77,19 +70,16 @@ module ActiveTriples
     end
 
     ##
-    # Sends a persistence message to the persistence_startegy, saving the
-    # RDFSource.
+    # Sends a persistence message to the `persistence_startegy`, saving the
+    # `Persistable`.
     #
     # @return [Boolean]
     def persist!(opts={})
-      return if @persisting
       result = false
       return result if opts[:validate] && !valid?
-      @persisting = true
       run_callbacks :persist do
         result = persistence_strategy.persist!
       end
-      @persisting = false
       result
     end
 
