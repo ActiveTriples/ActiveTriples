@@ -5,9 +5,9 @@ require 'rdf/spec/queryable'
 require 'active_triples/util/extended_bounded_description'
 
 describe ActiveTriples::ExtendedBoundedDescription do
-  subject { described_class.new(source_graph, starting_node, ancestors) }
+  subject { described_class.new(source_graph, starting_node, bounds) }
 
-  let(:ancestors)     { [] }
+  let(:bounds)        { [] }
   let(:source_graph)  { RDF::Repository.new }
   let(:starting_node) { RDF::Node.new }
 
@@ -81,17 +81,17 @@ describe ActiveTriples::ExtendedBoundedDescription do
 
   it_behaves_like 'a bounded description'
 
-  context 'with ancestors' do
+  context 'with starting bounds' do
     before do
       included_statements <<
-        RDF::Statement(starting_node, RDF::URI('a'), ancestor)
+        RDF::Statement(starting_node, RDF::URI('a'), bound)
 
       excluded_statements << 
-        RDF::Statement(ancestor, RDF::URI('a'), starting_node)
+        RDF::Statement(bound, RDF::URI('a'), starting_node)
     end
     
-    let(:ancestor)  { RDF::Node.new(:ancestor) }
-    let(:ancestors) { [ancestor] }
+    let(:bound)  { RDF::Node.new(:bound) }
+    let(:bounds) { [bound] }
 
     it_behaves_like 'a bounded description'
   end
