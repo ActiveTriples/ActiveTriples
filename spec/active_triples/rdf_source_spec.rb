@@ -272,6 +272,18 @@ describe ActiveTriples::RDFSource do
     end
   end
 
+  describe '#inspect' do
+    it 'includes bnode id' do
+      expect(subject.inspect).to include subject.to_base
+    end
+
+    it 'includes uri' do
+      subject.set_subject!('http://example.org/moomin')
+
+      expect(subject.inspect).to include subject.to_base
+    end
+  end
+
   describe '#rdf_subject' do
     its(:rdf_subject) { is_expected.to be_a_node }
 
