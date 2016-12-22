@@ -288,6 +288,14 @@ module ActiveTriples
     end
 
     ##
+    # @return [String]
+    #
+    # @note Without a custom #inspect, we inherit from RDF::Value.
+    def inspect
+      sprintf("#<%s:%#0x ID:%s>", self.class.to_s, self.object_id, self.to_base)
+    end
+
+    ##
     # @return [Boolean] true if the Term is a node
     #
     # @see RDF::Term#node?
@@ -493,7 +501,7 @@ module ActiveTriples
     end
 
     ##
-    # @deprecated for removal in 1.0; use `#get_values` instead.
+    # @deprecated for removal in 1.0; use `#get_values` insctead.
     # @see #get_values
     def get_relation(args)
       warn 'DEPRECATION: `ActiveTriples::RDFSource#get_relation` will be' \
