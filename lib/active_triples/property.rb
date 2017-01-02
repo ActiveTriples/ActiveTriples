@@ -14,15 +14,18 @@ module ActiveTriples
     # @option options [Boolean] :cast
     # @option options [String, Class] :class_name
     # @option options [RDF::URI] :predicate
-    def initialize(options = {})
-      self.name = options.fetch(:name)
+    def initialize(options = {}, &block)
+      self.name       = options.fetch(:name)
       self.attributes = options.except(:name)
+      self.config     = block 
     end
 
     ##
     # @!attribute [r] name
     #   @return [Symbol]
-    attr_reader :name
+    # @!attribute [r] config
+    #   @return [Proc]
+    attr_reader :name, :config
 
     ##
     # @return [Boolean]
@@ -47,9 +50,11 @@ module ActiveTriples
     ##
     # @!attribute [w] name
     #   @return [Symbol]
+    # @!attribute [w] config
+    #   @return [Proc]
     # @!attribute [rw] attributes
     #   @return [Hash<Symbol, Object>]
-    attr_writer   :name
+    attr_writer   :name, :config
     attr_accessor :attributes
 
     alias_method :to_h, :attributes

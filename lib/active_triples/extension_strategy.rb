@@ -10,7 +10,7 @@ module ActiveTriples
       #   the property to.
       # @param [ActiveTriples::Property] property The property to copy.
       def apply(resource, property)
-        resource.property property.name, property.to_h
+        resource.property(property.name, property.to_h, &property.config)
       end
     end
   end

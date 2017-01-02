@@ -17,6 +17,16 @@ describe ActiveTriples::Property do
     expect(subject.class_name).to eq "Test"
   end
 
+  it 'should hold a block' do
+    fake = Object.new
+    property = described_class.new(options) do
+      fake.configure
+    end
+
+    expect(fake).to receive(:configure)
+    property.config.call
+  end
+
   describe "#to_h" do
     it "should not return the property's name" do
       expect(subject.to_h).to eq (
