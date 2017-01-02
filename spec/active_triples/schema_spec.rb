@@ -12,5 +12,11 @@ RSpec.describe ActiveTriples::Schema do
       expect(property.name).to eq :title
       expect(property.predicate).to eq RDF::Vocab::DC.title
     end
+
+    it 'should hold a block' do
+      subject.property :title, :predicate => RDF::Vocab::DC.title do
+        configure
+      end
+    end
   end
 end
