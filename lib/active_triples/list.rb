@@ -173,7 +173,7 @@ module ActiveTriples
       super
       if value.kind_of? RDFSource
         resource << value
-        value.set_persistence_strategy(ParentStrategy)
+        value.set_persistence_strategy(ParentStrategy.new(value))
         value.persistence_strategy.parent = resource
       end
     end

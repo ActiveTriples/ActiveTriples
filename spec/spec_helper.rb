@@ -28,3 +28,23 @@ RSpec.configure do |config|
   # Use the specified formatter
   config.formatter = :progress
 end
+
+def silence_stderr
+  @orig_stderr = $stderr
+  $stderr = StringIO.new
+
+  yield
+
+  $stderr = @orig_stderr
+  @orig_stderr = nil
+end
+
+def silence_stdout
+  @orig_stdout = $stdout
+  $stdout = StringIO.new
+
+  yield
+
+  $stderr = @orig_stdout
+  @orig_stdout = nil
+end

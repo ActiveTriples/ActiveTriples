@@ -2,8 +2,7 @@
 require 'spec_helper'
 
 describe ActiveTriples::Persistable do
-  subject { klass.new }
-
+  subject     { klass.new }
   let(:klass) { Class.new { include ActiveTriples::Persistable } }
 
   let(:statement) do
@@ -12,15 +11,12 @@ describe ActiveTriples::Persistable do
 
   describe 'method delegation' do
     context 'with a strategy' do
-      let(:strategy_class) do
-        object_double(ActiveTriples::ParentStrategy).as_stubbed_const
-      end
-
-      let(:strategy) { instance_double('PersistenceStrategy') }
+      let(:strategy_class) { FakePersistenceStrategy }
+      let(:strategy)       { instance_double('PersistenceStrategy') }
 
       before do
         allow(strategy_class).to receive(:new).and_return(strategy)
-        subject.set_persistence_strategy(strategy_class)
+        subject.set_persistence_strategy(strategy_class.new(subject))
       end
 
       describe '#persist!' do
@@ -63,25 +59,41 @@ describe ActiveTriples::Persistable do
   end
 
   describe '#set_persistence_strategy' do
-    let(:strategy_class) { double('strategy class') }
-    let(:strategy) { double('persistence strategy') }
+    let(:strategy_class) { FakePersistenceStrategy }
+    let(:strategy)       { strategy_class.new(klass) }
 
-    before do
-      allow(strategy_class).to receive(:new).and_return(strategy)
+    it 'sets new persistence strategy' do
+      expect { subject.set_persistence_strategy(strategy) }
+        .to change { subject.persistence_strategy }
+              .to(strategy)
     end
 
-    it 'sets new persistence strategy as an instance of the given class' do
-      expect { subject.set_persistence_strategy(strategy_class) }
-        .to change { subject.persistence_strategy }
-             .from(an_instance_of(ActiveTriples::RepositoryStrategy))
-             .to(strategy)
+    context 'when passing a strategy class' do
+      it 'sets new persistence strategy as an instance of the given class' do
+        silence_stderr do
+          expect { subject.set_persistence_strategy(strategy_class) }
+            .to change { subject.persistence_strategy }
+                  .from(an_instance_of(ActiveTriples::RepositoryStrategy))
+                  .to(an_instance_of(strategy_class))
+        end
+      end
+      
+      it 'is deprecated' do
+        expect { subject.set_persistence_strategy(strategy_class) }
+          .to write(/(\[DEPRECATION\]).*/).to(:error)
+      end
     end
   end
 
   context 'with graph implementation' do
-    before do
-      graph = RDF::Graph.new
-      allow(subject).to receive(:graph).and_return(graph)
+    let(:klass) do
+      Class.new do 
+        include ActiveTriples::Persistable
+        
+        def graph
+          @graph ||= RDF::Graph.new
+        end
+      end
     end
 
     it 'mirrors writes to graph' do

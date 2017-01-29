@@ -541,7 +541,7 @@ module ActiveTriples
         unless new_resource == parent ||
                (parent.persistence_strategy.is_a?(ParentStrategy) &&
                 parent.persistence_strategy.ancestors.find { |a| a == new_resource })
-          new_resource.set_persistence_strategy(ParentStrategy)
+          new_resource.set_persistence_strategy(ParentStrategy.new(new_resource))
           new_resource.parent = parent
         end
 
@@ -573,7 +573,7 @@ module ActiveTriples
         node = klass.from_uri(value, parent)
 
         if is_property? && property_config[:persist_to]
-          node.set_persistence_strategy(property_config[:persist_to])
+          node.set_persistence_strategy(property_config[:persist_to].new(node))
 
           node.persistence_strategy.parent = parent if
             node.persistence_strategy.is_a?(ParentStrategy)

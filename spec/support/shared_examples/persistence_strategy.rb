@@ -2,7 +2,7 @@
 shared_examples 'a persistence strategy' do
   shared_context 'with changes' do
     before do
-      subject.source << 
+      subject.graph <<
         RDF::Statement.new(RDF::Node.new, RDF::Vocab::DC.title, 'moomin')
     end
   end

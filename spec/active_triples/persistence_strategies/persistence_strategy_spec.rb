@@ -23,3 +23,8 @@ describe ActiveTriples::PersistenceStrategy do
     end
   end
 end
+
+describe FakePersistenceStrategy do
+  subject { described_class.new(:FAKE_ARG) }
+  it_behaves_like 'a persistence strategy'
+end

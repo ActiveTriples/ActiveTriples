@@ -12,7 +12,6 @@ describe ActiveTriples::RepositoryStrategy do
 
   it_behaves_like 'a persistence strategy'
 
-
   describe '#persisted?' do
     context 'before persist!' do
       it 'returns false' do

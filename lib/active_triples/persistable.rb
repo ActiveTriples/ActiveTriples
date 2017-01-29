@@ -27,6 +27,7 @@ module ActiveTriples
       persistence_strategy.graph
     end
 
+    ##
     # @see RDF::Writable.insert_statement
     def insert_statement(*args)
       graph.send(:insert_statement, *args)
@@ -40,18 +41,27 @@ module ActiveTriples
 
     ##
     # Returns the persistence strategy object that handles this object's
-    # persistence
+    # persistence.
     def persistence_strategy
-      @persistence_strategy || set_persistence_strategy(RepositoryStrategy)
+      @persistence_strategy || set_persistence_strategy
     end
 
     ##
     # Sets a persistence strategy
     #
     # @param klass [Class] A class implementing the persistence strategy
-    #   interface
-    def set_persistence_strategy(klass)
-      @persistence_strategy = klass.new(self)
+    #   interface.
+    def set_persistence_strategy(klass = RepositoryStrategy.new(self))
+      @persistence_strategy = 
+        if klass.is_a?(Class)
+          warn "[DEPRECATION] Passing a class to #{self.class}#" \
+               'set_persistence_strategy is deprecated. Pass a '\
+               '`PersistenceStrategy` instance instead. Called from ' +
+               Gem.location_of_caller.join(':')
+          klass.new(self)
+        else
+          klass
+        end
     end
 
     ##
@@ -86,8 +96,8 @@ module ActiveTriples
     ##
     # Indicates if the resource is persisted.
     #
-    # @see #persist
     # @return [Boolean]
+    # @see #persist
     def persisted?
       persistence_strategy.persisted?
     end

@@ -10,7 +10,7 @@ describe ActiveTriples::ParentStrategy do
     let(:parent) { BasicPersistable.new }
 
     before do
-      rdf_source.set_persistence_strategy(described_class)
+      rdf_source.set_persistence_strategy(described_class.new(rdf_source))
       rdf_source.persistence_strategy.parent = parent
     end
   end
@@ -201,7 +201,7 @@ describe ActiveTriples::ParentStrategy do
         let(:last) { BasicPersistable.new }
 
         before do
-          parent.set_persistence_strategy(ActiveTriples::ParentStrategy)
+          parent.set_persistence_strategy(ActiveTriples::ParentStrategy.new(parent))
           parent.persistence_strategy.parent = last
           rdf_source.reload
         end
@@ -250,9 +250,9 @@ describe ActiveTriples::ParentStrategy::Ancestors do
       let(:last)   { BasicPersistable.new }
       
       before do
-        parent.set_persistence_strategy(ActiveTriples::ParentStrategy)
+        parent.set_persistence_strategy(ActiveTriples::ParentStrategy.new(parent))
         parent.persistence_strategy.parent = last
-        rdf_source.set_persistence_strategy(ActiveTriples::ParentStrategy)
+        rdf_source.set_persistence_strategy(ActiveTriples::ParentStrategy.new(rdf_source))
         rdf_source.persistence_strategy.parent = parent
       end
       

@@ -9,13 +9,28 @@ module ActiveTriples
   #                                            predicate: RDF::Vocab::DC.title)
   class Property
     ##
+    # @!attribute [w] name
+    #   @return [Symbol]
+    # @!attribute [rw] attributes
+    #   @return [Hash<Symbol, Object>]
+    attr_writer   :name
+    attr_accessor :attributes
+
+    ##
+    # @!method to_h()
+    #   Returns the property's configuration values. Will not return #name, 
+    #     which is meant to only be accessible via the accessor.
+    #   @return [Hash] Configuration values for this property.
+    alias_method :to_h, :attributes
+
+    ##
     # @param options [Hash] Options for the property
     # @option options [RDF::URI] :name
     # @option options [Boolean] :cast
     # @option options [String, Class] :class_name
     # @option options [RDF::URI] :predicate
     def initialize(options = {})
-      self.name = options.fetch(:name)
+      self.name       = options.fetch(:name)
       self.attributes = options.except(:name)
     end
 
@@ -41,24 +56,5 @@ module ActiveTriples
     def predicate
       attributes[:predicate]
     end
-
-    private
-
-    ##
-    # @!attribute [w] name
-    #   @return [Symbol]
-    # @!attribute [rw] attributes
-    #   @return [Hash<Symbol, Object>]
-    attr_writer   :name
-    attr_accessor :attributes
-
-    alias_method :to_h, :attributes
-
-    ##
-    # Returns the property's configuration values. Will not return #name, which 
-    # is meant to only be accessible via the accessor.
-    # 
-    # @return [Hash] Configuration values for this property.
-    public :to_h
   end
 end

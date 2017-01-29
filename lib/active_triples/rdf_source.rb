@@ -94,9 +94,9 @@ module ActiveTriples
       @rdf_subject = get_uri(resource_uri) if resource_uri
 
       if args.first.is_a?(Hash) || args.empty?
-        set_persistence_strategy(RepositoryStrategy)
+        set_persistence_strategy(RepositoryStrategy.new(self))
       else
-        set_persistence_strategy(ParentStrategy)
+        set_persistence_strategy(ParentStrategy.new(self))
         persistence_strategy.parent = args.shift
       end
 
