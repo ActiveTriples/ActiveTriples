@@ -93,6 +93,8 @@ module ActiveTriples
       resource_uri = args.shift unless args.first.is_a?(Hash)
       @rdf_subject = get_uri(resource_uri) if resource_uri
 
+      callback = args.first.delete(:callback) if args.first.is_a?(Hash)
+
       if args.first.is_a?(Hash) || args.empty?
         set_persistence_strategy(RepositoryStrategy)
       else
@@ -107,6 +109,9 @@ module ActiveTriples
       Array.wrap(self.class.type).each do |type|
         get_values(:type) << type unless get_values(:type).include?(type)
       end
+
+      # This needs to be set last to prevent infinite loops in construction
+      @property_change_callback = callback
     end
 
     ##
@@ -549,6 +554,25 @@ module ActiveTriples
 
     def marked_for_destruction?
       @marked_for_destruction
+    end
+
+    # Invokes the callback set during initialization (if present), with the property name and the array
+    # of values that will be set.
+    #
+    # @param property [Symbol] the property being mutated
+    # @param values [Array] the values it will take on
+    def property_will_change(property, values)
+      @property_change_callback.call(property, values) if @property_change_callback
+    end
+
+    # The callback proc cannot be serialized
+    def marshal_dump
+      (instance_variables - [:@property_change_callback]).map { |name| [name, instance_variable_get(name)] }
+    end
+
+    def marshal_load(data)
+      ivars = data
+      ivars.each { |name, val| instance_variable_set(name, val) }
     end
 
     private
