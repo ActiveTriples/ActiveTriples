@@ -721,20 +721,19 @@ describe ActiveTriples::RDFSource do
     end
   end
 
-  describe 'callback' do
+  describe 'on_property_change callback' do
     let(:callback) {double}
-
-    before do
-      class TestRdfSource
+    let(:dummy_class) do
+      Class.new do
         include ActiveTriples::RDFSource
         property :test_title, predicate: RDF::Vocab::DC.title
       end
     end
 
-    it 'should be invoked when a property changes' do
+    it 'is invoked when a property changes' do
       expect(callback).to receive(:call).with(:test_title, ["A Title"])
 
-      rdf_source = TestRdfSource.new(callback: callback)
+      rdf_source = dummy_class.new(on_property_change: callback)
       rdf_source[:test_title] = "A Title"
     end
   end

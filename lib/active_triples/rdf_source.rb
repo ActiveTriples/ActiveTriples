@@ -87,13 +87,19 @@ module ActiveTriples
     # You can pass in only a parent with:
     #    new(nil, parent)
     #
+    # @param [Array<Object>] *args
+    # @overload initialize(*args, opts = {})
+    #   @param [Hash] opts
+    #   @option opts [#call] :on_property_change a callable that can receive params [Symbol, Array<Object>],
+    #     the property name as symbol, and an array of values the property will change to
+    #
     # @see RDF::Graph
     # @todo move this logic out to a Builder?
     def initialize(*args, &block)
       resource_uri = args.shift unless args.first.is_a?(Hash)
       @rdf_subject = get_uri(resource_uri) if resource_uri
 
-      callback = args.first.delete(:callback) if args.first.is_a?(Hash)
+      property_change_callback = args.first.delete(:on_property_change) if args.first.is_a?(Hash)
 
       if args.first.is_a?(Hash) || args.empty?
         set_persistence_strategy(RepositoryStrategy)
@@ -110,8 +116,13 @@ module ActiveTriples
         get_values(:type) << type unless get_values(:type).include?(type)
       end
 
-      # This needs to be set last to prevent infinite loops in construction
-      @property_change_callback = callback
+      # This needs to be set last. Notifying observing objects of mutations performed in the constructor
+      # is generally problematic as, until .new returns, the observer has no real handle to the thing they're
+      # being notified of. This can trigger issues such as causing ActiveFedora to enter an infinite loop
+      # as attribute_will_change! attempts to access ActiveFedora::FedoraAttributes#resource, which,
+      # because this constructor has not yet completed, causes it to attempt to initialize again, triggering
+      # the callback again, etc...
+      @property_change_callback = property_change_callback
     end
 
     ##
