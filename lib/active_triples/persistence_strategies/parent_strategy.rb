@@ -27,25 +27,25 @@ module ActiveTriples
     # @see PeristenceStrategy#graph=
     def graph=(graph)
       final_parent.insert(graph || source.to_a)
-      @graph = BufferedTransaction.begin(parent, 
+      @graph = BufferedTransaction.begin(parent,
                                          mutable:   true,
                                          subject:   source.to_term)
     end
 
     ##
-    # @return [ActiveTriples::BufferedTransaction] a transaction on parent with 
-    #   buffered changes, with reads projected against an "Extended Bounded 
+    # @return [ActiveTriples::BufferedTransaction] a transaction on parent with
+    #   buffered changes, with reads projected against an "Extended Bounded
     #   Description" of the strategy's `#source`.
     #
     # @see ActiveTriples::ExtendedBoundedDescription
     def graph
-      @graph ||= BufferedTransaction.begin(parent, 
+      @graph ||= BufferedTransaction.begin(parent,
                                            mutable:   true,
                                            subject:   source.to_term)
     end
 
     ##
-    # Resources using this strategy are persisted only if their parent is also 
+    # Resources using this strategy are persisted only if their parent is also
     # persisted.
     #
     # @see PersistenceStrategy#persisted?
@@ -66,8 +66,8 @@ module ActiveTriples
     end
 
     ##
-    # @abstract Clear out any old assertions in the datastore / repository 
-    # about this node or statement thus preparing to receive the updated 
+    # @abstract Clear out any old assertions in the datastore / repository
+    # about this node or statement thus preparing to receive the updated
     # assertions.
     def erase_old_resource; end # noop
 
@@ -91,6 +91,7 @@ module ActiveTriples
     # @param parent [RDFSource] source with a persistence strategy,
     #   must be mutable.
     def parent=(parent)
+      raise NilParentError if parent.nil?
       raise UnmutableParentError unless parent.is_a? RDF::Mutable
       raise UnmutableParentError unless parent.mutable?
 
@@ -108,7 +109,7 @@ module ActiveTriples
 
       graph.execute
 
-      parent.persist! if 
+      parent.persist! if
         ancestors.find { |a| a.is_a?(ActiveTriples::List::ListResource) }
 
       reload
@@ -152,17 +153,17 @@ module ActiveTriples
       #
       # @raise [NilParentError] if `source` does not persist to a parent
       def each
-        raise NilParentError if 
-          !source.persistence_strategy.respond_to?(:parent) || 
+        raise NilParentError if
+          !source.persistence_strategy.respond_to?(:parent) ||
           source.persistence_strategy.parent.nil?
-        
+
         current = source.persistence_strategy.parent
-        
+
         if block_given?
           loop do
             yield current
-            
-            break unless (current.persistence_strategy.respond_to?(:parent) && 
+
+            break unless (current.persistence_strategy.respond_to?(:parent) &&
                           current.persistence_strategy.parent)
             break if current.persistence_strategy.parent == current
 
@@ -172,7 +173,7 @@ module ActiveTriples
         to_enum
       end
     end
-    
+
     class NilParentError < RuntimeError; end
     class UnmutableParentError < ArgumentError; end
   end
