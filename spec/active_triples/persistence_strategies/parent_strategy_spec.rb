@@ -4,7 +4,7 @@ require 'spec_helper'
 describe ActiveTriples::ParentStrategy do
   subject { described_class.new(rdf_source) }
   let(:rdf_source) { BasicPersistable.new }
-  
+
   shared_context 'with a parent' do
     subject      { rdf_source.persistence_strategy }
     let(:parent) { BasicPersistable.new }
@@ -50,7 +50,7 @@ describe ActiveTriples::ParentStrategy do
       rdf_source.insert(*statements)
       subject.persist!
     end
-    
+
     let(:statements) do
       [RDF::Statement(subject.source.rdf_subject, RDF::Vocab::DC.title, 'moomin'),
        RDF::Statement(subject.parent, RDF::Vocab::DC.relation, subject.source.rdf_subject)]
@@ -58,7 +58,7 @@ describe ActiveTriples::ParentStrategy do
 
     it 'removes graph from the parent' do
       subject.destroy
-      
+
       statements.each do |statement|
         expect(subject.parent.statements).not_to have_statement statement
       end
@@ -83,18 +83,18 @@ describe ActiveTriples::ParentStrategy do
 
     context 'with parent' do
       include_context 'with a parent'
-      
+
       it 'gives the parent' do
         expect(subject.ancestors).to contain_exactly(parent)
       end
 
       context 'and nested parents' do
         let(:parents) do
-          [double('second', persistence_strategy: double('strategy2')), 
+          [double('second', persistence_strategy: double('strategy2')),
            double('third', persistence_strategy: double('strategy3'))]
         end
         let(:last) { double('last', persistence_strategy: double('last_strategy')) }
-        
+
         it 'gives all ancestors' do
           allow(parent.persistence_strategy)
             .to receive(:parent).and_return(parents.first)
@@ -102,7 +102,7 @@ describe ActiveTriples::ParentStrategy do
             .to receive(:parent).and_return(parents[1])
           allow(parents[1].persistence_strategy)
             .to receive(:parent).and_return(last)
-          
+
           expect(subject.ancestors)
             .to contain_exactly(*(parents << parent << last))
         end
@@ -148,7 +148,19 @@ describe ActiveTriples::ParentStrategy do
   describe '#parent' do
     it { is_expected.to have_attributes(:parent => nil) }
 
-    it 'requires its parent to be RDF::Mutable' do
+    context 'with a parent' do
+      include_context 'with a parent'
+      it { is_expected.to have_attributes(:parent => parent) }
+    end
+  end
+
+  describe '#parent=' do
+    it 'requires a non-nil value' do
+      expect { subject.parent = nil }
+        .to raise_error described_class::NilParentError
+    end
+
+    it 'requires the value to be RDF::Mutable' do
       expect { subject.parent = Object.new }
         .to raise_error described_class::UnmutableParentError
     end
@@ -158,11 +170,6 @@ describe ActiveTriples::ParentStrategy do
       allow(immutable).to receive(:mutable?).and_return(false)
       expect { subject.parent = immutable }
         .to raise_error described_class::UnmutableParentError
-    end
-
-    context 'with a parent' do
-      include_context 'with a parent'
-      it { is_expected.to have_attributes(:parent => parent) }
     end
   end
 
@@ -205,7 +212,7 @@ describe ActiveTriples::ParentStrategy do
           parent.persistence_strategy.parent = last
           rdf_source.reload
         end
-        
+
         it 'writes to #parent graph when parent changes while child is live' do
           parent.insert(parent_st)
           parent.persist!
@@ -248,16 +255,16 @@ describe ActiveTriples::ParentStrategy::Ancestors do
     context 'with parents' do
       let(:parent) { BasicPersistable.new }
       let(:last)   { BasicPersistable.new }
-      
+
       before do
         parent.set_persistence_strategy(ActiveTriples::ParentStrategy)
         parent.persistence_strategy.parent = last
         rdf_source.set_persistence_strategy(ActiveTriples::ParentStrategy)
         rdf_source.persistence_strategy.parent = parent
       end
-      
+
       it { expect(subject.each).to be_a Enumerator }
-      
+
       it 'enumerates ancestors' do
         expect(subject.each).to contain_exactly(parent, last)
       end
