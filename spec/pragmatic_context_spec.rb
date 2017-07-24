@@ -41,7 +41,8 @@ describe 'PragmaticContext integration' do
   end
 
   it 'should have contexts' do
-    expect(subject.as_jsonld['@context'].keys).to eq ["license", "title"]
+    expect(subject.as_jsonld['@context'].keys)
+      .to contain_exactly("license", "title")
   end
   
   it 'should use context with dump' do
