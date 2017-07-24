@@ -1,12 +1,19 @@
 anguage: ruby
 bundler_args: --without debug
 script: "bundle exec rspec spec"
+env:
+  - CI=true
 rvm:
   - 1.9.3
   - 2.0.0
-  - 2.1.0
-  - 2.1.1
+  - 2.1
+  - 2.2
+  - 2.3
+  - 2.4
   - jruby-19mode
+cache: bundler
+sudo: false
 matrix:
   allow_failures:
       - rvm: jruby-19mode
+dist: trusty
