@@ -395,9 +395,9 @@ module ActiveTriples
       values = prepare_relation(values) if values.is_a?(Relation)
       values = [values].compact unless values.kind_of?(Array)
 
-      parent.notify_observers(property, values)
       clear
       values.each { |val| set_value(val) }
+      parent.notify_observers(property, self)
       
       parent.persist! if parent.persistence_strategy.respond_to?(:ancestors) &&
                          parent.persistence_strategy.ancestors.any? { |r| r.is_a?(ActiveTriples::List::ListResource) }
