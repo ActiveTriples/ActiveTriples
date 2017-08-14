@@ -108,6 +108,45 @@ describe ActiveTriples::RDFSource do
     end
   end
 
+  describe 'observers' do
+    let(:observer) { double('observer') }
+
+    before { subject.add_observer(observer) }
+
+    include_context 'with properties'
+    
+    it 'notifies an observer of changes' do
+      expect(observer)
+        .to receive(:notify)
+        .with(:creator, a_collection_containing_exactly('moomin'))
+
+      subject.creator = 'moomin'
+    end
+
+    it 'notifies muliple observers of changes' do
+      other_observer = double('second observer')
+      values         = ['moomin', 'snork']
+
+      expect(observer)
+        .to receive(:notify)
+        .with(:creator, a_collection_containing_exactly(*values))
+      expect(other_observer)
+        .to receive(:notify)
+        .with(:creator, a_collection_containing_exactly(*values))
+
+      subject.add_observer(other_observer)
+      subject.creator = values
+    end
+
+    it 'does not notify removed observers' do
+      expect(observer).not_to receive(:notify)
+      
+      subject.delete_observer(observer)
+
+      subject.creator = 'moomin'
+    end
+  end
+
   describe '#==' do
     shared_examples 'Term equality' do
       it 'equals itself' do

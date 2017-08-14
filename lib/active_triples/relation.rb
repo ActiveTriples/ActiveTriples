@@ -390,6 +390,7 @@ module ActiveTriples
       values = prepare_relation(values) if values.is_a?(Relation)
       values = [values].compact unless values.kind_of?(Array)
 
+      parent.notify_observers(property, values)
       clear
       values.each { |val| set_value(val) }
       

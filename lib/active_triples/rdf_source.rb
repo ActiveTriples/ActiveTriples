@@ -2,6 +2,7 @@
 require 'active_model'
 require 'active_support/core_ext/hash'
 require 'active_support/core_ext/array/wrap'
+require 'set'
 
 module ActiveTriples
   ##
@@ -90,6 +91,8 @@ module ActiveTriples
     # @see RDF::Graph
     # @todo move this logic out to a Builder?
     def initialize(*args, &block)
+      @observers   = Set.new
+
       resource_uri = args.shift unless args.first.is_a?(Hash)
       @rdf_subject = get_uri(resource_uri) if resource_uri
 
@@ -549,6 +552,32 @@ module ActiveTriples
 
     def marked_for_destruction?
       @marked_for_destruction
+    end
+
+    ##
+    # @param observer [#notify]
+    #
+    # @retern [#notify] the added observer
+    def add_observer(observer)
+      @observers.add(observer)
+    end
+
+    ##
+    # @param observer [#notify] an observer to delete
+    #
+    # @return [#notify, nil] the deleted observer; nil if the observer was not
+    #   registered
+    def delete_observer(observer)
+      @observers.delete?(observer)
+    end
+
+    ##
+    # @param property [Symbol]
+    # @param values   [Enumerator]
+    #
+    # @return [void]
+    def notify_observers(property, values)
+      @observers.each { |o| o.notify(property, values) }
     end
 
     private
