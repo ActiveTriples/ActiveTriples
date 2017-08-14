@@ -215,7 +215,7 @@ Contributing
 
 Please observe the following guidelines:
 
- - Do your work in a feature branch based on ```master``` and rebase before submitting a pull request.
+ - Do your work in a feature branch based on ```develop``` and rebase before submitting a pull request.
  - Write tests for your contributions.
  - Document every method you add using YARD annotations. (_Note: Annotations are sparse in the existing codebase, help us fix that!_)
  - Organize your commits into logical units.
