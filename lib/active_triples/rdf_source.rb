@@ -572,11 +572,32 @@ module ActiveTriples
     end
 
     ##
+    # Sends `#notify` messages with the property symbol and the current values
+    # for the property to each observer.
+    #
+    # @note We short circuit to avoid query costs if no observers are present.
+    #   If there are regisetred observers, values are returned as an array.
+    #   This means that we incur query costs immediately and only once.
+    #
+    # @example Setting up observers
+    #    class MyObserver
+    #      def notify(property, values)
+    #        # do something
+    #      end
+    #    end
+    #
+    #    observer = MyObserver.new
+    #    my_source.add_observer(observer)
+    #
+    #    my_source.creator = 'Moomin'
+    #    # the observer recieves a #notify(:creator, ['Moomin']) message here.
+    #
     # @param property [Symbol]
-    # @param values   [Enumerator]
     #
     # @return [void]
-    def notify_observers(property, values)
+    def notify_observers(property)
+      return if @observers.empty?
+      values = get_values(property).to_a
       @observers.each { |o| o.notify(property, values) }
     end
 

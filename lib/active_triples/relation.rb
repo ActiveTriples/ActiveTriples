@@ -212,7 +212,7 @@ module ActiveTriples
     def clear
       return self if empty?
       parent.delete([rdf_subject, predicate, nil])
-      parent.notify_observers(property, self)
+      parent.notify_observers(property)
 
       self
     end
@@ -251,7 +251,7 @@ module ActiveTriples
       return self if parent.query([rdf_subject, predicate, value]).nil?
 
       parent.delete([rdf_subject, predicate, value])
-      parent.notify_observers(property, self)
+      parent.notify_observers(property)
       self
     end
 
@@ -397,7 +397,7 @@ module ActiveTriples
 
       clear
       values.each { |val| set_value(val) }
-      parent.notify_observers(property, self)
+      parent.notify_observers(property)
       
       parent.persist! if parent.persistence_strategy.respond_to?(:ancestors) &&
                          parent.persistence_strategy.ancestors.any? { |r| r.is_a?(ActiveTriples::List::ListResource) }
@@ -429,7 +429,7 @@ module ActiveTriples
       end
 
       parent.delete(*statements)
-      parent.notify_observers(property, self)
+      parent.notify_observers(property)
       self
     end
 
