@@ -203,7 +203,7 @@ describe ActiveTriples::Relation do
 
       types = { numeric: [0, 1, 2, 3_000_000_000],
                 string:  ['moomin', 'snork', 'snufkin'],
-                lang:    [RDF::Literal('Moomin', language: :en), 
+                lang:    [RDF::Literal('Moomin', language: :en),
                           RDF::Literal('Mummi', language: :fi)],
                 date:    [Date.today, Date.today - 1],
                 uri:     [RDF::URI('one'), RDF::URI('two'), RDF::URI('three')],
@@ -310,10 +310,10 @@ describe ActiveTriples::Relation do
       it 'still returns as a resource' do
         expect(subject.build).to be_a ActiveTriples::RDFSource
       end
-      
+
       it 'adds a new child node to the relation' do
         expect { subject.build }.to change { subject.count }.by 1
-      end        
+      end
     end
 
     context 'with configured properties' do
@@ -350,6 +350,15 @@ describe ActiveTriples::Relation do
       expect { subject.delete(1) }.not_to change { subject.to_a }
     end
 
+    it 'does not notify observers when no changes are made' do
+      observer = double(:observer)
+      parent_resource.add_observer(observer)
+
+      expect(observer).not_to receive(:notify)
+
+      subject.delete(1)
+    end
+
     context 'with values' do
       before { subject << values }
 
@@ -365,6 +374,17 @@ describe ActiveTriples::Relation do
         expect { subject.delete(values.first) }
           .to change { subject.to_a }
           .to contain_exactly(*values[1..-1])
+      end
+
+      it 'notifies observers of changes' do
+        observer = double(:observer)
+        parent_resource.add_observer(observer)
+
+        expect(observer).to receive(:notify)
+          .with(subject.property,
+                a_collection_containing_exactly(*values[1..-1]))
+
+        subject.delete(values.first)
       end
 
       it 'deletes a URI value' do
@@ -394,9 +414,17 @@ describe ActiveTriples::Relation do
     include_context 'with symbol property'
 
     let(:parent_resource) { ActiveTriples::Resource.new }
+    let(:observer)        { double(:observer) }
 
     it 'gives nil for non-existant value' do
       expect(subject.delete?(1)).to be_nil
+    end
+
+    it 'does not notify observers when no changes are made' do
+      parent_resource.add_observer(observer)
+
+      expect(observer).not_to receive(:notify)
+      subject.delete?(1)
     end
 
     it 'returns value when deleted' do
@@ -409,12 +437,23 @@ describe ActiveTriples::Relation do
       expect { subject.delete?(1) }
         .to change { subject.to_a }.to be_empty
     end
+
+    it 'notifies observers of changes' do
+      subject.set(1)
+      parent_resource.add_observer(observer)
+
+      expect(observer).to receive(:notify)
+        .with(subject.property, be_empty)
+
+      subject.delete?(1)
+    end
   end
 
   describe '#subtract' do
     include_context 'with symbol property'
 
     let(:parent_resource) { ActiveTriples::Resource.new }
+    let(:observer)        { double(:observer) }
 
     it 'subtracts values as arguments' do
       subject.set([1, 2, 3])
@@ -432,6 +471,16 @@ describe ActiveTriples::Relation do
       subject.set([:one, :two, :three])
       expect { subject.subtract([:two, :three]) }
         .to change { subject.to_a }.to contain_exactly(:one)
+    end
+
+    it 'notifies observers of changes' do
+      subject.set([1, 2, 3])
+      parent_resource.add_observer(observer)
+
+      expect(observer).to receive(:notify)
+        .with(subject.property, a_collection_containing_exactly(1))
+
+      subject.subtract([2, 3])
     end
   end
 
@@ -480,11 +529,31 @@ describe ActiveTriples::Relation do
         expect { subject.clear }
           .to change { subject.parent.query(query_pattern) }.to([])
       end
+
+      it 'notifies observers of changed state' do
+        observer = double(:observer)
+        parent_resource.add_observer(observer)
+
+        expect(observer)
+          .to receive(:notify)
+          .with(subject.property, be_empty)
+
+        subject.clear
+      end
     end
 
     it 'is a no-op when relation is empty' do
       subject.parent << [subject.parent.rdf_subject, RDF.type, 'moomin']
       expect { subject.clear }.not_to change { subject.parent.statements.to_a }
+    end
+
+    it 'does not notify observers when relation is empty' do
+      observer = double(:observer)
+      parent_resource.add_observer(observer)
+
+      expect(observer).not_to receive(:notify)
+
+      subject.clear
     end
   end
 
@@ -502,6 +571,19 @@ describe ActiveTriples::Relation do
       values = [:moomin, :snork]
       expect { subject << values }
         .to change { subject.to_a }.to contain_exactly(*values)
+    end
+
+    it 'notifies observers on the parent' do
+      observer = double(:observer)
+      values   = [:moomin, :snork]
+      parent_resource.add_observer(observer)
+
+      expect(observer)
+        .to receive(:notify)
+        .with(subject.property,
+              a_collection_containing_exactly(*values))
+
+      subject << values
     end
 
     it 'keeps datatypes' do
@@ -536,8 +618,8 @@ describe ActiveTriples::Relation do
       end
 
       it 'retains unknown datatypes' do
-        literal = 
-          RDF::Literal('snowflake', 
+        literal =
+          RDF::Literal('snowflake',
                        datatype: RDF::URI('http://emaple.com/snowflake'))
 
         subject << literal
@@ -561,7 +643,7 @@ describe ActiveTriples::Relation do
           literal = DummySnowflake.new('special')
 
           subject << literal
-          
+
           expect { subject << 'special' }
             .to change { subject.send(:objects).to_a }
                  .to contain_exactly(literal, RDF::Literal('special'))
@@ -670,7 +752,7 @@ describe ActiveTriples::Relation do
             expect(subject.each.map(&:rdf_subject))
               .to contain_exactly(*values)
           end
-          
+
           context 'and a class is configured' do
             let(:this_type) { RDF::URI('http://example.org/Moomin') }
             let(:this_class) do
@@ -694,16 +776,16 @@ describe ActiveTriples::Relation do
                           class_name: this_class,
                           predicate:  RDF::URI('http://example.org/moomin')
             end
-              
+
             it 'casts values with no type to the class' do
-              expect(subject).to contain_exactly(an_instance_of(this_class), 
+              expect(subject).to contain_exactly(an_instance_of(this_class),
                                                  an_instance_of(this_class),
                                                  an_instance_of(this_class))
             end
 
             it 'casts values with other type to the other class' do
               subject << other_class.new
-              expect(subject).to contain_exactly(an_instance_of(this_class), 
+              expect(subject).to contain_exactly(an_instance_of(this_class),
                                                  an_instance_of(this_class),
                                                  an_instance_of(this_class),
                                                  an_instance_of(other_class))
@@ -858,6 +940,18 @@ describe ActiveTriples::Relation do
         values = [:moomin, :snork]
         expect { subject.set(values) }
           .to change { subject.to_a }.to contain_exactly(*values)
+      end
+
+      it 'notifies observers on the parent' do
+        observer = double(:observer)
+        values   = [:moomin, :snork]
+        parent_resource.add_observer(observer)
+
+        expect(observer)
+          .to receive(:notify)
+          .with(subject.property, a_collection_containing_exactly(*values))
+
+        subject.set(values)
       end
 
       context 'when given a Relation' do
