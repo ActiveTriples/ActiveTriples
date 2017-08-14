@@ -210,7 +210,9 @@ module ActiveTriples
     #
     # @return [Relation] self; a now empty relation
     def clear
+      return self if empty?
       parent.delete([rdf_subject, predicate, nil])
+      parent.notify_observers(property, self)
 
       self
     end
@@ -245,8 +247,11 @@ module ActiveTriples
     # @return [ActiveTriples::Relation] self
     def delete(value)
       value = RDF::Literal(value) if value.is_a? Symbol
-      parent.delete([rdf_subject, predicate, value])
 
+      return self if parent.query([rdf_subject, predicate, value]).nil?
+
+      parent.delete([rdf_subject, predicate, value])
+      parent.notify_observers(property, self)
       self
     end
 
@@ -412,6 +417,9 @@ module ActiveTriples
     #
     # @note This casts symbols to a literals, which gets us symmetric behavior
     #   with `#set(:sym)`.
+    #
+    # @note This method treats all calls as changes for the purpose of observer
+    #   notifications
     # @see #delete
     def subtract(*values)
       values = values.first if values.first.is_a? Enumerable
@@ -421,6 +429,7 @@ module ActiveTriples
       end
 
       parent.delete(*statements)
+      parent.notify_observers(property, self)
       self
     end
 
