@@ -114,7 +114,7 @@ describe ActiveTriples::RDFSource do
     before { subject.add_observer(observer) }
 
     include_context 'with properties'
-    
+
     it 'notifies an observer of changes' do
       expect(observer)
         .to receive(:notify)
@@ -140,7 +140,7 @@ describe ActiveTriples::RDFSource do
 
     it 'does not notify removed observers' do
       expect(observer).not_to receive(:notify)
-      
+
       subject.delete_observer(observer)
 
       subject.creator = 'moomin'
@@ -212,9 +212,9 @@ describe ActiveTriples::RDFSource do
 
     context 'with statements for other subjects' do
       before do
-        subject << 
+        subject <<
           RDF::Statement(RDF::URI('http://example.org/OTHER_SUBJECT'),
-                         RDF::URI('http://example.org/ontology/OTHER_PRED'), 
+                         RDF::URI('http://example.org/ontology/OTHER_PRED'),
                          'OTHER_OBJECT')
       end
 
@@ -228,6 +228,16 @@ describe ActiveTriples::RDFSource do
   describe '#attributes=' do
     it 'raises an error when not passed a hash' do
       expect { subject.attributes = true }.to raise_error ArgumentError
+    end
+  end
+
+  describe '#default_labels' do
+    it 'prefers skos:prefLabel' do
+      expect(subject.default_labels.first).to eq RDF::Vocab::SKOS.prefLabel
+    end
+
+    it 'values are all valid predicates' do
+      subject.default_labels.each { |term| expect(term).to be_uri }
     end
   end
 
@@ -529,14 +539,14 @@ describe ActiveTriples::RDFSource do
     describe 'on child nodes' do
       let(:parent)  { source_class.new }
       let(:subject) { source_class.new(uri, parent) }
-      
+
       include_examples 'setting values' do
         let(:value) do
-          ['moomin', 
-           Date.today, 
-           RDF::Node.new, 
-           source_class.new, 
-           source_class.new(uri / 'new'), 
+          ['moomin',
+           Date.today,
+           RDF::Node.new,
+           source_class.new,
+           source_class.new(uri / 'new'),
            subject]
         end
       end
@@ -550,7 +560,7 @@ describe ActiveTriples::RDFSource do
 
       it 'persists to parent' do
         property = RDF::Vocab::DC.title
-        
+
         subject.set_value(property, 'Comet in Moominland')
 
         expect { subject.persist! }
@@ -636,15 +646,15 @@ describe ActiveTriples::RDFSource do
         expect { subject.set_value(predicate, child_other) }
           .not_to change { child_other.persistence_strategy.parent }
       end
-      
+
       context 'when setting to a relation' do
         it 'adds child node data to graph' do
           other << RDF::Statement(other, RDF::URI('p'), 'o')
-          
-          relation_source = source_class.new 
+
+          relation_source = source_class.new
           relation_source.set_value(predicate, other)
           relation = relation_source.get_values(predicate)
-          
+
           expect { subject.set_value(predicate, relation) }
             .to change { subject.statements.to_a }
             .to include(*other.statements.to_a)

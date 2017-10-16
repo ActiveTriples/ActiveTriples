@@ -76,7 +76,26 @@ module ActiveTriples
       define_model_callbacks :persist
     end
 
+    ##
+    # @!method count
+    #   @return (see RDF::Graph#count)
+    # @!method each
+    #   @return (see RDF::Graph#each)
+    # @!method load!
+    #   @return (see RDF::Graph#load!)
+    # @!method has_statement?
+    #   @return (see RDF::Graph#has_statement?)
+    # @!method query
+    #   @return (see RDF::Graph#query)
     delegate :query, :each, :load!, :count, :has_statement?, to: :graph
+
+    ##
+    # @!method to_base
+    #   @return (see RDF::Term#to_base)
+    # @!method term?
+    #   @return (see RDF::Term#term?)
+    # @!method escape
+    #   @return (see RDF::Term#escape)
     delegate :to_base, :term?, :escape, to: :to_term
 
     ##
@@ -190,6 +209,16 @@ module ActiveTriples
                                'Has it been defined yet?'
         end
       end
+    end
+
+    ##
+    # @return [Array<RDF::URI>] a group of properties to use for default labels.
+    def default_labels
+      [RDF::Vocab::SKOS.prefLabel,
+       RDF::Vocab::DC.title,
+       RDF::RDFS.label,
+       RDF::Vocab::SKOS.altLabel,
+       RDF::Vocab::SKOS.hiddenLabel]
     end
 
     ##
@@ -602,16 +631,6 @@ module ActiveTriples
     end
 
     private
-
-    ##
-    # @return [Array<RDF::URI>] a group of properties to use for default labels.
-    def default_labels
-      [RDF::Vocab::SKOS.prefLabel,
-       RDF::Vocab::DC.title,
-       RDF::RDFS.label,
-       RDF::Vocab::SKOS.altLabel,
-       RDF::Vocab::SKOS.hiddenLabel]
-    end
 
     ##
     # Rewrites the subject and object of each statement containing
