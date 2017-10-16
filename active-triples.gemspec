@@ -19,8 +19,9 @@ Gem::Specification.new do |s|
   s.add_dependency 'activemodel',   '>= 3.0.0'
   s.add_dependency 'activesupport', '>= 3.0.0'
 
-  s.add_development_dependency 'rdoc'
+  s.add_development_dependency 'yard'
   s.add_development_dependency 'rspec'
+  s.add_development_dependency 'guard-rspec'
   s.add_development_dependency 'rdf-spec',   '~> 2.0'
   s.add_development_dependency 'rdf-rdfxml', '~> 2.0'
   s.add_development_dependency 'rdf-turtle', '~> 2.0'
