@@ -1,3 +1,11 @@
+1.1.0
+----
+  - Add support for RDF.rb 3.0
+
+1.0.0
+----
+  - Finalize 1.0.0 APIs
+
 0.11.0
 ----
   - Reworks ParentStrategy to use an Transaction over a well defined
@@ -110,12 +118,12 @@
 
 0.8.0
 -----
-  - Adds RDF.rb interfaces to `RDFSource`, improving interoperability 
+  - Adds RDF.rb interfaces to `RDFSource`, improving interoperability
   with other `ruby-rdf` packages.
-  - Introduces a defined `Persistable` interface and 
+  - Introduces a defined `Persistable` interface and
   `PersistenceStrategies`.
   - Changes `Relation`'s delete methods to remove all values, instead of
-  trying to maintain a predicate -> class pair on the property 
+  trying to maintain a predicate -> class pair on the property
   definitions in some cases. The previous functionality was unclear and
   unreliable.
   - Adds a `Schema` concept, for defining property definitions that are
