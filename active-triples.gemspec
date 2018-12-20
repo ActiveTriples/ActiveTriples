@@ -8,16 +8,16 @@ Gem::Specification.new do |s|
   s.platform    = Gem::Platform::RUBY
   s.authors     = ["Tom Johnson", "Trey Terrell"]
   s.homepage    = 'https://github.com/no-reply/ActiveTriples'
-  s.email       = 'thomas.johnson@oregonstate.edu'  
+  s.email       = 'thomas.johnson@oregonstate.edu'
   s.summary     = %q{RDF graphs in ActiveModel wrappers.}
   s.description = %q{ActiveTriples provides tools for modeling RDF as discrete resources.}
   s.license     = "APACHE2"
   s.required_ruby_version     = '>= 1.9.3'
-  
+
   s.add_dependency('rdf', '~> 1.1')
   s.add_dependency('rdf-vocab', '~> 0.8')
   s.add_dependency('activemodel', '>= 3.0.0')
-  s.add_dependency('deprecation', '~> 0.1')
+  s.add_dependency('deprecation', '>= 0.1', '< 2')
   s.add_dependency('activesupport', '>= 3.0.0')
 
   s.add_development_dependency('rdoc')
