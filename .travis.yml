@@ -4,11 +4,14 @@ script: "bundle exec rspec spec"
 sudo: false
 cache: bundler
 rvm:
+ - 2.1
  - 2.2
  - 2.3
  - 2.4
+ - 2.5
+ - 2.6
  - ruby-head
- - jruby-9.1.9.0
+ - jruby-9.2.5.0
  - jruby-head
 matrix:
   allow_failures:
