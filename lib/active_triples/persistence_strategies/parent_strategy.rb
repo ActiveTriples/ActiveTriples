@@ -124,7 +124,7 @@ module ActiveTriples
     def reload
       return false if source.frozen?
 
-      final_parent.persistence_strategy.class.new(source).reload
+      final_parent.persistence_strategy.class.new(source).reload unless final_parent == parent
       self.graph = source.to_a
 
       @persisted = true unless graph.empty?
